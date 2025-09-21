@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      font-size: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="welcomeMessage"></div>
+
+  <script>
+    // Get username from localStorage
+    const username = localStorage.getItem("username") || "Guest";
+    // Display welcome message
+    document.getElementById("welcomeMessage").innerText = "Welcome " + username;
+  </script>
+</body>
+</html>
