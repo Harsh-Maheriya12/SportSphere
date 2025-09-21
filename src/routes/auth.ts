@@ -27,7 +27,23 @@ router.post("/register", async (req: Request, res: Response) => {
 
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    // Generate JWT
+    const token = jwt.sign(
+      { userId: newUser._id, role: newUser.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "3h" }
+    );
+
+    res.status(201).json({
+      message: "User registered successfully",
+      token,
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -43,6 +59,13 @@ router.post("/login", async (req: Request, res: Response) => {
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Check if the user registered with a different provider
+    if (user.authProvider !== 'local') {
+      return res.status(400).json({ 
+        message: `You have registered using ${user.authProvider}. Please sign in with ${user.authProvider}.` 
+      });
     }
 
     // Compare password 

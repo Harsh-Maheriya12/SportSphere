@@ -53,14 +53,14 @@ const UserSchema: Schema = new Schema(
 );
 
 // Hash password before saving (if using local auth)
-UserSchema.pre<IUser>('save', async function (next) {
-  if (this.authProvider !== 'local' || !this.isModified('password') || !this.password) {
+UserSchema.pre<IUser>('save', async function (next) { // <IUser> tell typescript that this refers to a object which is of type IUser
+  if (this.authProvider !== 'local' || !this.isModified('password') || !this.password) {  // making sure that we dont rehash the password and it is not a external service login
     return next();
   }
 
   try {
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    this.password = await bcrypt.hash(this.password, salt); // hash the password and save the hash
     next();
   } catch (error: any) {
     next(error);
@@ -71,8 +71,8 @@ UserSchema.pre<IUser>('save', async function (next) {
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
-  const UserModel = this.constructor as Model<IUser>;
-  const user = await UserModel.findById(this._id).select('+password').exec();
+  const UserModel = this.constructor as Model<IUser>; // type safety
+  const user = await UserModel.findById(this._id).select('+password').exec(); // we have disabled the ability to directly read passwords so we need to request the password specially
   if (!user || !user.password) return false;
 
   return bcrypt.compare(candidatePassword, user.password);
