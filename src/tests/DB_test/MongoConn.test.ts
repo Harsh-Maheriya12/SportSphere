@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import connectDB from '../../config/db';
+import { connectDB } from '../../config/db';
 
 // --- Integration Test (mongodb-memory-server) ---
 describe('MongoDB Integration Test with in-memory server', () => {
@@ -23,6 +23,15 @@ describe('MongoDB Integration Test with in-memory server', () => {
     await mongod.stop();
   });
 
+  // before each individual test (it()) this will run and clear the database to make sure that the test run independently
+  beforeEach(async () => {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      const collection = collections[key];
+      await collection.deleteMany({}); // Deletes all documents in the collection
+    }
+  });
+
   // Define an individual test case
   it('should connect to in-memory MongoDB', () => {
     // The assertion: expect the connection's readyState to be 1 (which means connected)
@@ -33,7 +42,7 @@ describe('MongoDB Integration Test with in-memory server', () => {
   it('should insert and retrieve a test document', async () => {
     // Set up a temporary model for this test
     const TestSchema = new mongoose.Schema({ name: String });
-    const TestModel = mongoose.model('Test', TestSchema);
+    const TestModel = mongoose.models.Test || mongoose.model('Test', TestSchema);
 
     // Perform database operations
     // Create a new document in the database
