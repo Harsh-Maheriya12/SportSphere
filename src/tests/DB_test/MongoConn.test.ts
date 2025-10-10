@@ -1,7 +1,9 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDB } from '../../config/db';
+import dotenv from "dotenv";
 
+dotenv.config();
 // --- Integration Test (mongodb-memory-server) ---
 describe('MongoDB Integration Test with in-memory server', () => {
   let mongod: MongoMemoryServer;  // Declare variable to hold the in-memory database instance

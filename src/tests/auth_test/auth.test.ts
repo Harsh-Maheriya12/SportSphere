@@ -3,8 +3,11 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import app from '../../app'; // Import the configured Express app
 import User from '../../models/User';
 import {connectDB , disconnectDB } from '../../config/db';
+import dotenv from "dotenv";
 
-describe('/api/auth', () => {
+dotenv.config();
+
+describe('/auth', () => {
   let mongod: MongoMemoryServer;
 
   // Before all tests, set up the in-memory database
@@ -40,6 +43,7 @@ describe('/api/auth', () => {
       expect(res.body).toHaveProperty('message', 'User registered successfully');
     });
 
+    
     it('should return a 400 error if email already exists', async () => {
       await User.create({
         username: 'existinguser',
@@ -56,7 +60,14 @@ describe('/api/auth', () => {
         });
 
       expect(res.statusCode).toEqual(400);
-      expect(res.body).toHaveProperty('message', 'User already exists with this email');
+      expect(res.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: 'email',
+            msg: 'User already exists'
+          })
+        ])
+      );
     });
   });
 
@@ -71,7 +82,7 @@ describe('/api/auth', () => {
       });
       await user.save();
     });
-
+  
     it('should log in a user with correct credentials and return a token', async () => {
       const res = await request(app)
         .post('/api/auth/login')
