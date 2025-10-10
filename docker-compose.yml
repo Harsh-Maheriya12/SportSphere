@@ -1,0 +1,53 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: sportsphere-backend
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "8000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/sportsphere
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=5000
+    depends_on:
+      - mongo
+    # THIS IS THE NEW HEALTHCHECK CONFIGURATION
+    healthcheck:
+      # This command runs inside the container to check if the server is responsive.
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 10s   # Run the check every 10 seconds.
+      timeout: 5s     # Wait up to 5 seconds for a response.
+      retries: 5      # Try 5 times before marking as unhealthy.
+      start_period: 30s # Give the server a 30-second grace period to start up.
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    container_name: sportsphere-frontend
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    # THIS IS THE UPDATED DEPENDS_ON CONFIGURATION
+    depends_on:
+      server:
+        # It now waits for the 'server' service to pass its health check.
+        condition: service_healthy
+
+  mongo:
+    image: mongo:latest
+    container_name: sportsphere-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
+

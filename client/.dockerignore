@@ -1,0 +1,11 @@
+# Ignore dependency folders
+node_modules
+
+# Ignore build output
+dist
+
+# Ignore local configs
+.env
+
+# Ignore Docker files
+Dockerfile*

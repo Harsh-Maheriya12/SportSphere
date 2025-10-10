@@ -1,0 +1,16 @@
+# Ignore dependency folders
+node_modules
+client/node_modules
+
+# Ignore build output
+dist
+client/dist
+
+# Ignore Docker files
+Dockerfile*
+docker-compose.yml
+
+# Ignore git and other local configs
+.git
+.gitignore
+.env
