@@ -1,0 +1,239 @@
+<svg width="696" height="722" viewBox="0 0 522 541.5" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="translate(1.2906815020862308,303.0170375521558) scale(0.3226703755215577)">
+<title>SportSphereFlow</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-204 1613.75,-204 1613.75,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_unauthenticated</title>
+<polygon fill="lightgrey" stroke="lightgrey" points="141.68,-106 141.68,-184 576.88,-184 576.88,-106 141.68,-106"/>
+<text text-anchor="middle" x="359.28" y="-167.4" font-family="Times,serif" font-size="14.00">Unauthenticated User</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_registration_path</title>
+<polygon fill="none" stroke="black" points="655.13,-20 655.13,-98 1152,-98 1152,-20 655.13,-20"/>
+<text text-anchor="middle" x="903.56" y="-81.4" font-family="Times,serif" font-size="14.00">Registration Path</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_login_path</title>
+<polygon fill="none" stroke="black" points="659.85,-114 659.85,-192 1147.28,-192 1147.28,-114 659.85,-114"/>
+<text text-anchor="middle" x="903.56" y="-175.4" font-family="Times,serif" font-size="14.00">Login Path</text>
+</g>
+<g id="clust4" class="cluster">
+<title>cluster_authenticated_state</title>
+<polygon fill="#f0fff4" stroke="#f0fff4" points="1227.82,-20 1227.82,-98 1601.75,-98 1601.75,-20 1227.82,-20"/>
+<text text-anchor="middle" x="1414.78" y="-81.4" font-family="Times,serif" font-size="14.00">Authenticated State</text>
+</g>
+<g id="clust5" class="cluster">
+<title>cluster_logout_flow</title>
+<polygon fill="none" stroke="black" points="8,-20 8,-98 229.65,-98 229.65,-20 8,-20"/>
+<text text-anchor="middle" x="118.82" y="-81.4" font-family="Times,serif" font-size="14.00">Logout Flow</text>
+</g>
+<!-- Start -->
+<g id="node1" class="node">
+<title>Start</title>
+<polygon fill="white" stroke="none" points="217.06,-151 149.68,-151 149.68,-115 217.06,-115 217.06,-151"/>
+<text text-anchor="middle" x="183.37" y="-130" font-family="Inter" font-size="10.00">User visits '/'</text>
+</g>
+<!-- AppRouterUnauth -->
+<g id="node2" class="node">
+<title>AppRouterUnauth</title>
+<polygon fill="white" stroke="black" points="311.39,-115 311.39,-151 401.27,-151 401.27,-115 311.39,-115"/>
+<text text-anchor="middle" x="356.33" y="-130" font-family="Inter" font-size="10.00">AppRouterUnauth</text>
+</g>
+<!-- Start&#45;&gt;AppRouterUnauth -->
+<g id="edge1" class="edge">
+<title>Start-&gt;AppRouterUnauth</title>
+<path fill="none" stroke="black" d="M216.93,-133C240.24,-133 272.21,-133 299.55,-133"/>
+<polygon fill="black" stroke="black" points="299.43,-136.5 309.43,-133 299.43,-129.5 299.43,-136.5"/>
+<text text-anchor="middle" x="266.52" y="-135.7" font-family="Inter" font-size="9.00">HTTP Request</text>
+</g>
+<!-- HomePage -->
+<g id="node3" class="node">
+<title>HomePage</title>
+<polygon fill="white" stroke="black" points="509,-115 509,-151 568.88,-151 568.88,-115 509,-115"/>
+<text text-anchor="middle" x="538.94" y="-130" font-family="Inter" font-size="10.00">HomePage</text>
+</g>
+<!-- AppRouterUnauth&#45;&gt;HomePage -->
+<g id="edge2" class="edge">
+<title>AppRouterUnauth-&gt;HomePage</title>
+<path fill="none" stroke="black" d="M401.51,-133C430.79,-133 468.91,-133 497.41,-133"/>
+<polygon fill="black" stroke="black" points="497.08,-136.5 507.08,-133 497.08,-129.5 497.08,-136.5"/>
+<text text-anchor="middle" x="455.13" y="-135.7" font-family="Inter" font-size="9.00">Renders component</text>
+</g>
+<!-- RegisterPage -->
+<g id="node4" class="node">
+<title>RegisterPage</title>
+<polygon fill="#f0f9ff" stroke="black" points="663.13,-29 663.13,-65 731.89,-65 731.89,-29 663.13,-29"/>
+<text text-anchor="middle" x="697.51" y="-44" font-family="Inter" font-size="10.00">RegisterPage</text>
+</g>
+<!-- HomePage&#45;&gt;RegisterPage -->
+<g id="edge3" class="edge">
+<title>HomePage-&gt;RegisterPage</title>
+<path fill="none" stroke="black" d="M569.02,-117.03C592.62,-104.06 626.26,-85.58 653.06,-70.86"/>
+<polygon fill="black" stroke="black" points="654.55,-74.04 661.63,-66.16 651.18,-67.9 654.55,-74.04"/>
+<text text-anchor="middle" x="616" y="-107.88" font-family="Inter" font-size="9.00">Clicks 'Sign Up'</text>
+</g>
+<!-- LoginPage -->
+<g id="node8" class="node">
+<title>LoginPage</title>
+<polygon fill="#f0f9ff" stroke="black" points="667.85,-123 667.85,-159 727.17,-159 727.17,-123 667.85,-123"/>
+<text text-anchor="middle" x="697.51" y="-138" font-family="Inter" font-size="10.00">LoginPage</text>
+</g>
+<!-- HomePage&#45;&gt;LoginPage -->
+<g id="edge4" class="edge">
+<title>HomePage-&gt;LoginPage</title>
+<path fill="none" stroke="black" d="M569.02,-134.49C593.63,-135.74 629.14,-137.56 656.44,-138.95"/>
+<polygon fill="black" stroke="black" points="655.9,-142.43 666.07,-139.44 656.26,-135.44 655.9,-142.43"/>
+<text text-anchor="middle" x="616" y="-140.88" font-family="Inter" font-size="9.00">Clicks 'Login'</text>
+</g>
+<!-- RegisterContext -->
+<g id="node5" class="node">
+<title>RegisterContext</title>
+<polygon fill="#f0f9ff" stroke="black" points="768.89,-29 768.89,-65 849.88,-65 849.88,-29 768.89,-29"/>
+<text text-anchor="middle" x="809.38" y="-44" font-family="Inter" font-size="10.00">RegisterContext</text>
+</g>
+<!-- RegisterPage&#45;&gt;RegisterContext -->
+<g id="edge5" class="edge">
+<title>RegisterPage-&gt;RegisterContext</title>
+<path fill="none" stroke="black" d="M732.37,-47C740.26,-47 748.83,-47 757.29,-47"/>
+<polygon fill="black" stroke="black" points="757.15,-50.5 767.15,-47 757.15,-43.5 757.15,-50.5"/>
+</g>
+<!-- RegisterApi -->
+<g id="node6" class="node">
+<title>RegisterApi</title>
+<polygon fill="#f0f9ff" stroke="black" points="958.36,-29 958.36,-65 1022.69,-65 1022.69,-29 958.36,-29"/>
+<text text-anchor="middle" x="990.53" y="-44" font-family="Inter" font-size="10.00">RegisterApi</text>
+</g>
+<!-- RegisterContext&#45;&gt;RegisterApi -->
+<g id="edge6" class="edge">
+<title>RegisterContext-&gt;RegisterApi</title>
+<path fill="none" stroke="black" d="M850.14,-47C878.81,-47 917.45,-47 946.78,-47"/>
+<polygon fill="black" stroke="black" points="946.41,-50.5 956.41,-47 946.41,-43.5 946.41,-50.5"/>
+</g>
+<!-- RegisterBackend -->
+<g id="node7" class="node">
+<title>RegisterBackend</title>
+<polygon fill="#f0f9ff" stroke="black" points="1059.69,-29 1059.69,-65 1144,-65 1144,-29 1059.69,-29"/>
+<text text-anchor="middle" x="1101.84" y="-44" font-family="Inter" font-size="10.00">RegisterBackend</text>
+</g>
+<!-- RegisterApi&#45;&gt;RegisterBackend -->
+<g id="edge7" class="edge">
+<title>RegisterApi-&gt;RegisterBackend</title>
+<path fill="none" stroke="black" d="M1023.15,-47C1030.95,-47 1039.52,-47 1048.03,-47"/>
+<polygon fill="black" stroke="black" points="1048.01,-50.5 1058.01,-47 1048.01,-43.5 1048.01,-50.5"/>
+</g>
+<!-- RegisterBackend&#45;&gt;LoginPage -->
+<g id="edge8" class="edge">
+<title>RegisterBackend-&gt;LoginPage</title>
+<path fill="none" stroke="black" d="M1059.52,-63.47C1047.76,-67.7 1034.84,-71.92 1022.69,-75 912.06,-103.04 879.2,-84.73 768.89,-114 758.67,-116.71 747.89,-120.4 737.93,-124.18"/>
+<polygon fill="black" stroke="black" points="736.93,-120.81 728.9,-127.72 739.49,-127.33 736.93,-120.81"/>
+<text text-anchor="middle" x="904.12" y="-109.65" font-family="Inter" font-size="9.00">201 Created</text>
+<text text-anchor="middle" x="904.12" y="-98.85" font-family="Inter" font-size="9.00">(navigates to /login)</text>
+</g>
+<!-- LoginContext -->
+<g id="node9" class="node">
+<title>LoginContext</title>
+<polygon fill="#f0f9ff" stroke="black" points="773.61,-123 773.61,-159 845.16,-159 845.16,-123 773.61,-123"/>
+<text text-anchor="middle" x="809.38" y="-138" font-family="Inter" font-size="10.00">LoginContext</text>
+</g>
+<!-- LoginPage&#45;&gt;LoginContext -->
+<g id="edge9" class="edge">
+<title>LoginPage-&gt;LoginContext</title>
+<path fill="none" stroke="black" d="M727.66,-141C738.15,-141 750.27,-141 761.87,-141"/>
+<polygon fill="black" stroke="black" points="761.7,-144.5 771.7,-141 761.7,-137.5 761.7,-144.5"/>
+</g>
+<!-- LoginApi -->
+<g id="node10" class="node">
+<title>LoginApi</title>
+<polygon fill="#f0f9ff" stroke="black" points="963.08,-123 963.08,-159 1017.97,-159 1017.97,-123 963.08,-123"/>
+<text text-anchor="middle" x="990.53" y="-138" font-family="Inter" font-size="10.00">LoginApi</text>
+</g>
+<!-- LoginContext&#45;&gt;LoginApi -->
+<g id="edge10" class="edge">
+<title>LoginContext-&gt;LoginApi</title>
+<path fill="none" stroke="black" d="M845.35,-141C875.87,-141 920.06,-141 951.46,-141"/>
+<polygon fill="black" stroke="black" points="951.3,-144.5 961.3,-141 951.3,-137.5 951.3,-144.5"/>
+</g>
+<!-- LoginBackend -->
+<g id="node11" class="node">
+<title>LoginBackend</title>
+<polygon fill="#f0f9ff" stroke="black" points="1064.41,-123 1064.41,-159 1139.28,-159 1139.28,-123 1064.41,-123"/>
+<text text-anchor="middle" x="1101.84" y="-138" font-family="Inter" font-size="10.00">LoginBackend</text>
+</g>
+<!-- LoginApi&#45;&gt;LoginBackend -->
+<g id="edge11" class="edge">
+<title>LoginApi-&gt;LoginBackend</title>
+<path fill="none" stroke="black" d="M1018.27,-141C1028.71,-141 1041.01,-141 1052.88,-141"/>
+<polygon fill="black" stroke="black" points="1052.55,-144.5 1062.55,-141 1052.55,-137.5 1052.55,-144.5"/>
+</g>
+<!-- SetState -->
+<g id="node12" class="node">
+<title>SetState</title>
+<polygon fill="white" stroke="black" points="1235.82,-29 1235.82,-65 1289.82,-65 1289.82,-29 1235.82,-29"/>
+<text text-anchor="middle" x="1262.82" y="-44" font-family="Inter" font-size="10.00">SetState</text>
+</g>
+<!-- LoginBackend&#45;&gt;SetState -->
+<g id="edge12" class="edge">
+<title>LoginBackend-&gt;SetState</title>
+<path fill="none" stroke="black" d="M1133.87,-122.65C1160.19,-107.09 1197.96,-84.76 1225.65,-68.39"/>
+<polygon fill="black" stroke="black" points="1227.22,-71.52 1234.05,-63.42 1223.66,-65.5 1227.22,-71.52"/>
+<text text-anchor="middle" x="1189.91" y="-107.88" font-family="Inter" font-size="9.00">200 OK + JWT</text>
+</g>
+<!-- AppRouterAuth -->
+<g id="node13" class="node">
+<title>AppRouterAuth</title>
+<polygon fill="white" stroke="black" points="1326.82,-29 1326.82,-65 1407.26,-65 1407.26,-29 1326.82,-29"/>
+<text text-anchor="middle" x="1367.04" y="-44" font-family="Inter" font-size="10.00">AppRouterAuth</text>
+</g>
+<!-- SetState&#45;&gt;AppRouterAuth -->
+<g id="edge13" class="edge">
+<title>SetState-&gt;AppRouterAuth</title>
+<path fill="none" stroke="black" d="M1290.14,-47C1297.87,-47 1306.61,-47 1315.32,-47"/>
+<polygon fill="black" stroke="black" points="1315.17,-50.5 1325.17,-47 1315.17,-43.5 1315.17,-50.5"/>
+</g>
+<!-- DashboardPage -->
+<g id="node14" class="node">
+<title>DashboardPage</title>
+<polygon fill="white" stroke="black" points="1514.99,-29 1514.99,-65 1593.75,-65 1593.75,-29 1514.99,-29"/>
+<text text-anchor="middle" x="1554.37" y="-44" font-family="Inter" font-size="10.00">DashboardPage</text>
+</g>
+<!-- AppRouterAuth&#45;&gt;DashboardPage -->
+<g id="edge14" class="edge">
+<title>AppRouterAuth-&gt;DashboardPage</title>
+<path fill="none" stroke="black" d="M1407.34,-47C1435.42,-47 1473.41,-47 1503.6,-47"/>
+<polygon fill="black" stroke="black" points="1503.24,-50.5 1513.24,-47 1503.24,-43.5 1503.24,-50.5"/>
+<text text-anchor="middle" x="1461.12" y="-49.7" font-family="Inter" font-size="9.00">Renders component</text>
+</g>
+<!-- LogoutClick -->
+<g id="node15" class="node">
+<title>LogoutClick</title>
+<polygon fill="#fff7f7" stroke="black" points="16,-29 16,-65 108.09,-65 108.09,-29 16,-29"/>
+<text text-anchor="middle" x="62.05" y="-44" font-family="Inter" font-size="10.00">User clicks Logout</text>
+</g>
+<!-- DashboardPage&#45;&gt;LogoutClick -->
+<g id="edge15" class="edge">
+<title>DashboardPage-&gt;LogoutClick</title>
+<path fill="none" stroke="black" stroke-dasharray="1,5" d="M1514.68,-31.22C1477.68,-17.56 1419.99,0 1368.04,0 182.37,0 182.37,0 182.37,0 153.99,0 124.28,-11.65 101.61,-23.36"/>
+<polygon fill="black" stroke="black" points="100.19,-20.15 93.05,-27.98 103.52,-26.31 100.19,-20.15"/>
+</g>
+<!-- LogoutContext -->
+<g id="node16" class="node">
+<title>LogoutContext</title>
+<polygon fill="#fff7f7" stroke="black" points="145.09,-29 145.09,-65 221.65,-65 221.65,-29 145.09,-29"/>
+<text text-anchor="middle" x="183.37" y="-44" font-family="Inter" font-size="10.00">LogoutContext</text>
+</g>
+<!-- LogoutClick&#45;&gt;LogoutContext -->
+<g id="edge16" class="edge">
+<title>LogoutClick-&gt;LogoutContext</title>
+<path fill="none" stroke="black" d="M108.5,-47C116.65,-47 125.17,-47 133.41,-47"/>
+<polygon fill="black" stroke="black" points="133.29,-50.5 143.29,-47 133.29,-43.5 133.29,-50.5"/>
+</g>
+<!-- LogoutContext&#45;&gt;AppRouterUnauth -->
+<g id="edge17" class="edge">
+<title>LogoutContext-&gt;AppRouterUnauth</title>
+<path fill="none" stroke="black" d="M221.04,-65.45C246.62,-78.32 280.97,-95.59 308.52,-109.45"/>
+<polygon fill="black" stroke="black" points="306.86,-112.53 317.36,-113.9 310,-106.28 306.86,-112.53"/>
+<text text-anchor="middle" x="266.52" y="-113.73" font-family="Inter" font-size="9.00">State change</text>
+<text text-anchor="middle" x="266.52" y="-102.93" font-family="Inter" font-size="9.00">re-routes to /</text>
+</g>
+</g>
+</svg>
