@@ -8,6 +8,11 @@ interface JwtPayload {
   userId: string;
 }
 
+// Express Request interface to include a user property.
+export interface IUserRequest extends Request {
+  user?: any;
+}
+
 /**
  * An Express middleware to protect routes by verifying a JWT.
  * It expects a 'Bearer <token>' in the Authorization header.
