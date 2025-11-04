@@ -1,6 +1,10 @@
 import app from './app';
 import { connectDB } from './config/db';
 import logger from './config/logger';
+import dotenv from "dotenv";
+
+
+dotenv.config();// Load .env file
 
 // Determine the port from environment variables, with a default fallback.
 const PORT = process.env.PORT || 8000;
