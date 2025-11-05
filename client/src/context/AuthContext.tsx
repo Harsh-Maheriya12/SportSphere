@@ -56,7 +56,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Handles the user registration process by calling the API service.
   // It does not automatically log the user in upon successful registration.
   const register = async (username: string, email: string, password: string) => {
-    await apiRegister(username, email, password);
+     try {
+      const data = await apiRegister(username, email, password);
+
+      // No data 
+      if (!data) {
+        throw new Error('Registration failed');
+      }
+     
+    } catch (error) { // Unwanted Error
+      console.error('Registration error:', error);
+      throw error;
+    }
   };
 
   // Clears the user's session from both the application state and localStorage.

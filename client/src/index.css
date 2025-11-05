@@ -2,6 +2,162 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter', sans-serif;
+@layer base {
+  :root {
+    /* Light mode - Orange and Black theme */
+    /* --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 7%;
+    --popover: 0 0% 98%;
+    --popover-foreground: 0 0% 7%;
+    --primary: 24 95% 53%;
+    --primary-foreground: 0 0% 7%;
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 24 90% 58%;
+    --accent-foreground: 0 0% 7%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89%;
+    --input: 0 0% 89%;
+    --ring: 24 95% 53%;
+    --radius: 0.75rem;
+    --chart-1: 24 95% 53%;
+    --chart-2: 0 0% 9%;
+    --chart-3: 24 90% 58%;
+    --chart-4: 24 85% 48%;
+    --chart-5: 24 80% 63%; */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 24 95% 58%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 24 90% 63%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 85% 65%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 24 95% 58%;
+    --chart-1: 24 95% 58%;
+    --chart-2: 0 0% 12%;
+    --chart-3: 24 90% 63%;
+    --chart-4: 24 85% 53%;
+    --chart-5: 24 80% 68%;
+  }
+
+  .dark {
+    /* Dark mode - True Black and Orange theme */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 24 95% 58%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 24 90% 63%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 85% 65%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 24 95% 58%;
+    --chart-1: 24 95% 58%;
+    --chart-2: 0 0% 12%;
+    --chart-3: 24 90% 63%;
+    --chart-4: 24 85% 53%;
+    --chart-5: 24 80% 68%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Custom scrollbar styling for dark theme */
+  .dark ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .dark ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+  
+  .dark ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-lg;
+  }
+  
+  .dark ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+  
+  /* Selection styling */
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Gradient utilities matching the theme */
+  .gradient-orange {
+    background: linear-gradient(135deg, hsl(24 95% 58%), hsl(24 85% 48%));
+  }
+  
+  .gradient-dark {
+    background: linear-gradient(180deg, hsl(0 0% 4%), hsl(0 0% 8%));
+  }
+  
+  /* Text gradient */
+  .text-gradient-orange {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(24 95% 58%), hsl(24 90% 63%));
+  }
+  
+  /* Glass effect */
+  .glass-effect {
+    @apply backdrop-blur-lg bg-background/80 border border-border;
+  }
+  
+  /* Glow effect for orange elements */
+  .glow-orange {
+    box-shadow: 0 0 20px hsl(24 95% 58% / 0.3);
+  }
+  
+  .glow-orange-lg {
+    box-shadow: 0 0 40px hsl(24 95% 58% / 0.4);
+  }
+
+  /* Button Styles */
+
+  .button-style1{
+    @apply w-full bg-primary hover:bg-orange-600 hover:border-white border-2 text-background rounded-xl font-semibold;
+  }
+
+
 }
