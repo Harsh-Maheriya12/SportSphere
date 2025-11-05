@@ -22,7 +22,8 @@ const request = async <T>(url: string, options: RequestInit = {}): Promise<T> =>
   const data = await response.json();
 
   // If the response is not successful, throw an error with the server's message.
-  let errorMessage = 'An API error occurred';
+  if(!response.ok){
+    let errorMessage = 'An API error occurred';
     if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
         errorMessage = data.errors[0].message || data.errors[0].msg;
     } else if (data.message) {
@@ -30,6 +31,8 @@ const request = async <T>(url: string, options: RequestInit = {}): Promise<T> =>
     }
     throw new Error(errorMessage);
 
+  }
+  
   return data;
 };
 

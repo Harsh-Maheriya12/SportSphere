@@ -12,6 +12,7 @@ export interface IUser extends Document {
   role: 'user' | 'coach' | 'venue' | 'admin';
   authProvider: 'local' | 'google';
   providerId?: string; // The unique ID from an OAuth provider like Google.
+  verified: boolean;
   comparePassword(candidatePassword: string): Promise<boolean>; // Defines the signature for our custom instance method.
 }
 
@@ -52,6 +53,10 @@ const UserSchema: Schema = new Schema(
     },
     providerId: {
       type: String,
+    },
+    verified: {
+      type: Boolean,
+      default: false,
     },
   },
   // This option automatically adds `createdAt` and `updatedAt` timestamp fields.
