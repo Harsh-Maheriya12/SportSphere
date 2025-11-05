@@ -1,42 +1,41 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from '../config/logger';
+import AppError from '../utils/AppError';
 
 /**
- * A centralized Express error-handling middleware.
- * This function is executed whenever an error is passed to the `next()` function
- * in any preceding middleware or route handler.
- * @param err The error object. Can be a standard Error or a custom error.
- * @param req The Express request object.
- * @param res The Express response object.
- * @param next The Express next middleware function.
+ * Centralized Express error handler.
+ * Handles both expected (AppError) and unexpected errors uniformly.
  */
-const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
-    // Log the error with structured context for effective debugging.
-    // This uses the centralized pino logger.
-    logger.error({
-        message: err.message,
-        stack: err.stack,
-        url: req.originalUrl,
-        method: req.method,
-        ip: req.ip,
-    });
+const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  // Log key details for debugging
+  logger.error({
+    message: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip,
+  });
 
-    // Determine the appropriate HTTP status code.
-    // If a status code has already been set on the response object (e.g., res.status(404)), use it.
-    // Otherwise, default to 500 (Internal Server Error) for unexpected errors.
-    const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-    
-    // Set the final status code on the response.
-    res.status(statusCode);
+  // Determine status code
+  const statusCode = err.statusCode || res.statusCode || 500;
+  if (res.statusCode === 200) res.status(statusCode);
 
-    // Send a structured JSON response back to the client.
-    res.json({
-        message: err.message,
-        // For security, the detailed error stack trace is only included in the API response
-        // when the application is NOT running in a production environment.
-        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+  // Handle known (operational) errors
+  if (err instanceof AppError && err.isOperational) {
+    return res.status(statusCode).json({
+      status: 'error',
+      message: err.message,
+      ...(err.details && { details: err.details }),
     });
+  }
+
+  // Handle unexpected errors
+  logger.error('UNEXPECTED ERROR:', err);
+  return res.status(500).json({
+    status: 'error',
+    message: 'Something went wrong on the server.',
+    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+  });
 };
 
 export default errorHandler;
-

@@ -3,46 +3,68 @@ import asyncHandler from 'express-async-handler';
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
 
-// Defines the expected structure of the payload decoded from a valid JWT.
 interface JwtPayload {
   userId: string;
 }
-
 /**
- * An Express middleware to protect routes by verifying a JWT.
- * It expects a 'Bearer <token>' in the Authorization header.
+ * Middleware: Protect routes by verifying JWT in the Authorization header.
+ * Provides detailed, expressive error messages for easier debugging.
  */
 export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  let token;
+  let token: string | undefined;
+  let decoded: JwtPayload;
 
-  // Check if the Authorization header exists and follows the 'Bearer' scheme.
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      // Extract the token string from the 'Bearer <token>' format.
-      token = req.headers.authorization.split(' ')[1];
+  // 1. Validate Authorization header presence and format
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.status(401);
+    throw new Error('Authorization header missing — token not provided.');
+  }
 
-      // Verify the token's signature and expiration using the JWT_SECRET.
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+  if (!authHeader.startsWith('Bearer ')) {
+    res.status(401);
+    throw new Error("Invalid Authorization format — expected 'Bearer <token>'.");
+  }
 
-      // Use the userId from the token payload to fetch the user from the database.
-      req.user = await User.findById(decoded.userId).select('-password');
+  // 2. Extract token
+  token = authHeader.split(' ')[1];
+  if (!token || token.trim() === '') {
+    res.status(401);
+    throw new Error('Token is empty — please provide a valid token after \'Bearer\'.');
+  }
 
-      if (!req.user) {
-        res.status(401);
-        throw new Error('Not authorized, user not found');
-      }
-
-      // If verification is successful, pass control to the next middleware or route handler.
-      next();
-    } catch (error) {
+  // 3. Verify token validity
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+  } catch (error: any) {
+    if (error instanceof jwt.TokenExpiredError) {
       res.status(401);
-      throw new Error('Not authorized, token failed');
+      throw new Error('Token verification failed — token has expired.');
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401);
+      throw new Error('Token verification failed — invalid or tampered token.');
+    } else if (error instanceof jwt.NotBeforeError) {
+      res.status(401);
+      throw new Error('Token verification failed — token not yet active.');
+    } else {
+      res.status(401);
+      throw new Error(`Unexpected token verification error: ${error.message}`);
     }
   }
 
-  if (!token) {
-    res.status(401);
-    throw new Error('Not authorized, no token');
+  // 4. Fetch user associated with token
+  try {
+    req.user = await User.findById(decoded.userId).select('-password');
+  } catch (dbError: any) {
+    res.status(500);
+    throw new Error(`Database lookup failed — could not retrieve user: ${dbError.message}`);
   }
-});
 
+  if (!req.user) {
+    res.status(401);
+    throw new Error('Authentication failed — user not found or has been removed.');
+  }
+
+  // 5. Pass control if everything checks out
+  next();
+});

@@ -60,7 +60,7 @@ describe('/auth', () => {
         });
 
       expect(res.statusCode).toEqual(400);
-      expect(res.body.errors).toEqual(
+      expect(res.body.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             path: 'email',

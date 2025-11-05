@@ -1,10 +1,10 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import asyncHandler from 'express-async-handler';
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/User";
 import { validateRegister } from '../middleware/validation';
+import AppError from "../utils/AppError";
 
-// Create a new Express router instance for authentication routes.
 const router = Router();
 
 /**
@@ -12,29 +12,30 @@ const router = Router();
  * @route   POST /api/auth/register
  * @access  Public
  */
-router.post("/register", validateRegister, asyncHandler(async (req: Request, res: Response) => {
-    // The request body has already been validated by the `validateRegister` middleware.
+router.post("/register", validateRegister, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { username, email, password } = req.body;
 
-    // Create a new user instance using the User model.
-    const newUser:IUser = new User({
+    // Double-check for existing user (redundant but explicit)
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return next(new AppError("User already exists", 400));
+    }
+
+    const newUser: IUser = new User({
       username,
       email,
       password,
       authProvider: "local",
     });
 
-    // The `pre('save')` hook on the User model will hash the password before this operation.
     await newUser.save();
 
-    // Generate a JSON Web Token for the newly created user.
     const token = jwt.sign(
       { userId: newUser._id, role: newUser.role },
       process.env.JWT_SECRET as string,
       { expiresIn: "3h" }
     );
 
-    // Send a 201 Created response with the token and curated user data.
     res.status(201).json({
       message: "User registered successfully",
       token,
@@ -52,33 +53,26 @@ router.post("/register", validateRegister, asyncHandler(async (req: Request, res
  * @route   POST /api/auth/login
  * @access  Public
  */
-router.post("/login", asyncHandler(async (req: Request, res: Response) => {
+router.post("/login", asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
 
-    // Find the user by email and explicitly request the password field, which is hidden by default.
     const user = await User.findOne({ email }).select("+password");
     if (!user || user.authProvider !== 'local') {
-      // For security, use a generic error message for both non-existent users and wrong providers.
-      res.status(400);
-      throw new Error("Invalid credentials");
+      return next(new AppError("Invalid credentials", 400));
     }
 
-    // Use the custom `comparePassword` method on the user model to securely check the password.
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      res.status(400);
-      throw new Error("Invalid credentials");
+      return next(new AppError("Invalid credentials", 400));
     }
 
-    // If credentials are correct, generate a new JWT.
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET as string,
       { expiresIn: "3h" }
     );
 
-    // Send the token and user data back to the client.
-    res.json({
+    res.status(200).json({
       message: "Login successful",
       token,
       user: {
@@ -95,18 +89,14 @@ router.post("/login", asyncHandler(async (req: Request, res: Response) => {
  * @route   POST /api/auth/check-username
  * @access  Public
  */
-router.post("/check-username", asyncHandler(async (req: Request, res: Response) => {
+router.post("/check-username", asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { username } = req.body;
     if (!username) {
-        res.status(400);
-        throw new Error('Username is required');
+        return next(new AppError('Username is required', 400));
     }
-    
-    // Check the database for a user with the given username.
-    const existingUser = await User.findOne({ username });
 
-    // Respond with a boolean indicating if the username is available.
-    res.json({ available: !existingUser });
+    const existingUser = await User.findOne({ username });
+    res.status(200).json({ available: !existingUser });
 }));
 
 export default router;
