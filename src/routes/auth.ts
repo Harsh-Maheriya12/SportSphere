@@ -3,6 +3,8 @@ import asyncHandler from 'express-async-handler';
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/User";
 import { validateRegister } from '../middleware/validation';
+import { sendOtpVerificationMail, verifyOtp, isEmailVerified } from '../controllers/emailHelper';
+import UserEmailOtpVerification from '../models/UserEmailOtpVerification';
 
 // Create a new Express router instance for authentication routes.
 const router = Router();
@@ -13,8 +15,15 @@ const router = Router();
  * @access  Public
  */
 router.post("/register", validateRegister, asyncHandler(async (req: Request, res: Response) => {
-    // The request body has already been validated by the `validateRegister` middleware.
+    // Extract user details from the request body.
     const { username, email, password } = req.body;
+
+    // Check if email was verified via OTP
+    const emailVerified = await isEmailVerified(email);
+    if (!emailVerified) {
+      res.status(403);
+      throw new Error('Please verify your email with OTP before registering');
+    }
 
     // Create a new user instance using the User model.
     const newUser:IUser = new User({
@@ -22,10 +31,14 @@ router.post("/register", validateRegister, asyncHandler(async (req: Request, res
       email,
       password,
       authProvider: "local",
+      verified: true, // Email is already verified
     });
 
     // The `pre('save')` hook on the User model will hash the password before this operation.
     await newUser.save();
+
+    // Delete the OTP record after successful registration
+    await UserEmailOtpVerification.deleteMany({ email: email.toLowerCase().trim() });
 
     // Generate a JSON Web Token for the newly created user.
     const token = jwt.sign(
@@ -43,6 +56,7 @@ router.post("/register", validateRegister, asyncHandler(async (req: Request, res
         username: newUser.username,
         email: newUser.email,
         role: newUser.role,
+        verified: newUser.verified,
       },
     });
 }));
@@ -86,6 +100,7 @@ router.post("/login", asyncHandler(async (req: Request, res: Response) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        verified: user.verified,
       },
     });
 }));
@@ -107,6 +122,109 @@ router.post("/check-username", asyncHandler(async (req: Request, res: Response) 
 
     // Respond with a boolean indicating if the username is available.
     res.json({ available: !existingUser });
+}));
+
+/**
+ * @desc    Check if an email is available
+ * @route   POST /api/auth/check-email
+ * @access  Public
+ */
+router.post("/check-email", asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+    if (!email) {
+        res.status(400);
+        throw new Error('Email is required');
+    }
+    
+    // Check the database for a user with the given email.
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+
+    // Respond with a boolean indicating if the email is available.
+    res.json({ available: !existingUser });
+}));
+
+/**
+ * @desc    Send OTP verification email (before registration)
+ * @route   POST /api/auth/send-otp
+ * @access  Public
+ */
+router.post("/send-otp", asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+    
+    if (!email) {
+        res.status(400);
+        throw new Error('Email is required');
+    }
+
+    // Send OTP verification mail
+    const result = await sendOtpVerificationMail(email);
+
+    if (result.status === 'FAILED') {
+        res.status(400);
+        throw new Error(result.message);
+    }
+
+    res.json({
+        status: result.status,
+        message: result.message,
+        data: result.data,
+    });
+}));
+
+/**
+ * @desc    Verify OTP (before registration)
+ * @route   POST /api/auth/verify-otp
+ * @access  Public
+ */
+router.post("/verify-otp", asyncHandler(async (req: Request, res: Response) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        res.status(400);
+        throw new Error('Email and OTP are required');
+    }
+
+    // Verify OTP
+    const result = await verifyOtp(email, otp);
+
+    if (result.status === 'FAILED') {
+        res.status(400);
+        throw new Error(result.message);
+    }
+
+    res.json({
+        status: result.status,
+        message: result.message,
+        verified: result.verified,
+    });
+}));
+
+/**
+ * @desc    Resend OTP verification email
+ * @route   POST /api/auth/resend-otp
+ * @access  Public
+ */
+router.post("/resend-otp", asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email) {
+        res.status(400);
+        throw new Error('Email is required');
+    }
+
+    // Send OTP verification mail (this will delete any existing OTP for this email)
+    const result = await sendOtpVerificationMail(email);
+
+    if (result.status === 'FAILED') {
+        res.status(400);
+        throw new Error(result.message);
+    }
+
+    res.json({
+        status: result.status,
+        message: result.message,
+        data: result.data,
+    });
 }));
 
 export default router;
