@@ -1,16 +1,17 @@
-import React from 'react';
+import React, { ReactNode } from "react";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 
-// This is a shared layout component. It provides a consistent header and
-// structure for all pages in the application.
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface LayoutProps {
+  children: ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50 font-sans">
-      <header>
-        <h1 className="text-5xl font-bold text-blue-600 mb-8">SportSphere</h1>
-      </header>
-      <main className="w-full max-w-md">
-        {children}
-      </main>
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <Navbar />
+      <main className="flex-grow">{children}</main>
+      <Footer />
     </div>
   );
 };

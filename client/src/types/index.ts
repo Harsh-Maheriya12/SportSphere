@@ -11,3 +11,13 @@ export interface AuthResponse {
     token: string;
     user: User;
 }
+
+// Register response type
+export interface RegisterResponse {
+    message: string;
+    success: boolean;
+    user: {
+        username: string;
+        email: string;
+    };
+}
