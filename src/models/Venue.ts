@@ -14,6 +14,7 @@ export interface IVenue extends Document {
   capacity?: number;
   sports: string[]; // e.g., ["cricket","football","badminton"]
   images?: string[]; // urls
+  pricePerHour: number;
   owner: mongoose.Types.ObjectId | IUser;
   createdAt: Date;
   updatedAt: Date;
@@ -32,6 +33,7 @@ const VenueSchema: Schema<IVenue> = new Schema(
     capacity: { type: Number, default: 0 },
     sports: { type: [String], default: [] },
     images: { type: [String], default: [] },
+    pricePerHour: { type: Number, required: true, min: 0 },
     owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

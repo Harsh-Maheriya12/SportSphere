@@ -25,12 +25,14 @@ const validateVenue = [
     .withMessage("Price per hour must be a number"),
   
   body("latitude")
-    .isFloat({ min: -90, max: 90 })
-    .withMessage("Latitude must be between -90 and 90"),
+  .optional({ nullable: true })
+  .isFloat({ min: -90, max: 90 })
+  .withMessage("Latitude must be between -90 and 90"),
   
   body("longitude")
-    .isFloat({ min: -180, max: 180 })
-    .withMessage("Longitude must be between -180 and 180"),
+  .optional({ nullable: true })
+  .isFloat({ min: -180, max: 180 })
+  .withMessage("Longitude must be between -180 and 180"),
   
   (req: Request, res: Response, next: NextFunction): void => {
     const errors = validationResult(req);

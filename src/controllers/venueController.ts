@@ -29,7 +29,6 @@ export const createVenue = async (req: Request, res: Response) => {
       sports,
       images,
       pricePerHour,
-      amenities,
     } = req.body;
 
     if (!name || !address || !city || !pricePerHour) {
@@ -75,7 +74,6 @@ if (isNaN(latitude) || isNaN(longitude)) {
       sports,
       images,
       pricePerHour,
-      amenities,
       owner,
     });
 
@@ -92,70 +90,88 @@ if (isNaN(latitude) || isNaN(longitude)) {
 };
 
 // -----------------------------------------
-// GET ALL VENUES (Sport + City required, optional radius search) — NO PAGINATION
+// GET ALL VENUES (Sport, City, optional radius search)
 // -----------------------------------------
 export const getAllVenues = async (req: Request, res: Response) => {
   try {
-    const { sport, city, radius } = req.query;
+    const { sport, city, radius, userLat, userLng } = req.query;
 
-    // Check required parameters
-    if (!sport || !city) {
-      return res.status(400).json({
-        success: false,
-        message: "Both 'sport' and 'city' are required",
-      });
+    //  STEP 1: BASE QUERY
+    const query: any = {};
+    if (sport) query.sports = { $in: [sport] };
+    if (city) query.city = { $regex: city as string, $options: "i" };
+
+    //  STEP 2: FIND COORDINATES 
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+
+    // (1) If frontend sent direct coords (highest priority)
+    if (userLat && userLng) {
+      latitude = Number(userLat);
+      longitude = Number(userLng);
     }
 
-    // Validate city using library (India only)
-    const indianCities = City.getCitiesOfCountry("IN") ?? [];
-    const validCityNames = indianCities.map(c => c.name.toLowerCase());
-
-    if (!validCityNames.includes((city as string).toLowerCase())) {
-      return res.status(400).json({
-        success: false,
-        message: `City "${city}" is not valid.`,
-        validExamples: indianCities.slice(0, 10).map(c => c.name),
-      });
+    // (2) Else use logged-in user's saved location
+    else if ((req as any).user?.location?.coordinates) {
+      const [lng, lat] = (req as any).user.location.coordinates;
+      latitude = lat;
+      longitude = lng;
     }
 
-    // Get lat/lng of selected city
-    const matchedCity = indianCities.find(
-      c => c.name.toLowerCase() === (city as string).toLowerCase()
-    );
+    // (3) Else if city provided, use city lat/lng
+    else if (city) {
+      const cities = City.getCitiesOfCountry("IN") ?? [];
+      const matchedCity = cities.find(
+        c => c.name.toLowerCase() === (city as string).toLowerCase()
+      );
 
-    const cityLat = Number(matchedCity?.latitude);
-    const cityLng = Number(matchedCity?.longitude);
+      if (!matchedCity) {
+        return res.status(400).json({
+          success: false,
+          message: `City "${city}" is not valid.`,
+          validExamples: cities.slice(0, 10).map(c => c.name),
+        });
+      }
 
-    const query: any = {
-      sports: { $in: [sport] },
-      city: { $regex: city as string, $options: "i" },
+      latitude = Number(matchedCity.latitude);
+      longitude = Number(matchedCity.longitude);
+    }
+
+    // (4) Fallback default (Ahmedabad)
+    else {
+      latitude = 23.0225;
+      longitude = 72.5714;
+    }
+
+    //  STEP 3: APPLY GEO FILTER (SORT BY DISTANCE) 
+    query.location = {
+      $near: {
+        $geometry: { type: "Point", coordinates: [longitude, latitude] },
+        ...(radius ? { $maxDistance: Number(radius) * 1000 } : {}),
+      },
     };
 
-    //Apply geo filter only if radius provided
-    if (radius) {
-      query.location = {
-        $near: {
-          $geometry: { type: "Point", coordinates: [cityLng, cityLat] },
-          $maxDistance: Number(radius) * 1000, // km → meters
-        },
-      };
-    }
-
-    //Fetch all results (no pagination)
-    const venues = await Venue.find(query);
+    //  STEP 4: FETCH DATA (LIMIT 40) 
+    const venues = await Venue.find(query).limit(40);
 
     return res.json({
       success: true,
       count: venues.length,
       results: venues,
-      appliedGeoFilter: Boolean(radius),
+      appliedFilters: {
+        sport: sport || "ALL",
+        city: city || "AUTO-NEAREST",
+        radius: radius || "NONE",
+      },
+      usedLocation: { latitude, longitude },
     });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // -----------------------------------------
 // DELETE VENUE
@@ -199,18 +215,31 @@ export const getSuggestions = async (req: Request, res: Response) => {
   try {
     const { query } = req.query;
 
-    if (!query) {
+    if (!query || typeof query !== "string") {
       return res.json([]);
     }
 
+    // Search across venue name, city, and sports
     const suggestions = await Venue.find(
-      { name: { $regex: `^${query}`, $options: "i" } },
-      { name: 1 } // only return name
-    ).limit(8);
+      {
+        $or: [
+          { name: { $regex: query, $options: "i" } },
+          { city: { $regex: query, $options: "i" } },
+          { sports: { $regex: query, $options: "i" } }
+        ]
+      },
+      { name: 1 } // return only names
+    )
+      .limit(10)
+      .lean();
 
-    res.json(suggestions.map(v => v.name));
+    // Remove duplicates & return only venue names
+    const uniqueNames = [...new Set(suggestions.map(v => v.name))];
+
+    return res.json(uniqueNames);
+
   } catch (err) {
-    console.error(err);
+    console.error("Suggestion Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
