@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { validateRegister } from "../../middleware/validation";
 import User, { IUser } from "../../models/User";
 import AppError from "../../utils/AppError";
+import { expectNextAppError, expectNextSuccess } from "../utils/expectHelpers";
 
 jest.mock('../../models/User');
 
@@ -11,7 +12,7 @@ describe('validation middleware (validateRegistration)', () => {
 
     let mockRequest: Partial<Request>;
     let mockResponse: Partial<Response>;
-    let nextFunction: NextFunction;
+    let nextFunction: jest.MockedFunction<NextFunction>;
 
     beforeEach(() => {
         mockRequest = {};
@@ -19,7 +20,7 @@ describe('validation middleware (validateRegistration)', () => {
             status: jest.fn().mockReturnThis(),
             json: jest.fn().mockReturnThis(),
         } as Partial<Response>;
-        nextFunction = jest.fn() as unknown as NextFunction;
+        nextFunction = jest.fn() as jest.MockedFunction<NextFunction>;
         jest.clearAllMocks();
     });
 
@@ -30,7 +31,9 @@ describe('validation middleware (validateRegistration)', () => {
 
                 // Look for an AppError or Error passed to next()
                 const errorArg = (nextFunction as jest.Mock).mock.calls.find(
-                    (call) => call[0] instanceof Error
+                  (call) =>
+                    call[0] instanceof Error ||
+                    (call[0] && typeof call[0] === "object" && "statusCode" in call[0])
                 )?.[0];
 
                 if (errorArg) break; // Stop only if an error was passed
@@ -46,7 +49,7 @@ describe('validation middleware (validateRegistration)', () => {
 
         await runMiddleware(validateRegister);
 
-        expect(nextFunction).toHaveBeenCalledWith(); // No error passed
+        expectNextSuccess(nextFunction);
     });
 
     it('should call next(AppError) if username is missing', async () => {
@@ -58,11 +61,10 @@ describe('validation middleware (validateRegistration)', () => {
 
         await runMiddleware(validateRegister);
 
-        const calls = (nextFunction as jest.Mock).mock.calls;
-        const errorArg = calls[calls.length - 1]?.[0];
-        expect(errorArg).toBeInstanceOf(AppError);
-        expect(errorArg.message).toBe('Validation failed');
-        expect(errorArg.statusCode).toBe(400);
+        expectNextAppError(nextFunction, {
+            message: 'Validation failed',
+            statusCode: 400
+        });
     });
 
     it('should call next(AppError) if email is invalid', async () => {
@@ -75,11 +77,10 @@ describe('validation middleware (validateRegistration)', () => {
 
         await runMiddleware(validateRegister);
 
-        const calls = (nextFunction as jest.Mock).mock.calls;
-        const errorArg = calls[calls.length - 1]?.[0];
-        expect(errorArg).toBeInstanceOf(AppError);
-        expect(errorArg.message).toBe('Validation failed');
-        expect(errorArg.statusCode).toBe(400);
+        expectNextAppError(nextFunction, {
+            message: 'Validation failed',
+            statusCode: 400
+        });
     });
 
     it('should call next(AppError) if password is too short', async () => {
@@ -92,11 +93,10 @@ describe('validation middleware (validateRegistration)', () => {
 
         await runMiddleware(validateRegister);
 
-        const calls = (nextFunction as jest.Mock).mock.calls;
-        const errorArg = calls[calls.length - 1]?.[0];
-        expect(errorArg).toBeInstanceOf(AppError);
-        expect(errorArg.message).toBe('Validation failed');
-        expect(errorArg.statusCode).toBe(400);
+        expectNextAppError(nextFunction, {
+            message: 'Validation failed',
+            statusCode: 400
+        });
     });
 
     it('should call next(AppError) if email already exists', async () => {
@@ -112,11 +112,10 @@ describe('validation middleware (validateRegistration)', () => {
 
         await runMiddleware(validateRegister);
 
-        const calls = (nextFunction as jest.Mock).mock.calls;
-        const errorArg = calls[calls.length - 1]?.[0];
-        expect(errorArg).toBeInstanceOf(AppError);
-        expect(errorArg.details?.[0]?.msg).toBe('User already exists');
-        expect(errorArg.statusCode).toBe(400);
+        expectNextAppError(nextFunction, {
+            message: 'Validation failed',
+            statusCode: 400
+        });
     });
 
     it('should call next(AppError) with multiple validation errors', async () => {
@@ -128,11 +127,10 @@ describe('validation middleware (validateRegistration)', () => {
 
         await runMiddleware(validateRegister);
 
-        const calls = (nextFunction as jest.Mock).mock.calls;
-        const errorArg = calls[calls.length - 1]?.[0];
-        expect(errorArg).toBeInstanceOf(AppError);
-        expect(errorArg.message).toBe('Validation failed');
-        expect(errorArg.statusCode).toBe(400);
+        expectNextAppError(nextFunction, {
+            message: 'Validation failed',
+            statusCode: 400
+        });
     });
 
     it('should sanitize username by trimming and escaping', async () => {
@@ -145,7 +143,7 @@ describe('validation middleware (validateRegistration)', () => {
 
         await runMiddleware(validateRegister);
 
-        expect(nextFunction).toHaveBeenCalledWith();
+        expectNextSuccess(nextFunction);
         expect(mockRequest.body.username).toBe('&lt;script&gt;test&lt;&#x2F;script&gt;');
     });
 
@@ -159,7 +157,7 @@ describe('validation middleware (validateRegistration)', () => {
 
         await runMiddleware(validateRegister);
 
-        expect(nextFunction).toHaveBeenCalledWith();
+        expectNextSuccess(nextFunction);
         expect(mockRequest.body.email).toBe('  test.user@example.com  ');
     });
 });

@@ -7,6 +7,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Mock OTP email verification helpers to always pass during tests
+jest.mock('../../controllers/emailHelper', () => ({
+  isEmailVerified: jest.fn().mockResolvedValue(true),
+  sendOtpVerificationMail: jest.fn(),
+  verifyOtp: jest.fn(),
+}));
+
 describe('/auth', () => {
   let mongod: MongoMemoryServer;
 
@@ -40,7 +47,7 @@ describe('/auth', () => {
         });
       
       expect(res.statusCode).toEqual(201);
-      expect(res.body).toHaveProperty('message', 'User registered successfully');
+      expect(res.body).toHaveProperty('message', 'User registered successfully. Please login to continue.');
     });
 
     
