@@ -6,6 +6,12 @@ import User from '../models/User';
 interface JwtPayload {
   userId: string;
 }
+
+// Express Request interface to include a user property.
+export interface IUserRequest extends Request {
+  user?: any;
+}
+
 /**
  * Middleware: Protect routes by verifying JWT in the Authorization header.
  * Provides detailed, expressive error messages for easier debugging.
