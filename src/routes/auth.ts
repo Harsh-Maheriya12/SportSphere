@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/User";
@@ -9,8 +9,8 @@ import {
   isEmailVerified,
 } from "../controllers/emailHelper";
 import UserEmailOtpVerification from "../models/UserEmailOtpVerification";
+import AppError from "../utils/AppError";
 
-// Create a new Express router instance for authentication routes.
 const router = Router();
 
 /**
@@ -21,38 +21,47 @@ const router = Router();
 router.post(
   "/register",
   validateRegister,
-  asyncHandler(async (req: Request, res: Response) => {
-    // Extract user details from the request body.
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { username, email, password } = req.body;
 
     // Check if email was verified via OTP
     const emailVerified = await isEmailVerified(email);
     if (!emailVerified) {
-      res.status(403);
-      throw new Error("Please verify your email with OTP before registering");
+      return next(
+        new AppError("Please verify your email with OTP before registering", 403)
+      );
     }
 
-    // Create a new user instance using the User model.
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return next(new AppError("User already exists", 400));
+    }
+
     const newUser: IUser = new User({
       username,
       email,
       password,
       authProvider: "local",
-      verified: true, // Email is already verified
+      verified: true,
     });
 
-    // The `pre('save')` hook on the User model will hash the password before this operation.
     await newUser.save();
 
-    // Delete the OTP record after successful registration
+    // Delete OTP record after successful registration
     await UserEmailOtpVerification.deleteMany({
       email: email.toLowerCase().trim(),
     });
 
-    // Send a 201 Created response with the token and curated user data.
+    const token = jwt.sign(
+      { userId: newUser._id, role: newUser.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "3h" }
+    );
+
     res.status(201).json({
       message: "User registered successfully. Please login to continue.",
-      success: true,
+      token,
       user: {
         username: newUser.username,
         email: newUser.email,
@@ -68,33 +77,26 @@ router.post(
  */
 router.post(
   "/login",
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
 
-    // Find the user by email and explicitly request the password field, which is hidden by default.
     const user = await User.findOne({ email }).select("+password");
     if (!user || user.authProvider !== "local") {
-      // For security, use a generic error message for both non-existent users and wrong providers.
-      res.status(400);
-      throw new Error("Invalid credentials");
+      return next(new AppError("Invalid credentials", 400));
     }
 
-    // Use the custom `comparePassword` method on the user model to securely check the password.
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      res.status(400);
-      throw new Error("Invalid credentials");
+      return next(new AppError("Invalid credentials", 400));
     }
 
-    // If credentials are correct, generate a new JWT.
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET as string,
       { expiresIn: "3h" }
     );
 
-    // Send the token and user data back to the client.
-    res.json({
+    res.status(200).json({
       message: "Login successful",
       token,
       user: {
@@ -115,18 +117,14 @@ router.post(
  */
 router.post(
   "/check-username",
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { username } = req.body;
     if (!username) {
-      res.status(400);
-      throw new Error("Username is required");
+      return next(new AppError("Username is required", 400));
     }
 
-    // Check the database for a user with the given username.
     const existingUser = await User.findOne({ username });
-
-    // Respond with a boolean indicating if the username is available.
-    res.json({ available: !existingUser });
+    res.status(200).json({ available: !existingUser });
   })
 );
 
@@ -137,20 +135,16 @@ router.post(
  */
 router.post(
   "/check-email",
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { email } = req.body;
     if (!email) {
-      res.status(400);
-      throw new Error("Email is required");
+      return next(new AppError("Email is required", 400));
     }
 
-    // Check the database for a user with the given email.
     const existingUser = await User.findOne({
       email: email.toLowerCase().trim(),
     });
-
-    // Respond with a boolean indicating if the email is available.
-    res.json({ available: !existingUser });
+    res.status(200).json({ available: !existingUser });
   })
 );
 
@@ -161,20 +155,17 @@ router.post(
  */
 router.post(
   "/send-otp",
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { email } = req.body;
 
     if (!email) {
-      res.status(400);
-      throw new Error("Email is required");
+      return next(new AppError("Email is required", 400));
     }
 
-    // Send OTP verification mail
     const result = await sendOtpVerificationMail(email);
 
     if (result.status === "FAILED") {
-      res.status(400);
-      throw new Error(result.message);
+      return next(new AppError(result.message, 400));
     }
 
     res.json({
@@ -192,20 +183,17 @@ router.post(
  */
 router.post(
   "/verify-otp",
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      res.status(400);
-      throw new Error("Email and OTP are required");
+      return next(new AppError("Email and OTP are required", 400));
     }
 
-    // Verify OTP
     const result = await verifyOtp(email, otp);
 
     if (result.status === "FAILED") {
-      res.status(400);
-      throw new Error(result.message);
+      return next(new AppError(result.message, 400));
     }
 
     res.json({
@@ -223,20 +211,17 @@ router.post(
  */
 router.post(
   "/resend-otp",
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { email } = req.body;
 
     if (!email) {
-      res.status(400);
-      throw new Error("Email is required");
+      return next(new AppError("Email is required", 400));
     }
 
-    // Send OTP verification mail (this will delete any existing OTP for this email)
     const result = await sendOtpVerificationMail(email);
 
     if (result.status === "FAILED") {
-      res.status(400);
-      throw new Error(result.message);
+      return next(new AppError(result.message, 400));
     }
 
     res.json({
