@@ -1,37 +1,20 @@
-import request from 'supertest';
 import mongoose from 'mongoose';
-import app from '../../app';
+import jwt from 'jsonwebtoken';
 import Game from '../../models/gameModels';
 import User from '../../models/User';
-import jwt from 'jsonwebtoken';
-import { join } from 'path';
+import {
+  app,
+  request,
+  setupTestEnvironment,
+  tearDownTestEnvironment,
+  clearGameData,
+  token,
+  mockUserId,
+} from '../setupTestEnv';
 
-let token: string;
-let mockUserId: mongoose.Types.ObjectId;
-beforeAll(async () => {
-  // Connect to MongoDB using the URI from environment variables or a default test URI
-  await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/testdb');
-
-  // Create a mock user for authentication and association with games
-  const user = await User.create({
-    username: 'testuser',
-    email: 'test@example.com',
-    password: 'hashedpassword',
-    role: 'user'
-  });
-
-  mockUserId = user._id; 
-  token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || 'secret');
-});
-
-afterAll(async () => {
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
-});
-
-beforeEach(async () => {
-  await Game.deleteMany({});
-});
+beforeAll(setupTestEnvironment);
+afterAll(tearDownTestEnvironment);
+beforeEach(clearGameData);
 
 describe('Game Controller Tests', () => {
 
@@ -46,13 +29,13 @@ describe('Game Controller Tests', () => {
           sport: 'Football',
           description: 'Evening match',
           playersNeeded: { min: 1, max: 2 },
-          timeSlot: { startTime: new Date(), endTime: new Date(Date.now() + 3600000) }, 
+          timeSlot: { startTime: new Date(), endTime: new Date(Date.now() + 3600000) },
           venueLocation: { type: 'Point', coordinates: [72.87, 19.07] },
           approxCostPerPlayer: 100
         });
 
       // Assertions for a successful creation
-      expect(res.status).toBe(201); 
+      expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.game.sport).toBe('Football');
       expect(res.body.game.host).toBe(mockUserId.toString());
@@ -88,7 +71,7 @@ describe('Game Controller Tests', () => {
       expect(res.status).toBe(403);
       expect(res.body.message).toContain('You do not have permission to perform this action');
     });
-    
+
     // Test: should return 401 if no authentication token is provided
     it('should return 401 if no authentication token is provided', async () => {
       const res = await request(app)
@@ -100,8 +83,8 @@ describe('Game Controller Tests', () => {
           timeSlot: { startTime: new Date(), endTime: new Date(Date.now() + 3600000) },
           venueLocation: { type: 'Point', coordinates: [0, 0] },
         });
-        expect(res.status).toBe(401);
-        expect(res.body.message).toContain('Not authorized, no token');
+      expect(res.status).toBe(401);
+      expect(res.body.message).toContain('Not authorized, no token');
     });
 
     // Test: should return 403 for invalid token
@@ -135,7 +118,7 @@ describe('Game Controller Tests', () => {
           venueLocation: { type: 'Point', coordinates: [72.9, 19.1] },
           approxCostPerPlayer: 100
         });
-      expect(res.status).toBe(400);  
+      expect(res.status).toBe(400);
       expect(res.body.message).toContain('Missing required fields');
     });
 
@@ -155,7 +138,7 @@ describe('Game Controller Tests', () => {
       expect(res.status).toBe(400);
       expect(res.body.message).toContain('Invalid timeSlot');
     });
-    
+
     // Test: should return 400 if required fields (like description, playersNeeded) are missing
     it('should return 400 if required fields (like description, playersNeeded) are missing', async () => {
       const res = await request(app)
@@ -172,7 +155,7 @@ describe('Game Controller Tests', () => {
 
     // Test: should return 500 or validation error for invalid data types of playersNeeded
     it('should return 500 or validation error for invalid data types of playersNeeded', async () => {
-       const res = await request(app)
+      const res = await request(app)
         .post('/api/games')
         .set('Authorization', `Bearer ${token}`)
         .send({
@@ -183,8 +166,8 @@ describe('Game Controller Tests', () => {
           venueLocation: { type: 'Point', coordinates: [72.8, 19.0] },
           approxCostPerPlayer: 50
         });
-        expect(res.status).toBeGreaterThanOrEqual(400);
-        expect(res.body.message).toContain('playersNeeded.min and playersNeeded.max must be numbers');
+      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.body.message).toContain('playersNeeded.min and playersNeeded.max must be numbers');
     });
 
     // Test: should return 400 when venueLocation is null
@@ -317,12 +300,12 @@ describe('Game Controller Tests', () => {
           sport: 'Volleyball',
           description: 'Invalid time test',
           playersNeeded: { min: 6, max: 12 },
-          timeSlot: { startTime, endTime }, 
+          timeSlot: { startTime, endTime },
           venueLocation: { type: 'Point', coordinates: [72.9, 19.1] },
           approxCostPerPlayer: 80
         });
-        expect(res.status).toBe(400);
-        expect(res.body.message).toContain('Invalid timeSlot');
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Invalid timeSlot');
     });
 
     // Test: should return 400 for invalid date values in timeSlot
@@ -338,14 +321,14 @@ describe('Game Controller Tests', () => {
           venueLocation: { type: 'Point', coordinates: [72.85, 19.05] },
           approxCostPerPlayer: 100
         });
-        expect(res.status).toBe(400);
-        expect(res.body.message).toContain('Invalid timeSlot');
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Invalid timeSlot');
     });
 
     // Test: should return 400 for a game scheduled in the past
     it('should return 400 for a game scheduled in the past', async () => {
-      const pastStartTime = new Date(Date.now() - 7200000); 
-      const pastEndTime = new Date(Date.now() - 3600000);  
+      const pastStartTime = new Date(Date.now() - 7200000);
+      const pastEndTime = new Date(Date.now() - 3600000);
       const res = await request(app)
         .post('/api/games')
         .set('Authorization', `Bearer ${token}`)
@@ -357,14 +340,14 @@ describe('Game Controller Tests', () => {
           venueLocation: { type: 'Point', coordinates: [73.1, 19.2] },
           approxCostPerPlayer: 120
         });
-        expect(res.status).toBe(400); 
-        expect(res.body.message).toContain('Time slot cannot be in the past');
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Time slot cannot be in the past');
     });
 
     // Test: should return 400 if the host already has a game in the same time slot
     it('should return 400 if the host already has a game in the same time slot', async () => {
       const startTime = new Date(Date.now() + 86400000);
-      const endTime = new Date(startTime.getTime() + 3600000); 
+      const endTime = new Date(startTime.getTime() + 3600000);
 
       // Create the first game
       await Game.create({
@@ -388,8 +371,8 @@ describe('Game Controller Tests', () => {
           venueLocation: { type: 'Point', coordinates: [73.1, 19.1] },
         });
 
-        expect(res.status).toBe(400);
-        expect(res.body.message).toContain('You already have a game scheduled in this time slot');
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('You already have a game scheduled in this time slot');
     });
   });
 });
