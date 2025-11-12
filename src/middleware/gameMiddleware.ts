@@ -5,9 +5,6 @@ import Game from '../models/gameModels';
 // Middleware to authorize roles
 export const authorizeRoles = (...roles: string[]) => {
   return (req: IUserRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Not authorized' });
-    }
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ message: 'You do not have permission to perform this action' });
     }
@@ -26,10 +23,27 @@ export const validateGameInput = (req: IUserRequest, res: Response, next: NextFu
   if (typeof playersNeeded.min !== 'number' || typeof playersNeeded.max !== 'number') {
     return res.status(400).json({ message: 'playersNeeded.min and playersNeeded.max must be numbers' });
   }
+  // Validate venueLocation before checking timeSlot dates
+  if (typeof venueLocation !== 'object' || venueLocation === null) {
+    return res.status(400).json({ message: 'venueLocation must be a GeoJSON Point object' });
+  }
+  if (venueLocation.type !== 'Point') {
+    return res.status(400).json({ message: "venueLocation.type must be 'Point'" });
+  }
+  if (!Array.isArray(venueLocation.coordinates) || venueLocation.coordinates.length !== 2) {
+    return res.status(400).json({ message: 'venueLocation.coordinates must be an array of [lng, lat]' });
+  }
+  const [lng, lat] = venueLocation.coordinates;
+  if (typeof lng !== 'number' || typeof lat !== 'number') {
+    return res.status(400).json({ message: 'venueLocation.coordinates must contain numbers [lng, lat]' });
+  }
+  if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+    return res.status(400).json({ message: 'venueLocation coordinates out of range' });
+  }
 
-  // timeSlot must have startTime and endTime (consistent with Game model)
-  if (!timeSlot.startTime || !timeSlot.endTime) {
-    return res.status(400).json({ message: 'timeSlot.startTime and timeSlot.endTime are required' });
+  // Validate timeSlot dates after venueLocation validation
+  if (!timeSlot.startTime || !timeSlot.endTime || isNaN(new Date(timeSlot.startTime).getTime()) || isNaN(new Date(timeSlot.endTime).getTime())) {
+    return res.status(400).json({ message: 'Invalid timeSlot' });
   }
 
   return next();
@@ -39,17 +53,10 @@ export const validateGameInput = (req: IUserRequest, res: Response, next: NextFu
 export const checkTimeSlotConflict = async (req: IUserRequest, res: Response, next: NextFunction) => {
   try {
     const { timeSlot } = req.body;
-    if (!timeSlot) {
-      return res.status(400).json({ message: 'Time slot is required' });
-    }
 
     // Expect startTime/endTime fields (same as model)
     const start = new Date(timeSlot.startTime);
     const end = new Date(timeSlot.endTime);
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return res.status(400).json({ message: 'Invalid timeSlot' });
-    }
 
     if (end <= start) {
       // Keep error message compatible with tests that expect the substring 'Invalid timeSlot'
@@ -63,7 +70,6 @@ export const checkTimeSlotConflict = async (req: IUserRequest, res: Response, ne
     }
 
     // Overlap check: find any existing game for this host where
-    // existing.start < new.end AND existing.end > new.start
     const existingGame = await Game.findOne({
       host: req.user._id,
       'timeSlot.startTime': { $lt: end },

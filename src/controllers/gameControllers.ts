@@ -24,7 +24,7 @@ export const createGame = async (req: IUserRequest, res: Response) => {
             timeSlot,
             venueLocation,
             approxCostPerPlayer,
-            approvedPlayers: [], // Initially, no players are approved. 
+            approvedPlayers: [req.user._id],
         });
 
         // Send back the created game with a 201 Created status.

@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth";
 import userRoutes from "./routes/userRoutes";
 import errorHandler from './middleware/errorHandler';
 import venueRoutes from "./routes/venueRoutes";
+import gameRoutes from "./routes/gameRoutes";
 
 // Initialize the Express application.
 const app = express();
@@ -53,6 +54,8 @@ if (process.env.NODE_ENV === 'production') {
     app.get("/", (req, res) => res.json({ status: "Development server is running" }));
 }
 
+// Register Game routes
+app.use("/api/games", gameRoutes);
 // Register Venue routes
 app.use("/api/venues", venueRoutes);
 // Register the centralized error-handling middleware.
