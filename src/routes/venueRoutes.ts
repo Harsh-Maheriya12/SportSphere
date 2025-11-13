@@ -4,6 +4,7 @@ import { body, validationResult } from "express-validator";
 import { createVenue, getAllVenues, deleteVenue,getSuggestions } from "../controllers/venueController";
 import { protect } from "../middleware/authMiddleware";
 
+
 const router = express.Router();
 
 //  Validation middleware — ensures all required fields exist
@@ -46,7 +47,7 @@ const validateVenue = [
 
 //  Routes
 router.post("/", protect, validateVenue, createVenue); // Create a venue
-router.get("/", getAllVenues);                         // List all venues
+router.get("/", getAllVenues);    
 router.get("/suggestions", getSuggestions);            // auto-complete search
 router.delete("/:id", protect, deleteVenue);           // Delete venue
 

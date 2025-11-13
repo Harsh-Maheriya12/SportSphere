@@ -94,64 +94,76 @@ if (isNaN(latitude) || isNaN(longitude)) {
 // -----------------------------------------
 export const getAllVenues = async (req: Request, res: Response) => {
   try {
-    const { sport, city, radius, userLat, userLng } = req.query;
+    const { sport, city, radius, userLat, userLng, q } = req.query;
 
-    //  STEP 1: BASE QUERY
     const query: any = {};
-    if (sport) query.sports = { $in: [sport] };
-    if (city) query.city = { $regex: city as string, $options: "i" };
+    const hasSearch =
+      (q && q.toString().trim().length > 0) ||
+      (city && city.toString().trim().length > 0) ||
+      (sport && sport.toString().trim().length > 0);
 
-    //  STEP 2: FIND COORDINATES 
+    // STEP 1: TEXT FILTERS (apply only if user searched)
+    if (q && typeof q === "string" && q.trim().length > 0) {
+      // strict search for venue name first
+      query.name = { $regex: new RegExp("^"+q.trim(), "i") };
+    }
+
+    // Apply sport filter (case-insensitive)
+    if (sport && typeof sport === "string" && sport.trim().length > 0) {
+      query.sports = { $regex: new RegExp("^"+sport.trim(), "i") };
+    }
+
+    // Apply city filter (case-insensitive)
+    if (city && typeof city === "string" && city.trim().length > 0) {
+      query.city = { $regex: new RegExp("^"+city.trim(), "i") };
+    }
+
+    // STEP 2: DETERMINE COORDINATES
     let latitude: number | null = null;
     let longitude: number | null = null;
 
-    // (1) If frontend sent direct coords (highest priority)
+    // (1) From frontend query params
     if (userLat && userLng) {
       latitude = Number(userLat);
       longitude = Number(userLng);
     }
 
-    // (2) Else use logged-in user's saved location
+    // (2) Logged-in user location
     else if ((req as any).user?.location?.coordinates) {
       const [lng, lat] = (req as any).user.location.coordinates;
       latitude = lat;
       longitude = lng;
     }
 
-    // (3) Else if city provided, use city lat/lng
+    // (3) City provided (use its coordinates)
     else if (city) {
       const cities = City.getCitiesOfCountry("IN") ?? [];
       const matchedCity = cities.find(
-        c => c.name.toLowerCase() === (city as string).toLowerCase()
+        (c) => c.name.toLowerCase() === (city as string).toLowerCase()
       );
-
-      if (!matchedCity) {
-        return res.status(400).json({
-          success: false,
-          message: `City "${city}" is not valid.`,
-          validExamples: cities.slice(0, 10).map(c => c.name),
-        });
+      if (matchedCity) {
+        latitude = Number(matchedCity.latitude);
+        longitude = Number(matchedCity.longitude);
       }
-
-      latitude = Number(matchedCity.latitude);
-      longitude = Number(matchedCity.longitude);
     }
 
-    // (4) Fallback default (Ahmedabad)
-    else {
+    // (4) Default fallback → Ahmedabad
+    if (!latitude || !longitude) {
       latitude = 23.0225;
       longitude = 72.5714;
     }
 
-    //  STEP 3: APPLY GEO FILTER (SORT BY DISTANCE) 
-    query.location = {
-      $near: {
-        $geometry: { type: "Point", coordinates: [longitude, latitude] },
-        ...(radius ? { $maxDistance: Number(radius) * 1000 } : {}),
-      },
-    };
+    // STEP 3: APPLY GEO FILTER only if no venue search
+    if (!hasSearch || radius) {
+      query.location = {
+        $near: {
+          $geometry: { type: "Point", coordinates: [longitude, latitude] },
+          ...(radius ? { $maxDistance: Number(radius) * 1000 } : { $maxDistance: 20000 }),
+        },
+      };
+    }
 
-    //  STEP 4: FETCH DATA (LIMIT 40) 
+    // STEP 4: FETCH
     const venues = await Venue.find(query).limit(40);
 
     return res.json({
@@ -159,19 +171,18 @@ export const getAllVenues = async (req: Request, res: Response) => {
       count: venues.length,
       results: venues,
       appliedFilters: {
+        q: q || "NONE",
         sport: sport || "ALL",
-        city: city || "AUTO-NEAREST",
+        city: city || "AUTO",
         radius: radius || "NONE",
       },
       usedLocation: { latitude, longitude },
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("Venue search error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 // -----------------------------------------
 // DELETE VENUE
@@ -213,33 +224,53 @@ export const deleteVenue = async (req: Request, res: Response) => {
 
 export const getSuggestions = async (req: Request, res: Response) => {
   try {
-    const { query } = req.query;
+    const { q, type } = req.query;
 
-    if (!query || typeof query !== "string") {
+    if (!q || typeof q !== "string" || q.trim().length === 0) {
       return res.json([]);
     }
 
-    // Search across venue name, city, and sports
-    const suggestions = await Venue.find(
-      {
-        $or: [
-          { name: { $regex: query, $options: "i" } },
-          { city: { $regex: query, $options: "i" } },
-          { sports: { $regex: query, $options: "i" } }
-        ]
-      },
-      { name: 1 } // return only names
-    )
-      .limit(10)
-      .lean();
+    const regex = new RegExp("^"+ q.trim(), "i");
 
-    // Remove duplicates & return only venue names
-    const uniqueNames = [...new Set(suggestions.map(v => v.name))];
+    let filter: any = {};
+    let projection: any = {};
 
-    return res.json(uniqueNames);
+    if (type === "city") {
+      filter.city = regex;
+      projection = { city: 1 };
+    } else if (type === "sport") {
+      filter.sports = regex;
+      projection = { sports: 1 };
+    } else {
+      // default: venue name or description
+      filter.$or = [{ name: regex }, { description: regex }];
+      projection = { name: 1 };
+    }
 
+    const results = await Venue.find(filter, projection).limit(8);
+
+    // Remove duplicates & flatten if needed
+    let suggestions: string[] = [];
+
+    if (type === "sport") {
+      results.forEach((r) => {
+        if (Array.isArray(r.sports)) suggestions.push(...r.sports);
+        else if (r.sports) suggestions.push(r.sports);
+      });
+    } else if (type === "city") {
+      suggestions = results.map((r) => r.city) as string[];
+
+    } else {
+      suggestions = results.map((r) => r.name);
+    }
+
+    // Remove duplicates and nulls
+    suggestions = [...new Set(suggestions.filter(Boolean))];
+
+    res.json(suggestions);
   } catch (err) {
-    console.error("Suggestion Error:", err);
+    console.error("Suggestion error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
