@@ -10,6 +10,8 @@ import {
 } from "../controllers/emailHelper";
 import UserEmailOtpVerification from "../models/UserEmailOtpVerification";
 import AppError from "../utils/AppError";
+import { redirectToGoogle, googleCallback } from "../controllers/googleAuth";
+import { protect } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -229,6 +231,28 @@ router.post(
       message: result.message,
       data: result.data,
     });
+  })
+);
+
+/**
+ * @desc    Google OAuth — Redirect to Google
+ * @route   GET /api/auth/google
+ * @access  Public
+ */
+router.get("/google", redirectToGoogle);
+
+/**
+ * @desc    Google OAuth — Callback handler
+ * @route   GET /api/auth/google/callback
+ * @access  Public
+ */
+router.get("/google/callback", googleCallback);
+
+router.get(
+  "/me",
+  protect,
+  asyncHandler(async (req: Request, res: Response) => {
+    res.status(200).json({ success: true, user: req.user });
   })
 );
 

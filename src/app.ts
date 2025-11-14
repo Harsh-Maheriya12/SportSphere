@@ -1,5 +1,3 @@
-// FILE PATH: src/app.ts
-
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -10,6 +8,7 @@ import userRoutes from "./routes/userRoutes";
 import errorHandler from './middleware/errorHandler';
 import venueRoutes from "./routes/venueRoutes";
 import gameRoutes from "./routes/gameRoutes";
+import devtool from "./routes/developertools";
 
 // Initialize the Express application.
 const app = express();
@@ -22,7 +21,10 @@ app.use(pinoHttp({ logger }));
 // This allows the frontend (running on a different origin) to make requests to this backend.
 const corsOptions = {
   origin: 'http://localhost:5173', // Restricts requests to the specified origin.
-  optionsSuccessStatus: 200 
+  optionsSuccessStatus: 200 ,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
 
@@ -36,7 +38,10 @@ app.use("/api/users", userRoutes);
 // Requests to '/api/auth' will be handled by the authRoutes module.
 app.use("/api/auth", authRoutes);
 
-// Configure the server to serve the static frontend build in a production environment.
+if (process.env.NODE_ENV === 'development') {
+  app.use("/api/dev", devtool);
+}
+
 if (process.env.NODE_ENV === 'production') {
   // Define the absolute path to the frontend's dist directory.
   const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
