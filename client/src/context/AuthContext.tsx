@@ -11,6 +11,9 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshAuth: () => Promise<void>;
+  success: string | null;
+  setSuccess: (msg: string | null) => void;
 }
 
 // Defines the props for the AuthProvider component, ensuring it can wrap other components.
@@ -29,18 +32,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   // State to track the initial loading process while checking for a persisted session.
   const [isLoading, setIsLoading] = useState(true);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // This effect runs once when the application first loads. Its purpose is to
-  // check for a user session in localStorage to provide persistence across page reloads.
+  const fetchCurrentUser = async (token: string) => {
+    try {
+      const response = await fetch('http://localhost:8000/api/auth/me', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        setUser(null);
+        return;
+      }
+
+      const data = await response.json();
+      setUser(data.user || null);
+
+    } catch (error) {
+      console.warn("fetchCurrentUser failed:", error);
+      setUser(null);
+      return;
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    if (token && storedUser) {
-      // If a session is found, restore the user state.
-      setUser(JSON.parse(storedUser));
+    if (!token) {
+      setIsLoading(false);
+      return;
     }
-    // Set loading to false once the check is complete.
-    setIsLoading(false);
+
+    (async () => {
+      await fetchCurrentUser(token);
+      setIsLoading(false);
+    })();
   }, []);
 
   // Handles the login process by calling the API service and updating the state on success.
@@ -48,7 +78,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const data: AuthResponse = await apiLogin(email, password);
     // Persist the session in localStorage.
     localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
     // Update the user state, which will trigger a rerender throughout the application.
     setUser(data.user);
   };
@@ -73,8 +102,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Clears the user's session from both the application state and localStorage.
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
     setUser(null);
+  };
+
+  const refreshAuth = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setIsLoading(true);
+    await fetchCurrentUser(token);
+    setIsLoading(false);
   };
 
   // Assemble the context value object that will be exposed to consuming components.
@@ -85,6 +121,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
+    refreshAuth,
+    success,
+    setSuccess,
   };
 
   // The Provider component makes the `value` object available to any child component

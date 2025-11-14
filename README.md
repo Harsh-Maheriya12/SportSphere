@@ -31,7 +31,7 @@ SportSphere is a full-stack, containerized application for a sports community. T
 
 ---
 
-## 🛠 Setup & Running Instructions
+## Setup & Running Instructions
 
 This project is fully containerized. You must have Docker Desktop installed and running on your system. You do not need to install MongoDB or Node.js on your local machine.
 
@@ -42,31 +42,36 @@ git clone https://github.com/<your-username>/SportSphere_new.git
 cd SportSphere_new
 ```
 
-### 2. Create the Environment File
+### 2. Environment Variables
 
-This is a critical step. Create a file named `.env` in the root of the project. This file is ignored by Git and contains your secrets.
+The backend requires specific environment variables for email delivery (SMTP) and Google OAuth authentication. Create a `.env` file in the project root with the following keys:
 
-Copy the following into your new `.env` file:
+### Email (SMTP) Configuration
 
-```env
-# .env
-
-# This is the port the Express app will listen on INSIDE the container.
-# This should match the port mapping in docker-compose.yml.
-PORT=5000
-
-# This is the connection string for the Docker network.
-# 'mongo' is the service name of the database in docker-compose.yml.
-MONGO_URI=mongodb://mongo:27017/sportsphere
-
-# This must be a long, random, and secure string.
-# It is used to sign and verify authentication tokens.
-JWT_SECRET=your_long_random_secret_string_here
-
-# Set the node environment to development
-NODE_ENV=development
+```
+SMTP_HOST=<your-smtp-host>
+SMTP_PORT=<your-smtp-port>
+SMTP_USER=<your-smtp-username>
+SMTP_PASS=<your-smtp-password>
+EMAIL_FROM=<sender-email-address>
 ```
 
+### Google OAuth Configuration
+
+```
+GOOGLE_CLIENT_ID=<your-google-oauth-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-oauth-client-secret>
+GOOGLE_REDIRECT_URI=<your-backend-oauth-callback-url>
+```
+
+### JWT Configuration
+
+```
+JWT_SECRET=<your-jwt-secret>
+JWT_EXPIRES_IN=<e.g., 1d or 7d>
+```
+
+These variables are mandatory for authentication, email verification, Google login, and token generation. Ensure they are correctly set before running the backend.
 ### 3. Build and Run the Application
 
 With Docker Desktop running, execute the following command from the project's root directory. This command builds the images for the first time and starts all services.
@@ -82,7 +87,7 @@ docker-compose up --build
 
 ---
 
-## Daily Workflow
+## Workflow
 
 - To Start: `docker-compose up`
 - To Stop: `Ctrl + C` (in the terminal where it's running)

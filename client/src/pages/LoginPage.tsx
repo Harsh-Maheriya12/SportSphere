@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
+import GoogleLogo from "../assets/google.svg";
 
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
@@ -143,6 +144,33 @@ const LoginPage: React.FC = () => {
                   </>
                 ) : (
                   "Sign in"
+                )}
+              </button>
+            </div>
+            {/* Google Sign-In */}
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLoading(true);
+                  window.location.href = 'http://localhost:8000/api/auth/google';
+                }}
+                disabled={isLoading}
+                className={`group relative w-full flex items-center justify-center py-3 px-4 border-transparent text-sm font-medium rounded-xl bg-black text-primary
+                   hover:border-white/90 hover:border-2 box-border border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors mt-3
+                   ${isLoading ? "opacity-75 cursor-not-allowed" : ""}`}
+                aria-label="Sign in with Google"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-primary-foreground" />
+                    Redirecting...
+                  </>
+                ) : (
+                  <>
+                    <img src={GoogleLogo} alt="Google" className="h-5 w-5 mr-3" />
+                    <span className="text-primary">Sign in with Google</span>
+                  </>
                 )}
               </button>
             </div>

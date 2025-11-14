@@ -100,3 +100,9 @@ export const apiCheckUsername = (
   });
 };
 
+
+export const apiMe = () => {
+  return request("/auth/me", {
+    method: "GET"
+  });
+};
