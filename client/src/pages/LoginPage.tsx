@@ -12,9 +12,12 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect if already logged in
+  // Redirect if already logged in (normal user) or if admin is already logged in
   React.useEffect(() => {
-    if (isAuthenticated) {
+    const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
+    if (isAdminLoggedIn) {
+      navigate("/admin");
+    } else if (isAuthenticated) {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
@@ -27,6 +30,18 @@ const LoginPage: React.FC = () => {
       return;
     }
 
+    // Check for admin credentials (dummy admin login)
+    if (email === "admin@sportsphere.com" && password === "admin123") {
+      setIsLoading(true);
+      // Store admin flag in localStorage
+      localStorage.setItem("isAdminLoggedIn", "true");
+      // Redirect to admin overview
+      navigate("/admin");
+      setIsLoading(false);
+      return;
+    }
+
+    // Normal user login flow
     setIsLoading(true);
     try {
       await login(email, password);

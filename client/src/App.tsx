@@ -13,6 +13,13 @@ import MyVenues from "./pages/MyVenues";
 import HostGame from "./pages/HostGame";
 import CoachProfile from "./pages/CoachProfile";
 import Layout from "./components/Layout";
+import FaqPage from "./pages/FaqPage";
+import Overview from "./pages/admin/Overview";
+import PlayerManagement from "./pages/admin/PlayerManagement";
+import CoachManagement from "./pages/admin/CoachManagement";
+import VenueManagement from "./pages/admin/VenueManagement";
+import Reports from "./pages/admin/Reports";
+import Tickets from "./pages/admin/Tickets";
 
 // A component to protect routes that require authentication.
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
@@ -31,8 +38,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 };
 
 // A component for public routes. If the user is logged in, it redirects them to the dashboard.
+// If admin is logged in, redirects to admin panel.
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
+  const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
 
   if (isLoading)
     return (
@@ -40,7 +49,18 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         Loading...
       </div>
     );
+  if (isAdminLoggedIn) return <Navigate to="/admin" replace />;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+};
+
+// A component to protect admin routes that require admin authentication.
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
+
+  if (!isAdminLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
   return <>{children}</>;
 };
 
@@ -75,6 +95,7 @@ const App: React.FC = () => {
       <Route path="/coaches" element={<Coaches />} />
       <Route path="/coaches/:id" element={<CoachProfile />} />
       <Route path="/games" element={<Games />} />
+      <Route path="/faq" element={<FaqPage />} />
 
       {/* Protected Routes */}
       <Route
@@ -107,6 +128,56 @@ const App: React.FC = () => {
           <ProtectedRoute>
             <HostGame />
           </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Routes */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <Overview />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/players"
+        element={
+          <AdminRoute>
+            <PlayerManagement />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/coaches"
+        element={
+          <AdminRoute>
+            <CoachManagement />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/venues"
+        element={
+          <AdminRoute>
+            <VenueManagement />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <AdminRoute>
+            <Reports />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/tickets"
+        element={
+          <AdminRoute>
+            <Tickets />
+          </AdminRoute>
         }
       />
 
