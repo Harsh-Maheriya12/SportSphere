@@ -7,13 +7,13 @@ import transporter from "../config/transporter";
 
 export const sendOtpVerificationMail = async (
   email: string
-): Promise<{ status: string; message: string; data?: { email: string } }> => {
+): Promise<{ success: boolean; message: string; data?: { email: string } }> => {
   try {
     // Check if email already exists
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
       return {
-        status: "FAILED",
+        success: false,
         message: "Email already registered. Please login.",
       };
     }
@@ -108,14 +108,14 @@ export const sendOtpVerificationMail = async (
     await transporter.sendMail(mailOptions);
 
     return {
-      status: "PENDING",
+      success: true,
       message: "Verification OTP email sent successfully",
-      data: { email },
+      data: { email }, 
     };
   } catch (error: any) {
     console.error("Error sending OTP email:", error);
     return {
-      status: "FAILED",
+      success: false,
       message: error.message || "Failed to send OTP email",
     };
   }
@@ -125,12 +125,12 @@ export const sendOtpVerificationMail = async (
 export const verifyOtp = async (
   email: string,
   otp: string
-): Promise<{ status: string; message: string; verified: boolean }> => {
+): Promise<{ success: boolean; message: string; verified: boolean }> => {
   try {
     // If otp or email not present
     if (!otp || !email) {
       return {
-        status: "FAILED",
+        success: false,
         message: "OTP and email are required",
         verified: false,
       };
@@ -143,7 +143,7 @@ export const verifyOtp = async (
 
     if (otpRecords.length === 0) {
       return {
-        status: "FAILED",
+        success: false,
         message: "No OTP found for this email. Please request a new one.",
         verified: false,
       };
@@ -159,7 +159,7 @@ export const verifyOtp = async (
         email: email.toLowerCase().trim(),
       });
       return {
-        status: "FAILED",
+        success: false,
         message: "Code has expired. Please request again.",
         verified: false,
       };
@@ -169,7 +169,7 @@ export const verifyOtp = async (
 
     if (!isValidOtp) {
       return {
-        status: "FAILED",
+        success: false,
         message: "Invalid OTP. Please try again.",
         verified: false,
       };
@@ -182,15 +182,14 @@ export const verifyOtp = async (
     );
 
     return {
-      status: "VERIFIED",
-      message:
-        "Email verified successfully. You can now complete registration.",
+      success: true,
+      message: "OTP verified successfully.",
       verified: true,
     };
   } catch (error: any) {
     console.error("Error verifying OTP:", error);
     return {
-      status: "FAILED",
+      success: false,
       message: error.message || "Failed to verify OTP",
       verified: false,
     };

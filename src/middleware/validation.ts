@@ -1,37 +1,59 @@
-import { body, validationResult } from 'express-validator';
-import { Request, Response, NextFunction } from 'express';
-import User from '../models/User';
-import AppError from '../utils/AppError';
+import { body, validationResult } from "express-validator";
+import { Request, Response, NextFunction } from "express";
+import User from "../models/User";
 
+// Validation rules for user registration (express-validator)
 export const validateRegister = [
-  body('username')
-    .notEmpty().withMessage('Username is required')
-    .trim()
-    .escape(),
+  // Username: required, trimmed, sanitized
+  body("username", "Username is required").not().isEmpty().trim().escape(),
 
-  body('email')
-    .isEmail().withMessage('Please include a valid email')
+  // Email: valid format, normalized, must not already exist
+  body("email", "Please include a valid email")
+    .isEmail()
     .normalizeEmail()
     .custom(async (email) => {
       const existingUser = await User.findOne({ email });
       if (existingUser) {
-        throw new AppError('User already exists', 400, { field: 'email' });
+        return Promise.reject("User already exists");
       }
     }),
 
-  body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters'),
+  // Password: minimum 6 characters (will be hashed before storage)
+  body("password", "Password must be at least 6 characters").isLength({
+    min: 6,
+  }),
 
-  // Final middleware for validation result handling
+  // Role: must be one of the allowed values
+  body("role", "Role is required")
+    .not()
+    .isEmpty()
+    .isIn(["player", "venue-owner", "coach", "admin"])
+    .withMessage("Role must be one of: player, venue-owner, coach, admin"),
+
+  // Age: required, integer between 13 and 120
+  body("age", "Age is required")
+    .not()
+    .isEmpty()
+    .isInt({ min: 13, max: 120 })
+    .withMessage("Age must be between 13 and 120"),
+
+  // Gender: must be one of the allowed values
+  body("gender", "Gender is required")
+    .not()
+    .isEmpty()
+    .isIn(["male", "female", "other"])
+    .withMessage("Gender must be one of: male, female, other"),
+
+  // Error handler: collect all validation errors and return them
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      // Pass a standardized AppError to the centralized error handler
-      return next(new AppError('Validation failed', 400, errors.array()));
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array(),
+      });
     }
-
-    // Validation succeeded
     return next();
   },
 ];
