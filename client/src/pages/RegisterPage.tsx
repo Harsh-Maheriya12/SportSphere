@@ -1,31 +1,43 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Shield, Loader2, CheckCircle, Eye, EyeOff } from "lucide-react";
-import { 
-  apiSendOtp, 
-  apiVerifyOtp, 
-  apiResendOtp, 
-  apiCheckUsername, 
-  apiRegister 
+import {
+  Mail,
+  Lock,
+  User,
+  Shield,
+  Loader2,
+  CheckCircle,
+  Upload,
+  Calendar,
+  Users,
+} from "lucide-react";
+import {
+  apiSendOtp,
+  apiVerifyOtp,
+  apiResendOtp,
+  apiCheckUsername,
+  apiRegister,
 } from "../services/api";
 
-const RegisterPage: React.FC = () => {
+function RegisterPage() {
   const navigate = useNavigate();
 
-  // Form fields
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  
-  // UI state
+  const [role, setRole] = useState<"player" | "venue-owner" | "coach">(
+    "player"
+  );
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState<"male" | "female" | "other">("male");
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [proof, setProof] = useState<File | null>(null);
   const [step, setStep] = useState("email");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
-
   const [usernameStatus, setUsernameStatus] = useState<
     "checking" | "available" | "taken" | "idle"
   >("idle");
@@ -38,7 +50,7 @@ const RegisterPage: React.FC = () => {
     }
   }, [otpTimer]);
 
-  // DEBOUNCED USERNAME CHECK
+  // Username Check
   useEffect(() => {
     if (username.length < 3) {
       setUsernameStatus("idle");
@@ -69,7 +81,7 @@ const RegisterPage: React.FC = () => {
       setStep("otp");
       setOtpTimer(600); // 10 minutes timer
     } catch (err: any) {
-      setError(err.message || "Failed to send OTP. Please try again.");
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +96,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       const data = await apiVerifyOtp(email, otp);
-      
+
       if (data.verified) {
         setSuccess("Email verified successfully!");
         setStep("details");
@@ -92,7 +104,7 @@ const RegisterPage: React.FC = () => {
         throw new Error("OTP verification failed");
       }
     } catch (err: any) {
-      setError(err.message || "Invalid OTP. Please try again.");
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +121,7 @@ const RegisterPage: React.FC = () => {
       setSuccess("OTP resent successfully!");
       setOtpTimer(600); // Reset timer
     } catch (err: any) {
-      setError(err.message || "Failed to resend OTP");
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -126,26 +138,45 @@ const RegisterPage: React.FC = () => {
       return;
     }
 
+    if (!profilePhoto) {
+      setError("Profile photo is required");
+      return;
+    }
+
+    if ((role === "coach" || role === "venue-owner") && !proof) {
+      setError("Proof document is required for coaches and venue owners");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const data = await apiRegister(username, email, password);
+      const data = await apiRegister(
+        username,
+        email,
+        password,
+        role,
+        parseInt(age),
+        gender,
+        profilePhoto!,
+        proof
+      );
 
-      // Registration successful - no token returned, user must login
+      // Redirect to login on successful registration
       if (data.success) {
         setSuccess("Registration successful! Redirecting to login...");
         setTimeout(() => {
           navigate("/login");
-        }, 3000);
+        }, 2500);
       }
     } catch (err: any) {
-      setError(err.message || "Registration failed. Please try again.");
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // RENDER USERNAME FEEDBACK
+  // Username Check
   const renderUsernameFeedback = () => {
     switch (usernameStatus) {
       case "checking":
@@ -176,6 +207,7 @@ const RegisterPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white/10 px-4 py-12">
       <div className="w-full max-w-md bg-card shadow-2xl rounded-2xl p-8 space-y-6 border border-border">
+        {/* Header */}
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-primary">
             Create an Account
@@ -189,9 +221,21 @@ const RegisterPage: React.FC = () => {
 
         {/* Progress Indicator */}
         <div className="flex items-center justify-center gap-2">
-          <div className={`h-2 w-16 rounded-full ${step === "email" ? "bg-primary" : "bg-primary/30"}`} />
-          <div className={`h-2 w-16 rounded-full ${step === "otp" ? "bg-primary" : "bg-primary/30"}`} />
-          <div className={`h-2 w-16 rounded-full ${step === "details" ? "bg-primary" : "bg-primary/30"}`} />
+          <div
+            className={`h-2 w-16 rounded-full ${
+              step === "email" ? "bg-primary" : "bg-primary/30"
+            }`}
+          />
+          <div
+            className={`h-2 w-16 rounded-full ${
+              step === "otp" ? "bg-primary" : "bg-primary/30"
+            }`}
+          />
+          <div
+            className={`h-2 w-16 rounded-full ${
+              step === "details" ? "bg-primary" : "bg-primary/30"
+            }`}
+          />
         </div>
 
         {/* Error Message */}
@@ -210,9 +254,10 @@ const RegisterPage: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 1: Email Input */}
+        {/* STEP 1: Send Otp */}
         {step === "email" && (
           <form onSubmit={handleSendOtp} className="space-y-5">
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Email Address
@@ -253,7 +298,7 @@ const RegisterPage: React.FC = () => {
           </form>
         )}
 
-        {/* STEP 2: OTP Verification */}
+        {/* STEP 2: Verify OTP */}
         {step === "otp" && (
           <form onSubmit={handleVerifyOtp} className="space-y-5">
             <div>
@@ -268,7 +313,9 @@ const RegisterPage: React.FC = () => {
                   type="text"
                   placeholder="Enter 4-digit code"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  onChange={(e) =>
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
                   className="w-full pl-10 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-background text-foreground transition text-center text-2xl tracking-widest"
                   required
                   maxLength={4}
@@ -284,7 +331,8 @@ const RegisterPage: React.FC = () => {
             {otpTimer > 0 && (
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
-                  Code expires in {Math.floor(otpTimer / 60)}:{String(otpTimer % 60).padStart(2, "0")}
+                  Code expires in {Math.floor(otpTimer / 60)}:
+                  {String(otpTimer % 60).padStart(2, "0")}
                 </p>
               </div>
             )}
@@ -312,7 +360,7 @@ const RegisterPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleResendOtp}
-                disabled={isLoading || otpTimer > 240}
+                disabled={isLoading || otpTimer > 100}
                 className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Didn't receive code? Resend
@@ -330,7 +378,7 @@ const RegisterPage: React.FC = () => {
           </form>
         )}
 
-        {/* STEP 3: Complete Registration */}
+        {/* STEP 3: Fill Form */}
         {step === "details" && (
           <form onSubmit={handleRegister} className="space-y-5">
             {/* Email (disabled) */}
@@ -384,35 +432,178 @@ const RegisterPage: React.FC = () => {
                   <Lock className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   placeholder="Create a strong password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-background text-foreground transition"
+                  className="w-full pl-10 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-background text-foreground transition"
                   required
                   minLength={6}
                   disabled={isLoading}
                 />
-                {/* Show/Hide password button */}
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((showPassword) => !showPassword)}
-                  className="absolute inset-y-0 right-2 flex items-center px-2 text-muted-foreground"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  tabIndex={0}
-                  disabled={isLoading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 At least 6 characters
               </p>
             </div>
+
+            {/* Role */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Select Your Role <span className="text-destructive">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as any)}
+                  className="w-full pl-10 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-background text-foreground transition appearance-none cursor-pointer"
+                  required
+                  disabled={isLoading}
+                >
+                  <option value="player">Player</option>
+                  <option value="coach">Coach</option>
+                  <option value="venue-owner">Venue Owner</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Age */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Age <span className="text-destructive">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <input
+                  type="number"
+                  placeholder="Enter your age"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-background text-foreground transition"
+                  required
+                  min="13"
+                  max="120"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Gender <span className="text-destructive">*</span>
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {/* Male button */}
+                <button
+                  type="button"
+                  onClick={() => setGender("male")}
+                  className={`py-3 px-4 rounded-xl border-2 transition-all ${
+                    gender === "male"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:border-primary/50"
+                  }`}
+                  disabled={isLoading}
+                >
+                  Male
+                </button>
+
+                {/* Female button */}
+                <button
+                  type="button"
+                  onClick={() => setGender("female")}
+                  className={`py-3 px-4 rounded-xl border-2 transition-all ${
+                    gender === "female"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:border-primary/50"
+                  }`}
+                  disabled={isLoading}
+                >
+                  Female
+                </button>
+
+                {/* Other button */}
+                <button
+                  type="button"
+                  onClick={() => setGender("other")}
+                  className={`py-3 px-4 rounded-xl border-2 transition-all ${
+                    gender === "other"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:border-primary/50"
+                  }`}
+                  disabled={isLoading}
+                >
+                  Other
+                </button>
+              </div>
+            </div>
+
+            {/* Profile Photo */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Profile Photo <span className="text-destructive">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)}
+                  className="hidden"
+                  id="profilePhoto"
+                  disabled={isLoading}
+                  required
+                />
+                <label
+                  htmlFor="profilePhoto"
+                  className="flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary transition-colors bg-background"
+                >
+                  <Upload className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm text-foreground">
+                    {profilePhoto ? profilePhoto.name : "Choose profile photo"}
+                  </span>
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                JPG, PNG, or JPEG (max 5MB)
+              </p>
+            </div>
+
+            {/* Proof Document Upload  */}
+            {(role === "coach" || role === "venue-owner") && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Verification Proof <span className="text-destructive">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setProof(e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="proof"
+                    required
+                    disabled={isLoading}
+                  />
+                  <label
+                    htmlFor="proof"
+                    className="flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary transition-colors bg-background"
+                  >
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-foreground">
+                      {proof ? proof.name : "Upload verification document"}
+                    </span>
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PDF format only (max 5MB) - License, certificate, or ID
+                </p>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -444,6 +635,6 @@ const RegisterPage: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default RegisterPage;

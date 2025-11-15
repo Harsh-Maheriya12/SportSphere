@@ -8,6 +8,7 @@ import userRoutes from "./routes/userRoutes";
 import errorHandler from './middleware/errorHandler';
 import venueRoutes from "./routes/venueRoutes";
 import gameRoutes from "./routes/gameRoutes";
+import coachRoutes from "./routes/coachRoutes";
 import devtool from "./routes/developertools";
 
 // Initialize the Express application.
@@ -63,6 +64,8 @@ if (process.env.NODE_ENV === 'production') {
 app.use("/api/games", gameRoutes);
 // Register Venue routes
 app.use("/api/venues", venueRoutes);
+// Register Coach routes
+app.use("/api/coaches", coachRoutes);
 // Register the centralized error-handling middleware.
 // Must be the last piece of middleware registered in the application.
 
