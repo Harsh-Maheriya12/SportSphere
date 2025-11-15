@@ -3,7 +3,7 @@ import cors from "cors";
 import path from "path";
 import pinoHttp from "pino-http";
 import logger from "./config/logger";
-import authRoutes from "./routes/auth";
+import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import errorHandler from './middleware/errorHandler';
 import venueRoutes from "./routes/venueRoutes";
