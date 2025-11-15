@@ -14,6 +14,9 @@ import {
   verifyPasswordResetOtpController,
   resetPassword,
 } from "../controllers/authController";
+import { redirectToGoogle, googleCallback } from "../controllers/googleAuth";
+import { protect } from "../middleware/authMiddleware";
+import { Request , Response } from "express";
 
 const router = express.Router();
 
@@ -38,5 +41,28 @@ router.post("/password-reset/verify-otp", asyncHandler(verifyPasswordResetOtpCon
 
 // Verify Otp
 router.post("/password-reset/reset", asyncHandler(resetPassword));
+
+
+/**
+ * @desc    Google OAuth — Redirect to Google
+ * @route   GET /api/auth/google
+ * @access  Public
+ */
+router.get("/google", redirectToGoogle);
+
+/**
+ * @desc    Google OAuth — Callback handler
+ * @route   GET /api/auth/google/callback
+ * @access  Public
+ */
+router.get("/google/callback", googleCallback);
+
+router.get(
+  "/me",
+  protect,
+  asyncHandler(async (req: Request, res: Response) => {
+    res.status(200).json({ success: true, user: req.user });
+  })
+);
 
 export default router;
