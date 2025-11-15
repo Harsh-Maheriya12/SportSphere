@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import GoogleLogo from "../assets/google.svg";
 
-const LoginPage: React.FC = () => {
+function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -53,7 +53,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         <div className="bg-card p-8 rounded-2xl shadow-lg">
-          {/* Error Message */}
+          {/* Error*/}
           {error && (
             <div className="mb-6 p-4 bg-destructive/20 border-l-4 border-destructive text-foreground rounded-lg flex items-center space-x-2">
               <div className="shrink-0 w-1 h-4 bg-destructive rounded-full" />
@@ -148,12 +148,12 @@ const LoginPage: React.FC = () => {
               </button>
             </div>
             {/* Google Sign-In */}
-            <div>
+            {/* <div>
               <button
                 type="button"
                 onClick={() => {
                   setIsLoading(true);
-                  window.location.href = 'http://localhost:8000/api/auth/google';
+                  window.location.href = 'http://localhost:5000/api/auth/google';
                 }}
                 disabled={isLoading}
                 className={`group relative w-full flex items-center justify-center py-3 px-4 border-transparent text-sm font-medium rounded-xl bg-black text-primary
@@ -173,7 +173,7 @@ const LoginPage: React.FC = () => {
                   </>
                 )}
               </button>
-            </div>
+            </div> */}
           </form>
 
           <div className="mt-6">

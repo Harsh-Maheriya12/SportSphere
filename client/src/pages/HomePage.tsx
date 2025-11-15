@@ -1,24 +1,50 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
-import {
-  ChevronRight,
-  Users,
-  MapPin,
-  Award,
-  Star,
-  Calendar,
-  Users2,
-} from "lucide-react";
+import { ChevronRight, Users, MapPin, Award } from "lucide-react";
 import Logo from "../assets/SportSphereLogo.jpg";
 import Plasma from "../components/background/Plasma";
 import { useAuth } from "../context/AuthContext";
 import VenueCard from "../components/cards/VenueCard";
 import CoachCard from "../components/cards/CoachCard";
 import GameCard from "../components/cards/GameCard";
+import { apiGetAllCoaches } from "../services/api";
+
+interface Coach {
+  id: string;
+  username: string;
+  email: string;
+  profilePhoto: string;
+  age: number;
+  gender: string;
+  sports: string[];
+  location: {
+    city: string;
+    state: string;
+    country: string;
+  };
+  pricing: number;
+  experience: number;
+}
 
 function HomePage() {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [coaches, setCoaches] = useState<Coach[]>([]);
+
+  // Fetch coaches
+  useEffect(() => {
+    const fetchCoaches = async () => {
+      try {
+        const response = await apiGetAllCoaches();
+        setCoaches(response.coaches.slice(0, 3));
+      } catch (error) {
+        console.error("Failed to load coaches:", error);
+      }
+    };
+
+    fetchCoaches();
+  }, []);
 
   // This have to be updated......
   const venues = [
@@ -69,36 +95,6 @@ function HomePage() {
     },
   ];
 
-  const coaches = [
-    {
-      id: 1,
-      name: "Alex Johnson",
-      specialty: "Basketball",
-      rating: 4.9,
-      reviews: 156,
-      image: Logo,
-      price: "$50/hour",
-    },
-    {
-      id: 2,
-      name: "Maria Garcia",
-      specialty: "Football",
-      rating: 4.7,
-      reviews: 203,
-      image: Logo,
-      price: "$45/hour",
-    },
-    {
-      id: 3,
-      name: "David Chen",
-      specialty: "Fitness Training",
-      rating: 4.8,
-      reviews: 289,
-      image: Logo,
-      price: "$60/hour",
-    },
-  ];
-
   const games = [
     {
       id: 1,
@@ -132,7 +128,8 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="relative min-h-[600px] w-full">
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 p-2">
+          {/* Background Effect */}
           <Plasma
             color="#ff6b35"
             speed={0.6}
@@ -389,8 +386,8 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Venues Section */}
-      <section className="py-20 bg-background border-t border-border/20">
+      {/* Venues Cards */}
+      <section className="py-20 bg-background border-t border-primary/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-black mb-4">
@@ -418,8 +415,8 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Coach Section */}
-      <section className="py-20 bg-background border-t border-border/20">
+      {/* Coach Cards */}
+      <section className="py-20 bg-background border-t border-primary/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-black mb-4">
@@ -432,23 +429,14 @@ function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {coaches.map((coach) => (
-              <CoachCard
-                key={coach.id}
-                id={coach.id.toString()}
-                name={coach.name}
-                specialty={coach.specialty}
-                rating={coach.rating}
-                reviews={coach.reviews}
-                price={coach.price}
-                image={coach.image}
-              />
+              <CoachCard key={coach.id} coach={coach} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Games Section */}
-      <section className="py-20 bg-background border-t border-border/20">
+      {/* Games Cards */}
+      <section className="py-20 bg-background border-t border-primary/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-black mb-4">
@@ -477,17 +465,23 @@ function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-b from-background to-secondary/20 border-t border-border/20">
+      <section className="py-20 bg-gradient-to-b from-background to-secondary/20 border-t border-primary/20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl sm:text-5xl font-black mb-6">
-            {isAuthenticated
-              ? "Keep the Momentum Going!"
-              : "Ready to Transform Your Sports Experience?"}
+            {isAuthenticated && (
+              <>
+                <h2>Keep Going <span className="text-primary mt-2">Champ !!!</span></h2>
+              </>
+            )}
+
+            {!isAuthenticated && (
+              <p>"Ready to Transform Your Sports Experience?"</p>
+            )}
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {!isAuthenticated && (
               <Link to="/login">
-                <Button className = "bg-orange-500 border-transparent hover:border-white/90 hover:border-2 box-border border-2 rounded-xl text-background font-bold text-lg px-8">
+                <Button className="bg-orange-500 border-transparent hover:border-white/90 hover:border-2 box-border border-2 rounded-xl text-background font-bold text-lg px-8">
                   Get Started Now
                 </Button>
               </Link>
