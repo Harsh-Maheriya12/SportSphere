@@ -14,6 +14,9 @@ import HostGame from "./pages/HostGame";
 import CoachProfile from "./pages/CoachProfile";
 import Layout from "./components/Layout";
 import OAuthSuccess from "./pages/OAuth2Success";
+import VenueDetails from "./pages/VenueDetails";
+import TimeSlotBooking from "./pages/TimeSlotBooking";
+
 
 // A component to protect routes that require authentication.
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
@@ -73,10 +76,15 @@ const App: React.FC = () => {
 
       {/* Public browsing routes */}
       <Route path="/venues" element={<Venues />} />
+      <Route path="/venues/:id" element={<VenueDetails />} />
       <Route path="/coaches" element={<Coaches />} />
       <Route path="/coaches/:id" element={<CoachProfile />} />
       <Route path="/games" element={<Games />} />
       <Route path="/oauth-success" element={<OAuthSuccess />} />
+
+      {/* <Route path="/host-game/:id" element={<HostGame />} /> */}
+      <Route path="/venues/:id/book" element={<TimeSlotBooking />} />
+
 
       {/* Protected Routes */}
       <Route

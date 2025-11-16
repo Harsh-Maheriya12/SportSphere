@@ -1,7 +1,7 @@
 // src/routes/venueRoutes.ts
 import express, { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
-import { createVenue, getAllVenues, deleteVenue } from "../controllers/venueController";
+import { createVenue, getAllVenues, deleteVenue, getVenueById } from "../controllers/venueController";
 import { protect } from "../middleware/authMiddleware";
 
 const router = express.Router();
@@ -45,6 +45,7 @@ const validateVenue = [
 //  Routes
 router.post("/", protect, validateVenue, createVenue); // Create a venue
 router.get("/", getAllVenues);                         // List all venues
+router.get("/:id", getVenueById);                      // Get a venue by id
 router.delete("/:id", protect, deleteVenue);           // Delete venue
 
 export default router;

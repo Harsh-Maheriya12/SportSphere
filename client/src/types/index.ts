@@ -21,3 +21,17 @@ export interface RegisterResponse {
         email: string;
     };
 }
+
+// Venue related types
+export interface Venue {
+    _id: string;
+    name: string;
+    description?: string;
+    address: string;
+    city?: string;
+    sports: string[];
+    images?: string[];
+    pricePerHour: number;
+    amenities?: string[];
+    timeSlots?: string[];
+}

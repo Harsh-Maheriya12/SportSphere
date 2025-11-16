@@ -1,4 +1,4 @@
-import { AuthResponse, RegisterResponse } from "../types/index";
+import { AuthResponse, RegisterResponse, Venue } from "../types/index";
 
 // DEFINE THE BASE URL for all API requests. This prevents repeating it everywhere.
 const BASE_URL = "/api";
@@ -105,4 +105,14 @@ export const apiMe = () => {
   return request("/auth/me", {
     method: "GET"
   });
+};
+
+// Venues API
+export const apiGetVenues = (q?: string): Promise<Venue[]> => {
+  const query = q && q.trim().length > 0 ? `?q=${encodeURIComponent(q.trim())}` : "";
+  return request<Venue[]>(`/venues${query}`, { method: "GET" });
+};
+
+export const apiGetVenueById = (id: string): Promise<Venue> => {
+  return request<Venue>(`/venues/${id}`, { method: "GET" });
 };
