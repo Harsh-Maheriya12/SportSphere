@@ -69,42 +69,68 @@ export const googleCallback = asyncHandler(
 
       const googleUser = profileResponse.data;
 
+      console.log('Google user data received:', {
+        email: googleUser.email,
+        name: googleUser.name,
+        picture: googleUser.picture,
+        sub: googleUser.sub
+      });
+
       if (!googleUser.email) {
         return next(new AppError("Google account has no email", 400));
       }
 
-      // 3. Find or create user in DB
-      let user = await User.findOne({ email: googleUser.email });
+      // 3. Check if user already exists
+      const existingUser = await User.findOne({ email: googleUser.email.toLowerCase().trim() });
 
-      if (!user) {
-        user = new User({
-          username: googleUser.name,
-          email: googleUser.email.toLowerCase().trim(),
-          authProvider: "google",
-          providerId: googleUser.sub,
-          role: "user",
-          verified: true
-        });
-
-        await user.save();
-      }
-
-      // 4. Generate JWT
-      const token = jwt.sign(
-        { userId: user._id, role: user.role },
-        process.env.JWT_SECRET!,
-        { expiresIn: "3h" }
-      );
+      if (existingUser) {
+        console.log('Existing user found, logging in:', existingUser.email);
+        // User exists - perform normal login
+        const token = jwt.sign(
+          { userId: existingUser._id, role: existingUser.role },
+          process.env.JWT_SECRET!,
+          { expiresIn: "3h" }
+        );
 
         const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-
-        // ensure no double slashes
         const base = frontendUrl.replace(/\/+$/, '');
-
-        // build absolute redirect url and encode token
         const redirectUrl = `${base}/oauth-success?token=${encodeURIComponent(token)}`;
 
-        res.redirect(redirectUrl);
+        console.log('Redirecting existing user to:', redirectUrl);
+        return res.redirect(redirectUrl);
+      }
+
+      console.log('New user detected, creating verification record');
+      // 4. New user - Mark email as verified and redirect to registration
+      const UserEmailOtpVerification = (await import("../models/UserEmailOtpVerification")).default;
+      
+      // Delete any existing OTP records for this email
+      await UserEmailOtpVerification.deleteMany({ 
+        email: googleUser.email.toLowerCase().trim() 
+      });
+
+      // Create a verified record (no actual OTP needed)
+      const verifiedRecord = new UserEmailOtpVerification({
+        email: googleUser.email.toLowerCase().trim(),
+        otp: "GOOGLE_VERIFIED", // Special marker for Google OAuth
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 3600000, // 1 hour to complete registration
+      });
+
+      await verifiedRecord.save();
+
+      // Redirect to registration with Google data
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+      const base = frontendUrl.replace(/\/+$/, '');
+      
+      // Ensure we have all required data
+      const userName = googleUser.name || googleUser.email.split('@')[0];
+      const userPicture = googleUser.picture || '';
+      
+      const redirectUrl = `${base}/oauth-success?email=${encodeURIComponent(googleUser.email)}&name=${encodeURIComponent(userName)}&picture=${encodeURIComponent(userPicture)}&provider=google`;
+
+      console.log('Redirecting new Google user to:', redirectUrl);
+      res.redirect(redirectUrl);
     } catch (error: any) {
       console.error("Google OAuth Error:", error.response?.data || error.message);
       return next(

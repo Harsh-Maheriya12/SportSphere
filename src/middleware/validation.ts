@@ -18,10 +18,11 @@ export const validateRegister = [
       }
     }),
 
-  // Password: minimum 6 characters (will be hashed before storage)
-  body("password", "Password must be at least 6 characters").isLength({
-    min: 6,
-  }),
+  // Password: minimum 6 characters (optional for Google OAuth)
+  body("password")
+    .if((value: any, { req }: any) => req.body.authProvider !== "google")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
 
   // Role: must be one of the allowed values
   body("role", "Role is required")

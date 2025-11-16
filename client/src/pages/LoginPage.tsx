@@ -148,12 +148,12 @@ function LoginPage() {
               </button>
             </div>
             {/* Google Sign-In */}
-            {/* <div>
+            <div>
               <button
                 type="button"
                 onClick={() => {
                   setIsLoading(true);
-                  window.location.href = 'http://localhost:5000/api/auth/google';
+                  window.location.href = "/api/auth/google";
                 }}
                 disabled={isLoading}
                 className={`group relative w-full flex items-center justify-center py-3 px-4 border-transparent text-sm font-medium rounded-xl bg-black text-primary
@@ -168,14 +168,17 @@ function LoginPage() {
                   </>
                 ) : (
                   <>
-                    <img src={GoogleLogo} alt="Google" className="h-5 w-5 mr-3" />
+                    <img
+                      src={GoogleLogo}
+                      alt="Google"
+                      className="h-5 w-5 mr-3"
+                    />
                     <span className="text-primary">Sign in with Google</span>
                   </>
                 )}
               </button>
-            </div> */}
+            </div>
           </form>
-
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -202,6 +205,6 @@ function LoginPage() {
       </div>
     </div>
   );
-};
+}
 
 export default LoginPage;
