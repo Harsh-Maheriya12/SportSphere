@@ -20,13 +20,15 @@ export interface AuthResponse {
   };
 }
 
-// Register Response
 export interface RegisterResponse {
   success: boolean;
   message: string;
+  token?: string; // For Google OAuth auto-login
   user: {
+    id?: string;
     username: string;
     email: string;
     role: string;
+    verified?: boolean;
   };
 }

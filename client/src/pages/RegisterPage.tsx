@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Mail,
   Lock,
@@ -18,9 +18,12 @@ import {
   apiCheckUsername,
   apiRegister,
 } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { refreshAuth } = useAuth();
 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -41,6 +44,44 @@ function RegisterPage() {
   const [usernameStatus, setUsernameStatus] = useState<
     "checking" | "available" | "taken" | "idle"
   >("idle");
+  
+  // Google OAuth specific states
+  const [isGoogleOAuth, setIsGoogleOAuth] = useState(false);
+  const [googlePictureUrl, setGooglePictureUrl] = useState("");
+
+  // Check for Google OAuth flow on mount
+  useEffect(() => {
+    const oauth = searchParams.get("oauth");
+    console.log("RegisterPage - Checking OAuth param:", oauth);
+    
+    if (oauth === "google") {
+      const googleDataStr = sessionStorage.getItem("googleOAuthData");
+      console.log("RegisterPage - Google OAuth data from session:", googleDataStr);
+      
+      if (googleDataStr) {
+        try {
+          const googleData = JSON.parse(googleDataStr);
+          console.log("RegisterPage - Parsed Google data:", googleData);
+          
+          // Pre-fill email and skip to details step
+          setEmail(googleData.email);
+          setUsername(googleData.name.replace(/\s+/g, '').toLowerCase() || "");
+          setIsGoogleOAuth(true);
+          setGooglePictureUrl(googleData.picture || "");
+          setStep("details");
+          
+          console.log("RegisterPage - Set isGoogleOAuth to true, skipping to details");
+          
+          // Don't clear session storage immediately - keep it for verification
+          // sessionStorage.removeItem("googleOAuthData");
+        } catch (error) {
+          console.error("Error parsing Google OAuth data:", error);
+        }
+      } else {
+        console.log("RegisterPage - No Google OAuth data found in sessionStorage");
+      }
+    }
+  }, [searchParams]);
 
   // OTP Timer countdown
   useEffect(() => {
@@ -138,7 +179,8 @@ function RegisterPage() {
       return;
     }
 
-    if (!profilePhoto) {
+    // For Google OAuth, profile photo is optional (can use Google picture)
+    if (!isGoogleOAuth && !profilePhoto) {
       setError("Profile photo is required");
       return;
     }
@@ -154,20 +196,32 @@ function RegisterPage() {
       const data = await apiRegister(
         username,
         email,
-        password,
+        isGoogleOAuth ? "" : password, // No password for Google OAuth
         role,
         parseInt(age),
         gender,
         profilePhoto!,
-        proof
+        proof,
+        isGoogleOAuth ? "google" : "local" // Pass auth provider
       );
 
-      // Redirect to login on successful registration
       if (data.success) {
-        setSuccess("Registration successful! Redirecting to login...");
-        setTimeout(() => {
-          navigate("/login");
-        }, 2500);
+        // For Google OAuth, auto-login and redirect to dashboard
+        if (isGoogleOAuth && data.token && data.user) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+          refreshAuth(); // Update auth context immediately
+          setSuccess("Registration successful! Logging you in...");
+          setTimeout(() => {
+            navigate("/");
+          }, 1500);
+        } else {
+          // For local registration, redirect to login
+          setSuccess("Registration successful! Redirecting to login...");
+          setTimeout(() => {
+            navigate("/login");
+          }, 2500);
+        }
       }
     } catch (err: any) {
       setError(err.message);
@@ -397,6 +451,12 @@ function RegisterPage() {
                   className="w-full pl-10 pr-4 py-3 border border-border rounded-xl bg-muted text-muted-foreground"
                 />
               </div>
+              {isGoogleOAuth && (
+                <p className="text-xs text-green-500 mt-1 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Verified via Google
+                </p>
+              )}
             </div>
 
             {/* Username */}
@@ -422,30 +482,32 @@ function RegisterPage() {
               {renderUsernameFeedback()}
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-muted-foreground" />
+            {/* Password - Only for local registration */}
+            {!isGoogleOAuth && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <input
+                    type="password"
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-background text-foreground transition"
+                    required={!isGoogleOAuth}
+                    minLength={6}
+                    disabled={isLoading}
+                  />
                 </div>
-                <input
-                  type="password"
-                  placeholder="Create a strong password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-background text-foreground transition"
-                  required
-                  minLength={6}
-                  disabled={isLoading}
-                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  At least 6 characters
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                At least 6 characters
-              </p>
-            </div>
+            )}
 
             {/* Role */}
             <div>
@@ -546,8 +608,23 @@ function RegisterPage() {
             {/* Profile Photo */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Profile Photo <span className="text-destructive">*</span>
+                Profile Photo {!isGoogleOAuth && <span className="text-destructive">*</span>}
               </label>
+              
+              {isGoogleOAuth && googlePictureUrl && (
+                <div className="mb-3 flex items-center gap-3 p-3 bg-muted rounded-xl border border-border">
+                  <img 
+                    src={googlePictureUrl} 
+                    alt="Google profile" 
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground">Using Google profile picture</p>
+                    <p className="text-xs text-muted-foreground">You can upload a custom photo below (optional)</p>
+                  </div>
+                </div>
+              )}
+              
               <div className="relative">
                 <input
                   type="file"
@@ -556,7 +633,7 @@ function RegisterPage() {
                   className="hidden"
                   id="profilePhoto"
                   disabled={isLoading}
-                  required
+                  required={!isGoogleOAuth}
                 />
                 <label
                   htmlFor="profilePhoto"
@@ -564,7 +641,11 @@ function RegisterPage() {
                 >
                   <Upload className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm text-foreground">
-                    {profilePhoto ? profilePhoto.name : "Choose profile photo"}
+                    {profilePhoto 
+                      ? profilePhoto.name 
+                      : isGoogleOAuth 
+                        ? "Upload custom photo (optional)" 
+                        : "Choose profile photo"}
                   </span>
                 </label>
               </div>

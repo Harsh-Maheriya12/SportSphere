@@ -13,11 +13,11 @@ import {
 
 // Register a new user
 export const register = async (req: Request, res: Response) => {
-  const { username, email, password, role, age, gender } = req.body;
+  const { username, email, password, role, age, gender, authProvider = "local" } = req.body;
   const files = req.files as Express.Multer.File[];
 
   try {
-    // Verify email OTP was completed
+    // Verify email OTP was completed (or Google verified)
     const emailVerified = await isEmailVerified(email);
     if (!emailVerified) {
       res.json({ 
@@ -27,7 +27,11 @@ export const register = async (req: Request, res: Response) => {
       return;
     }
 
-    if (!files || files.length === 0) {
+    // For Google OAuth, profile photo is optional (can use Google picture)
+    // For local registration, profile photo is required
+    const isGoogleAuth = authProvider === "google";
+    
+    if (!isGoogleAuth && (!files || files.length === 0)) {
       res.json({ 
         success: false, 
         message: "Profile photo is required" 
@@ -35,10 +39,11 @@ export const register = async (req: Request, res: Response) => {
       return;
     }
 
-    const profilePhoto = files.find((file) => file.fieldname === "profilePhoto");
-    const proof = files.find((file) => file.fieldname === "proof");
+    const profilePhoto = files?.find((file) => file.fieldname === "profilePhoto");
+    const proof = files?.find((file) => file.fieldname === "proof");
 
-    if (!profilePhoto) {
+    // For local auth, profile photo is mandatory
+    if (!isGoogleAuth && !profilePhoto) {
       res.json({ 
         success: false, 
         message: "Profile photo is required" 
@@ -55,25 +60,41 @@ export const register = async (req: Request, res: Response) => {
       return;
     }
 
-    // Upload files to Cloudinary
-    const profilePhotoUrl = await uploadToCloudinary(profilePhoto.path, "profile-photos");
+    // Upload files to Cloudinary (if provided)
+    let profilePhotoUrl: string = "";
+    
+    if (profilePhoto) {
+      profilePhotoUrl = await uploadToCloudinary(profilePhoto.path, "profile-photos");
+    } else if (isGoogleAuth) {
+      // For Google OAuth without custom photo, use a default or fetch from Google
+      // We'll use a default placeholder - the frontend can fetch Google picture separately
+      profilePhotoUrl = "https://ui-avatars.com/api/?name=" + encodeURIComponent(username) + "&size=200&background=ff8c00&color=fff";
+    }
+    
     let proofUrl: string | undefined;
     if (proof) {
       proofUrl = await uploadToCloudinary(proof.path, "proof-documents");
     }
 
-    const newUser: IUser = new User({
+    // For Google OAuth, password is optional
+    const userData: any = {
       username,
       email,
-      password,
       role,
       age: parseInt(age),
       gender,
       profilePhoto: profilePhotoUrl,
       proof: proofUrl,
-      authProvider: "local",
+      authProvider: isGoogleAuth ? "google" : "local",
       verified: true,
-    });
+    };
+
+    // Only add password for local registration
+    if (!isGoogleAuth && password) {
+      userData.password = password;
+    }
+
+    const newUser: IUser = new User(userData);
 
     await newUser.save();
 
@@ -82,6 +103,30 @@ export const register = async (req: Request, res: Response) => {
       email: email.toLowerCase().trim(),
     });
 
+    // For Google OAuth users, auto-login by generating JWT token
+    if (isGoogleAuth) {
+      const token = jwt.sign(
+        { userId: newUser._id, role: newUser.role },
+        process.env.JWT_SECRET as string,
+        { expiresIn: "3h" }
+      );
+
+      res.json({
+        success: true,
+        message: "Registration successful!",
+        token,
+        user: {
+          id: newUser._id,
+          username: newUser.username,
+          email: newUser.email,
+          role: newUser.role,
+          verified: newUser.verified,
+        },
+      });
+      return;
+    }
+
+    // For local registration, redirect to login
     res.json({
       success: true,
       message: "User registered successfully. Please login to continue.",
@@ -142,8 +187,12 @@ export const login = async (req: Request, res: Response) => {
         verified: user.verified,
       },
     });
-  } catch (error) {
-    throw error;
+  } catch (error: any) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred during login. Please try again.",
+    });
   }
 };
 

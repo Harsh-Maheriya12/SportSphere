@@ -57,7 +57,8 @@ export const apiRegister = (
   age: number,
   gender: string,
   profilePhoto: File,
-  proof?: File | null
+  proof?: File | null,
+  authProvider?: string
 ): Promise<RegisterResponse> => {
   const formData = new FormData();
   formData.append("username", username);
@@ -67,6 +68,10 @@ export const apiRegister = (
   formData.append("age", age.toString());
   formData.append("gender", gender);
   formData.append("profilePhoto", profilePhoto);
+
+  if (authProvider) {
+    formData.append("authProvider", authProvider);
+  }
 
   if (proof) {
     formData.append("proof", proof);
