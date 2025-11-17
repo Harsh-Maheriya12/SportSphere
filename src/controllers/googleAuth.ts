@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import User from "../models/User";
 import AppError from "../utils/AppError";
+import UserEmailOtpVerification from "../models/UserEmailOtpVerification";
 
 /**
  * Step 1: Redirect user to Google OAuth 2.0 consent screen
@@ -102,7 +103,6 @@ export const googleCallback = asyncHandler(
 
       console.log('New user detected, creating verification record');
       // 4. New user - Mark email as verified and redirect to registration
-      const UserEmailOtpVerification = (await import("../models/UserEmailOtpVerification")).default;
       
       // Delete any existing OTP records for this email
       await UserEmailOtpVerification.deleteMany({ 
