@@ -21,6 +21,7 @@
     "emitDecoratorMetadata": true,
     "esModuleInterop": true, // This is critical for libraries like Express
     "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,  
     "outDir": "dist",
     "baseUrl": "."
   },
