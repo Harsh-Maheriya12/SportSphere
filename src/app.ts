@@ -38,12 +38,14 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 if (process.env.NODE_ENV === 'production') {
-  // Serve frontend in production
-  const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
-  app.use(express.static(clientBuildPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(clientBuildPath, 'index.html'));
-  });
+  
+  // // Serve frontend in production
+  // const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
+  // app.use(express.static(clientBuildPath));
+  // app.get('*', (req, res) => {
+  //   res.sendFile(path.resolve(clientBuildPath, 'index.html'));
+  // });
+
 } else {
     // Dev health check
     app.get("/", (req, res) => res.json({ status: "Development server is running" }));
