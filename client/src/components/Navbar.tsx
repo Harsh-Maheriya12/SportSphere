@@ -6,11 +6,13 @@ import {
   MapPin,
   Users,
   Trophy,
-  BookOpen,
+  PackagePlus,
   UserCircle,
   LogOut,
   Menu,
   X,
+  UserCog,
+  CalendarSearchIcon,
 } from "lucide-react";
 import Logo from "../assets/SportSphereLogo.jpg";
 
@@ -28,20 +30,17 @@ function Navbar() {
   };
 
   return (
-    <nav className="bg-sidebar text-sidebar-foreground shadow-lg w-full">
+    <nav className="bg-sidebar text-sidebar-foreground shadow-lg w-full sticky top-0 bg-black/20 backdrop-blur-md z-50">
       <div className="w-full">
-        <div className="relative flex items-center justify-between h-16 px-4">
+        <div className="relative flex items-center justify-between h-16 px-4 w-25">
           {/* Left: Logo */}
-          <div className="flex-shrink-0 flex items-center">
+          <div className="flex-shrink-0 flex items-center w-auto">
             <Link to="/" className="flex items-center">
               <img
                 src={Logo}
                 alt="SportSphere Logo"
-                className="h-8 w-auto mr-2 rounded-xl"
+                className="h-10 w-25 mr-2 rounded-xl"
               />
-              <span className="font-bold text-xl text-sidebar-primary">
-                SportSphere
-              </span>
             </Link>
           </div>
 
@@ -54,6 +53,7 @@ function Navbar() {
               <Home className="w-5 h-5 mr-1" />
               Home
             </Link>
+
             <Link
               to="/venues"
               className="text-sidebar-primary hover:bg-white/20 hover:text-primary px-3 py-2 rounded-xl flex items-center transition-colors"
@@ -61,6 +61,7 @@ function Navbar() {
               <MapPin className="w-5 h-5 mr-1" />
               Venues
             </Link>
+
             <Link
               to="/coaches"
               className="text-sidebar-primary hover:bg-white/20 hover:text-primary px-3 py-2 rounded-xl flex items-center transition-colors"
@@ -68,6 +69,7 @@ function Navbar() {
               <Users className="w-5 h-5 mr-1" />
               Coaches
             </Link>
+
             <Link
               to="/games"
               className="text-sidebar-primary hover:bg-white/20 hover:text-primary px-3 py-2 rounded-xl flex items-center transition-colors"
@@ -77,7 +79,7 @@ function Navbar() {
             </Link>
           </div>
 
-          {/* Right: Auth dropdown (desktop) */}
+          {/* Right: User dropdown (desktop) */}
           <div className="hidden md:flex items-center flex-shrink-0">
             {isAuthenticated ? (
               <div className="relative">
@@ -91,21 +93,43 @@ function Navbar() {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-card rounded-md shadow-lg py-1 z-20">
                     <Link
-                      to="/dashboard"
+                      to="/my-profile"
                       className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       <UserCircle className="w-5 h-5 mr-2" />
                       My Profile
                     </Link>
+
                     <Link
                       to="/my-bookings"
                       className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
-                      <BookOpen className="w-5 h-5 mr-2" />
+                      <CalendarSearchIcon className="w-5 h-5 mr-2" />
                       My Bookings
                     </Link>
+
+                    <Link
+                      to="/host-game"
+                      className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <PackagePlus className="w-5 h-5 mr-2" />
+                      Host Game
+                    </Link>
+
+                    {user?.role === "coach" && (
+                      <Link
+                        to="/coach-dashboard"
+                        className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <UserCog className="w-5 h-5 mr-2" />
+                        Coach Dashboard
+                      </Link>
+                    )}
+
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
@@ -126,34 +150,8 @@ function Navbar() {
                   <div className="flex items-center ">
                     <UserCircle className="w-5 h-5 mr-1" />
                     Account
-                    {/* Login/Sign Up */}
                   </div>
                 </Link>
-                {/* <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="text-sidebar-primary hover:bg-white/20 px-3 py-2 rounded-xl flex items-center transition-colors"
-                >
-                  <UserCircle className="w-5 h-5 mr-1" />
-                  Account
-                </button> */}
-                {/* {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-card rounded-md shadow-lg py-1 z-20">
-                    <Link
-                      to="/login"
-                      className="block px-4 py-2 text-card-foreground hover:bg-white/20 transition-colors"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      to="/register"
-                      className="block px-4 py-2 text-card-foreground hover:bg-muted transition-colors"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      Sign Up
-                    </Link>
-                  </div>
-                )} */}
               </div>
             )}
           </div>
@@ -188,6 +186,7 @@ function Navbar() {
                 Home
               </div>
             </Link>
+
             <Link
               to="/venues"
               className="block text-sidebar-primary hover:bg-sidebar-accent px-3 py-2 rounded-md transition-colors"
@@ -198,6 +197,7 @@ function Navbar() {
                 Venues
               </div>
             </Link>
+
             <Link
               to="/coaches"
               className="block text-sidebar-primary hover:bg-sidebar-accent px-3 py-2 rounded-md transition-colors"
@@ -208,6 +208,7 @@ function Navbar() {
                 Coaches
               </div>
             </Link>
+
             <Link
               to="/games"
               className="block text-sidebar-primary hover:bg-sidebar-accent px-3 py-2 rounded-md transition-colors"
@@ -218,29 +219,54 @@ function Navbar() {
                 Games
               </div>
             </Link>
+
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className="block text-sidebar-primary hover:text-primary px-3 py-2 rounded-md transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center ">
-                    <UserCircle className="w-5 h-5 mr-2" />
-                    My Profile
-                  </div>
-                </Link>
-
                 <Link
                   to="/my-bookings"
                   className="block text-sidebar-primary hover:text-primary px-3 py-2 rounded-md transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <div className="flex items-center ">
-                    <BookOpen className="w-5 h-5 mr-2" />
+                    <CalendarSearchIcon className="w-5 h-5 mr-2" />
                     My Bookings
                   </div>
                 </Link>
+
+                <Link
+                  to="/host-game"
+                  className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
+                  onClick={() => setIsUserMenuOpen(false)}
+                >
+                  <PackagePlus className="w-5 h-5 mr-2" />
+                  Host Game
+                </Link>
+
+                {user?.role === "coach" && (
+                  <Link
+                    to="/coach-dashboard"
+                    className="block text-sidebar-primary hover:bg-sidebar-accent px-3 py-2 rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center hover:text-primary">
+                      <Users className="w-5 h-5 mr-2" />
+                      Coach Dashboard
+                    </div>
+                  </Link>
+                )}
+
+                {isAuthenticated && (
+                  <Link
+                    to="/my-profile"
+                    className="block text-sidebar-primary hover:text-primary px-3 py-2 rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center ">
+                      <UserCircle className="w-5 h-5 mr-2" />
+                      My Profile
+                    </div>
+                  </Link>
+                )}
 
                 <button
                   onClick={handleLogout}
@@ -251,26 +277,17 @@ function Navbar() {
                 </button>
               </>
             ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="block text-sidebar-primary hover:text primary px-3 py-2 rounded-md transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center hover:text-primary">
-                    <UserCircle className="w-5 h-5 mr-1" />
-                    Account
-                    {/* Login/Sign Up */}
-                  </div>
-                </Link>
-                {/* <Link
-                  to="/register"
-                  className="block text-sidebar-primary hover:bg-sidebar-accent px-3 py-2 rounded-md transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Sign Up
-                </Link> */}
-              </>
+              // Login 
+              <Link
+                to="/login"
+                className="block text-sidebar-primary hover:text primary px-3 py-2 rounded-md transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <div className="flex items-center hover:text-primary">
+                  <UserCircle className="w-5 h-5 mr-1" />
+                  Account
+                </div>
+              </Link>
             )}
           </div>
         </div>

@@ -9,7 +9,11 @@ export interface IUser extends Document {
   username: string;
   email: string;
   password?: string; // The password is optional as it won't exist for OAuth users.
-  role: 'user' | 'coach' | 'venue' | 'admin';
+  role: 'user' | 'player' | 'venue-owner' | 'coach' | 'venue' | 'admin'; // NEED TO CHANGE THIS ( IMPORTANT ) 
+  age: number;
+  gender: "male" | "female" | "other";
+  profilePhoto: string;
+  proof?: string;
   authProvider: 'local' | 'google';
   providerId?: string; // The unique ID from an OAuth provider like Google.
   verified: boolean;
@@ -42,8 +46,30 @@ const UserSchema: Schema = new Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'coach', 'venue', 'admin'], // Validator: Restricts the value to this list.
+      enum: ['user', 'player', 'venue-owner', 'coach', 'venue', 'admin'], // Validator: Restricts the value to this list.
       default: 'user',
+      required: true,
+    },
+    age: {
+      type: Number,
+      required: true,
+      min: 13,
+      max: 120,
+    },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      required: true,
+    },
+    profilePhoto: {
+      type: String,
+      required: true,
+    },
+    proof: {
+      type: String,
+      required: function (this: IUser) {
+        return this.role === "coach" || this.role === "venue-owner";
+      },
     },
     authProvider: {
       type: String,

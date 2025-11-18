@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPassword from "./pages/ForgotPassword";
 import DashboardPage from "./pages/DashboardPage";
 import HomePage from "./pages/HomePage";
 import Venues from "./pages/Venues";
@@ -10,15 +11,18 @@ import Coaches from "./pages/Coaches";
 import Games from "./pages/Games";
 import MyBookings from "./pages/MyBookings";
 import MyVenues from "./pages/MyVenues";
+import MyProfile from "./pages/MyProfile";
 import HostGame from "./pages/HostGame";
 import CoachProfile from "./pages/CoachProfile";
-import Layout from "./components/Layout";
+import ManageCoachProfile from "./pages/coach/ManageCoachProfile";
+import ManageCoachBookings from "./pages/coach/ManageCoachBooking";
+import ManageCoachSlots from "./pages/coach/ManageCoachSlots";
 import OAuthSuccess from "./pages/OAuth2Success";
 import VenueDetails from "./pages/VenueDetails";
 import TimeSlotBooking from "./pages/TimeSlotBooking";
 
 
-// A component to protect routes that require authentication.
+// Protect routes requiring authentication
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -34,7 +38,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   return <>{children}</>;
 };
 
-// A component for public routes. If the user is logged in, it redirects them to the dashboard.
+// Redirect authenticated users away from auth pages
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -44,19 +48,23 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         Loading...
       </div>
     );
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
-// THE APP COMPONENT IS THE CENTRAL ROUTER
 const App: React.FC = () => {
   return (
-    <Layout>
-      <Routes>
-      {/* Home Route - Accessible to all */}
+    <Routes>
+      {/* Public routes */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/venues" element={<Venues />} />
+      <Route path="/coaches" element={<Coaches />} />
+      <Route path="/coach/:id" element={<CoachProfile />} />
+      <Route path="/games" element={<Games />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/oauth-success" element={<OAuthSuccess />} />
 
-      {/* Auth Routes - Only for non-authenticated users */}
+      {/* Auth routes (redirect if logged in) */}
       <Route
         path="/login"
         element={
@@ -74,19 +82,7 @@ const App: React.FC = () => {
         }
       />
 
-      {/* Public browsing routes */}
-      <Route path="/venues" element={<Venues />} />
-      <Route path="/venues/:id" element={<VenueDetails />} />
-      <Route path="/coaches" element={<Coaches />} />
-      <Route path="/coaches/:id" element={<CoachProfile />} />
-      <Route path="/games" element={<Games />} />
-      <Route path="/oauth-success" element={<OAuthSuccess />} />
-
-      {/* <Route path="/host-game/:id" element={<HostGame />} /> */}
-      <Route path="/venues/:id/book" element={<TimeSlotBooking />} />
-
-
-      {/* Protected Routes */}
+      {/* Protected routes (require authentication) */}
       <Route
         path="/dashboard"
         element={
@@ -96,10 +92,46 @@ const App: React.FC = () => {
         }
       />
       <Route
+        path="/coach-dashboard"
+        element={<Navigate to="/coach-dashboard/profile" replace />}
+      />
+      <Route
+        path="/coach-dashboard/profile"
+        element={
+          <ProtectedRoute>
+            <ManageCoachProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/coach-dashboard/slots"
+        element={
+          <ProtectedRoute>
+            <ManageCoachSlots />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/coach-dashboard/bookings"
+        element={
+          <ProtectedRoute>
+            <ManageCoachBookings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/my-bookings"
         element={
           <ProtectedRoute>
             <MyBookings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-profile"
+        element={
+          <ProtectedRoute>
+            <MyProfile />
           </ProtectedRoute>
         }
       />
@@ -120,10 +152,9 @@ const App: React.FC = () => {
         }
       />
 
-      {/* A catch-all route to redirect any unknown paths */}
+      {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Layout>
+    </Routes>
   );
 };
 

@@ -1,37 +1,34 @@
+// User
 export interface User {
   id: string;
   username: string;
   email: string;
   role: string;
+  age?: number;
+  gender?: string;
+  profilePhoto?: string;
+  proof?: string;
 }
 
-// This is the expected shape of the response from the login/register API endpoints.
+// Login Response
 export interface AuthResponse {
-    message: string;
-    token: string;
-    user: User;
+  success: boolean;
+  message: string;
+  token: string;
+  user: User & {
+    verified: boolean;
+  };
 }
 
-// Register response type
 export interface RegisterResponse {
-    message: string;
-    success: boolean;
-    user: {
-        username: string;
-        email: string;
-    };
-}
-
-// Venue related types
-export interface Venue {
-    _id: string;
-    name: string;
-    description?: string;
-    address: string;
-    city?: string;
-    sports: string[];
-    images?: string[];
-    pricePerHour: number;
-    amenities?: string[];
-    timeSlots?: string[];
+  success: boolean;
+  message: string;
+  token?: string; // For Google OAuth auto-login
+  user: {
+    id?: string;
+    username: string;
+    email: string;
+    role: string;
+    verified?: boolean;
+  };
 }
