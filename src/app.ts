@@ -1,5 +1,4 @@
-import express from "express";
-import cors from "cors";
+import express, { Express } from "express";import cors from "cors";
 import path from "path";
 import pinoHttp from "pino-http";
 import logger from "./config/logger";
@@ -7,12 +6,13 @@ import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import errorHandler from './middleware/errorHandler';
 import venueRoutes from "./routes/venueRoutes";
+import subVenueRoutes from "./routes/subVenueRoutes";
 import gameRoutes from "./routes/gameRoutes";
 import coachRoutes from "./routes/coachRoutes";
 import devtool from "./routes/developertools";
+import timeslotRoutes from "./routes/timeslotRoutes";
 
-const app = express();
-
+const app: Express = express();
 // Request logger
 app.use(pinoHttp({ logger }));
 
@@ -53,7 +53,8 @@ if (process.env.NODE_ENV === 'production') {
 app.use("/api/games", gameRoutes);
 app.use("/api/venues", venueRoutes);
 app.use("/api/coaches", coachRoutes);
-
+app.use("/api/subvenues", subVenueRoutes);
+app.use("/api/timeslots", timeslotRoutes);
 // Global error handler
 app.use(errorHandler);
 
