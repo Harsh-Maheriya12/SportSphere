@@ -1,5 +1,6 @@
 import express, { Express } from "express";import cors from "cors";
 import path from "path";
+import fs from 'fs';
 import pinoHttp from "pino-http";
 import logger from "./config/logger";
 import authRoutes from "./routes/authRoutes";
@@ -38,13 +39,19 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 if (process.env.NODE_ENV === 'production') {
-  
-  // // Serve frontend in production
-  // const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
-  // app.use(express.static(clientBuildPath));
-  // app.get('*', (req, res) => {
-  //   res.sendFile(path.resolve(clientBuildPath, 'index.html'));
-  // });
+
+  // Serve frontend in production. Vite outputs to `dist` by default.
+  const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res) => {
+    const indexPath = path.resolve(clientBuildPath, 'index.html');
+    if (!fs.existsSync(indexPath)) {
+      // Helpful log when deployment misses client build
+      logger.error({ msg: 'Client index.html not found', path: indexPath });
+      return res.status(500).json({ error: 'Client build missing on server. Please ensure client is built to client/dist.' });
+    }
+    res.sendFile(indexPath);
+  });
 
 } else {
     // Dev health check
