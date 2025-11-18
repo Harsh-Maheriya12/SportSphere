@@ -50,7 +50,7 @@ if (process.env.NODE_ENV === 'production') {
       logger.error({ msg: 'Client index.html not found', path: indexPath });
       return res.status(500).json({ error: 'Client build missing on server. Please ensure client is built to client/dist.' });
     }
-    res.sendFile(indexPath);
+    return res.sendFile(indexPath);
   });
 
 } else {
