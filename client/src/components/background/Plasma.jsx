@@ -86,7 +86,7 @@ export const Plasma = ({
   direction = 'forward',
   scale = 1,
   opacity = 1,
-  mouseInteractive = true
+  mouseInteractive = false
 }) => {
   const containerRef = useRef(null);
   const mousePos = useRef({ x: 0, y: 0 });
@@ -103,7 +103,7 @@ export const Plasma = ({
       webgl: 2,
       alpha: true,
       antialias: false,
-      dpr: Math.min(window.devicePixelRatio || 1, 2)
+      dpr: 1, // Control pixel for performance
     });
     const gl = renderer.gl;
     const canvas = gl.canvas;

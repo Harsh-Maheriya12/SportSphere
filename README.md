@@ -1,138 +1,212 @@
 # SportSphere: Full-Stack Sports Community Platform
 
-SportSphere is a full-stack, containerized application for a sports community. This monorepo contains the **backend API** (Node.js/Express) and the **frontend client** (React/Vite). The entire development environment is managed by Docker Compose.
+SportSphere is a full-stack, containerized application designed to connect players, venue owners, and coaches.  
+This monorepo contains the **backend API** (Node.js/Express + TypeScript) and the **frontend client** (React/Vite).  
+The entire development environment is managed using **Docker Compose**.
 
 ---
 
 ## Tech Stack
 
 ### Backend
-
-- **Node.js** with Express
+- Node.js + Express
 - TypeScript
-- MongoDB with Mongoose
-- JSON Web Tokens (JWT) for authentication
-- Pino for structured logging
-- express-validator for input validation
-- Jest & Supertest for testing
+- MongoDB + Mongoose
+- Authentication: JWT + Google OAuth 2.0
+- Logging: Pino
+- Validation: express-validator
+- Testing: Jest + Supertest
 
 ### Frontend
+- React 18 + TypeScript
+- Vite
+- React Router DOM v6
+- Tailwind CSS
+- Context API
+- Vitest + React Testing Library
 
-- React 18 with TypeScript & Vite
-- React Router DOM for client-side routing
-- React Context API for global state management
-- Tailwind CSS for styling
-- Vitest & React Testing Library for testing
-
-### Environment
-
-- Docker & Docker Compose for containerization and orchestration
-- concurrently to orchestrate multiple npm scripts.
+### Environment & DevOps
+- Docker & Docker Compose
+- Concurrently (for local non‑docker workflow)
 
 ---
 
-## 🛠 Setup & Running Instructions
-
-This project is fully containerized. You must have Docker Desktop installed and running on your system. You do not need to install MongoDB or Node.js on your local machine.
+## Setup & Running Instructions
 
 ### 1. Clone the Repository
-
 ```bash
 git clone https://github.com/<your-username>/SportSphere_new.git
 cd SportSphere_new
 ```
 
-### 2. Create the Environment File
+---
 
-This is a critical step. Create a file named `.env` in the root of the project. This file is ignored by Git and contains your secrets.
+## Environment Variables
 
-Copy the following into your new `.env` file:
+Create a `.env` file at the project root.
 
-```env
-# .env
-
-# This is the port the Express app will listen on INSIDE the container.
-# This should match the port mapping in docker-compose.yml.
-PORT=5000
-
-# This is the connection string for the Docker network.
-# 'mongo' is the service name of the database in docker-compose.yml.
-MONGO_URI=mongodb://mongo:27017/sportsphere
-
-# This must be a long, random, and secure string.
-# It is used to sign and verify authentication tokens.
-JWT_SECRET=your_long_random_secret_string_here
-
-# Set the node environment to development
-NODE_ENV=development
+### **Email SMTP (for OTP + notifications)**
+```
+SMTP_HOST=<host>
+SMTP_PORT=<port>
+SMTP_USER=<username>
+SMTP_PASS=<password>
+EMAIL_FROM=<noreply@example.com>
 ```
 
-### 3. Build and Run the Application
+### **Google OAuth**
+```
+GOOGLE_CLIENT_ID=<client-id>
+GOOGLE_CLIENT_SECRET=<secret>
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/auth/google/callback
+```
 
-With Docker Desktop running, execute the following command from the project's root directory. This command builds the images for the first time and starts all services.
+### **JWT**
+```
+JWT_SECRET=<your-secret>
+JWT_EXPIRES_IN=7d
+```
+
+These are required for email verification, login, and Google OAuth.
+
+---
+
+## Running the Application (Docker)
+
+With Docker Desktop running:
 
 ```bash
 docker-compose up --build
 ```
 
-### 4. Access the Application
-
-- **Frontend:** Open your browser to [http://localhost:5173](http://localhost:5173)
-- **Backend API:** The API is accessible at [http://localhost:8000](http://localhost:8000) (e.g., [http://localhost:8000/api/auth/login](http://localhost:8000/api/auth/login)). The Vite proxy ensures your frontend can make requests to this address without CORS issues.
-
----
-
-## Daily Workflow
-
-- To Start: `docker-compose up`
-- To Stop: `Ctrl + C` (in the terminal where it's running)
-- To Stop & Remove Containers: `docker-compose down`
+### Access:
+- **Frontend:** http://localhost:5173  
+- **Backend API:** http://localhost:8000  
 
 ---
 
-## 📂 Project Structure
+## Running Without Docker (Local Development)
 
-```plaintext
-SportSphere_new/
-├── client/                     # Frontend React Application (runs on port 5173)
-│   ├── src/
-│   │   ├── components/         # Reusable UI components (e.g., Layout.tsx)
-│   │   ├── context/            # Global state management (AuthContext.tsx)
-│   │   ├── pages/              # Top-level page components (HomePage.tsx, etc.)
-│   │   ├── services/           # API communication layer (api.ts)
-│   │   ├── tests/              # Frontend tests (e.g., setup.ts, .test.tsx files)
-│   │   ├── types/              # Shared frontend TypeScript types (index.ts)
-│   │   ├── App.tsx             # Main React router
-│   │   ├── index.css           # Global styles & Tailwind imports
-│   │   └── main.tsx            # React application entry point
-│   ├── .dockerignore           # Files to exclude from the frontend Docker image
-│   ├── Dockerfile.dev          # Recipe for building the frontend dev container
-│   ├── index.html              # Main HTML entry point for the React app
-│   ├── package.json            # Frontend dependencies and scripts (Vite, React)
-│   ├── postcss.config.cjs      # PostCSS configuration for Tailwind
-│   ├── tailwind.config.cjs     # Tailwind CSS configuration
-│   ├── tsconfig.json           # TypeScript configuration for the frontend app
-│   ├── tsconfig.node.json      # TypeScript helper config for Vite
-│   └── vite.config.ts          # Vite configuration (dev server, proxy)
-│
-├── src/                        # Backend Node.js/Express Application (runs on port 8000)
-│   ├── config/                 # Configuration (db.ts, logger.ts)
-│   ├── controllers/            # Business logic (userController.ts)
-│   ├── middleware/             # Express middleware (authMiddleware.ts, errorHandler.ts, etc.)
-│   ├── models/                 # Mongoose database models (User.ts)
-│   ├── routes/                 # Express routers (auth.ts, userRoutes.ts)
-│   ├── tests/                  # Backend tests (unit/, DB_test/, auth_test/)
-│   ├── types/                  # Backend TypeScript type extensions (express/index.d.ts)
-│   ├── app.ts                  # Express application setup (middleware, routes)
-│   └── server.ts               # Server entry point (connects to DB, starts server)
-│
-├── .dockerignore               # Files to exclude from the backend Docker image
-├── .env                        # Environment variables (MUST be in .gitignore)
-├── .gitignore                  # Files to be ignored by Git
-├── docker-compose.yml          # Orchestrates all services (client, server, db)
-├── Dockerfile.dev              # Recipe for building the backend dev container
-├── jest.config.js              # Jest configuration for backend tests
-├── package.json                # Backend dependencies & orchestrator scripts
-├── README.md                   # Project README
-└── tsconfig.json               # TypeScript configuration for the backend
+If you prefer running the project locally without Docker, follow this setup.
+
+### 1. Install Dependencies
+From the project root:
+
+```bash
+npm install
+cd client
+npm install
+cd ..
 ```
+
+### 2. Start Backend (Express + TypeScript)
+
+```bash
+npm run dev
+```
+
+This runs the backend using `ts-node-dev` with hot reload enabled.  
+Backend runs on **http://localhost:8000**.
+
+### 3. Start Frontend (React + Vite)
+
+Open a second terminal:
+
+```bash
+cd client
+npm run dev
+```
+
+This launches Vite on **http://localhost:5173**.
+
+---
+
+## Vite Proxy Configuration (client/vite.config.ts)
+
+The Vite config is set up to proxy API calls from the frontend to the backend to avoid CORS issues:
+
+```ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+});
+```
+
+This means any request like:
+
+```ts
+fetch("/api/auth/login")
+```
+
+automatically forwards to:
+
+```
+http://localhost:8000/api/auth/login
+```
+
+allowing a smooth local development workflow.
+
+---
+
+## Workflow
+- Start: `docker-compose up`
+- Stop: `Ctrl + C`
+- Cleanup containers: `docker-compose down`
+
+---
+
+## Project Structure
+
+```
+SportSphere_new/
+├── client/                     # React Frontend (5173)
+│   ├── src/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── tests/
+│   │   ├── types/
+│   │   ├── App.tsx
+│   │   ├── index.css
+│   │   └── main.tsx
+│   ├── Dockerfile.dev
+│   ├── vite.config.ts
+│   └── package.json
+│
+├── src/                        # Backend API (8000)
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── tests/
+│   ├── types/
+│   ├── app.ts
+│   └── server.ts
+│
+├── docker-compose.yml
+├── Dockerfile.dev
+├── .env
+├── jest.config.js
+├── package.json
+└── tsconfig.json
+```
+
+---
+
+## Notes
+- You **do not need** to install MongoDB or Node locally — Docker handles everything.
+- The Vite dev server proxies API calls to the backend to avoid CORS issues.

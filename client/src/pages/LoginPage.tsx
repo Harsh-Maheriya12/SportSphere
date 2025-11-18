@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
+import GoogleLogo from "../assets/google.svg";
 
-const LoginPage: React.FC = () => {
+function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -52,7 +53,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         <div className="bg-card p-8 rounded-2xl shadow-lg">
-          {/* Error Message */}
+          {/* Error*/}
           {error && (
             <div className="mb-6 p-4 bg-destructive/20 border-l-4 border-destructive text-foreground rounded-lg flex items-center space-x-2">
               <div className="shrink-0 w-1 h-4 bg-destructive rounded-full" />
@@ -146,8 +147,38 @@ const LoginPage: React.FC = () => {
                 )}
               </button>
             </div>
+            {/* Google Sign-In */}
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLoading(true);
+                  window.location.href = "/api/auth/google";
+                }}
+                disabled={isLoading}
+                className={`group relative w-full flex items-center justify-center py-3 px-4 border-transparent text-sm font-medium rounded-xl bg-black text-primary
+                   hover:border-white/90 hover:border-2 box-border border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors mt-3
+                   ${isLoading ? "opacity-75 cursor-not-allowed" : ""}`}
+                aria-label="Sign in with Google"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-primary-foreground" />
+                    Redirecting...
+                  </>
+                ) : (
+                  <>
+                    <img
+                      src={GoogleLogo}
+                      alt="Google"
+                      className="h-5 w-5 mr-3"
+                    />
+                    <span className="text-primary">Sign in with Google</span>
+                  </>
+                )}
+              </button>
+            </div>
           </form>
-
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -174,6 +205,6 @@ const LoginPage: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default LoginPage;
