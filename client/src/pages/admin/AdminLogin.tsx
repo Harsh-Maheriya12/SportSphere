@@ -1,35 +1,36 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-// Admin credentials: prefer env variables, fallback to defaults for dev
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
+import { adminLogin } from '../../services/adminApi';
 
 const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     try {
-      // Hardcoded check (development-only). For production use seeded admin and proper auth.
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        const FAKE_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || 'hardcoded-admin-token';
-        localStorage.setItem('adminToken', FAKE_TOKEN);
-        localStorage.setItem('adminUser', JSON.stringify({ username: 'admin', email: ADMIN_EMAIL }));
-        navigate('/admin');
-        return;
-      }
+      const data = await adminLogin(email, password);
 
-      alert('Invalid admin credentials');
-    } catch (err) {
-      console.error(err);
-      alert('Login failed');
+      // Store the JWT token returned from backend
+      if (data.token) {
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminUser', JSON.stringify(data.user || { username: 'admin', email }));
+        navigate('/admin');
+      } else {
+        throw new Error('No token received from server');
+      }
+    } catch (err: any) {
+      console.error('Admin login error:', err);
+      // Handle axios error response
+      const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -45,6 +46,11 @@ const AdminLogin: React.FC = () => {
         </div>
 
         <div className="bg-card p-8 rounded-2xl shadow-lg">
+          {error && (
+            <div className="mb-4 p-3 bg-destructive/20 border border-destructive/50 text-destructive rounded-xl text-sm">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="admin-email" className="block text-sm font-medium text-foreground mb-1">Email</label>
@@ -84,8 +90,6 @@ const AdminLogin: React.FC = () => {
               <button type="button" onClick={()=>{ localStorage.removeItem('adminToken'); localStorage.removeItem('adminUser'); alert('Cleared admin session'); }} className="text-sm text-muted-foreground">Clear admin session</button>
             </div>
           </form>
-
-          <p className="text-xs text-muted-foreground mt-4">Dev mode: admin email/password from env or defaults: {ADMIN_EMAIL} / {ADMIN_PASSWORD}</p>
         </div>
       </div>
     </div>

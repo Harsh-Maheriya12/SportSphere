@@ -48,4 +48,13 @@ export const getOverviewStats = async (token?: string | null) => {
   return res.data;
 };
 
+// Admin Authentication
+export const adminLogin = async (email: string, password: string) => {
+  const res = await axios.post(`${API_BASE}/api/admin/auth/loginAdmin`, {
+    email,
+    password,
+  });
+  return res.data;
+};
+
 export default {};
