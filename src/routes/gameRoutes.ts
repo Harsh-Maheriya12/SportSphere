@@ -21,6 +21,13 @@ import {
     completeGame
   } from "../controllers/gameControllers/postGame";
 
+import {
+  createJoinRequest,
+  approveJoinRequest,
+  rejectJoinRequest,
+  cancelJoinRequest
+} from "../controllers/gameControllers/joinRequestController";
+
 const router:ExpressRouter = Router();
 
 // Protected Routes
@@ -48,12 +55,37 @@ router.delete(
   leaveGame
 );
 
-// Public Routes
-// Get all games with optional filters (sport, venue, date, price, location)
-router.get("/", getGames);
+// Send join request
+router.post(
+  "/:gameId/join",
+  protect,
+  authorizeRoles("player"),
+  createJoinRequest
+);
 
-// Get single game details
-router.get("/:gameId", getGameById);
+// Approve join request
+router.patch(
+  "/:gameId/approve/:playerId",
+  protect,
+  authorizeRoles("player"),
+  approveJoinRequest
+);
+
+// Reject join request
+router.patch(
+  "/:gameId/reject/:playerId",
+  protect,
+  authorizeRoles("player"),
+  rejectJoinRequest
+);
+
+// Cancel your own pending join request
+router.delete(
+  "/:gameId/join/cancel-request",
+  protect,
+  authorizeRoles("player"),
+  cancelJoinRequest
+);
 
 // Get all bookings related to logged-in user
 router.get("/my-bookings", protect, getMyBookings);
@@ -73,5 +105,12 @@ router.post(
   authorizeRoles("player"),
   rateVenueAfterGame
 );
+
+// Public Routes
+// Get single game details
+router.get("/:gameId", getGameById);
+
+// Get all games with optional filters (sport, venue, date, price, location)
+router.get("/", getGames);
 
 export default router;
