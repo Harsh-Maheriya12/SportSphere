@@ -210,3 +210,38 @@ SportSphere_new/
 ## Notes
 - You **do not need** to install MongoDB or Node locally — Docker handles everything.
 - The Vite dev server proxies API calls to the backend to avoid CORS issues.
+
+---
+
+## Deploy Backend-only to Render (minimal changes)
+
+If you want Render to run only the backend (no client build), follow these minimal settings and commands.
+
+- Build command (Render service settings):
+  - `npm run build`
+    - This runs the repository root `build` script which compiles TypeScript to `dist`.
+- Start command (Render service settings):
+  - `npm start`
+    - This runs `node dist/server.js` (see `package.json` -> `start`).
+- Node version: pick a supported Node 18+ (Render default is fine). Ensure `PORT` is not hard-coded — the server reads `process.env.PORT || 8000`.
+- Environment variables: add the usual secrets on Render (e.g., `MONGO_URI`, `JWT_SECRET`, `SMTP_*`, etc.).
+
+Checklist before deploying
+- Ensure `package.json` root `build` is set to compile the server only (e.g. `tsc`).
+- Make sure the server does not attempt to serve client static files in production (the `src/app.ts` production block should be disabled/commented).
+- Push the `backend-deploy` branch and trigger a new deploy on Render.
+
+Quick git commands
+```bat
+cd d:\SE_my\SE_backend_deploy\SportSphere
+git add package.json src/app.ts
+git commit -m "Deploy: backend-only settings for Render"
+git push origin backend-deploy
+```
+
+If Render still attempts to build the `client` subfolder because you previously configured a different build command, update the Render Build Command to `npm run build` and clear the service cache (Render UI option) before redeploying.
+
+Troubleshooting
+- If the server fails to start because the port is in use or not provided, ensure Render's `PORT` env var is present (Render sets it automatically for web services).
+- If you accidentally built the client previously and see missing files errors, clear the build cache and re-deploy.
+

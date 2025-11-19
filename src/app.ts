@@ -39,19 +39,13 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 if (process.env.NODE_ENV === 'production') {
-
-  // Serve frontend in production. Vite outputs to `dist` by default.
-  const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
-  app.use(express.static(clientBuildPath));
-  app.get('*', (req, res) => {
-    const indexPath = path.resolve(clientBuildPath, 'index.html');
-    if (!fs.existsSync(indexPath)) {
-      // Helpful log when deployment misses client build
-      logger.error({ msg: 'Client index.html not found', path: indexPath });
-      return res.status(500).json({ error: 'Client build missing on server. Please ensure client is built to client/dist.' });
-    }
-    return res.sendFile(indexPath);
-  });
+  
+  // // Serve frontend in production
+  // const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
+  // app.use(express.static(clientBuildPath));
+  // app.get('*', (req, res) => {
+  //   res.sendFile(path.resolve(clientBuildPath, 'index.html'));
+  // });
 
 } else {
     // Dev health check

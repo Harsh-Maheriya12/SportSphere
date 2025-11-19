@@ -8,8 +8,7 @@
     "dev:server": "ts-node-dev --respawn --transpile-only -r dotenv/config src/server.ts",
     "dev:client": "npm run dev --prefix client",
     "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
-    "build": "npm --prefix client install --include=dev && npm --prefix client run build && tsc",
-    "build:fast": "npm --prefix client run build && tsc",
+    "build": "tsc",
     "test": "jest --detectOpenHandles --runInBand"
   },
   "dependencies": {
