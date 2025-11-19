@@ -218,7 +218,7 @@ function MyBookings() {
         {!loading && !error && bookingType === "coach" && filteredCoachBookings.length > 0 && (
           <div className="grid gap-4">
             {filteredCoachBookings.map((booking) => (
-              <BookingCard key={booking._id} booking={booking} userRole={user?.role == "player"? "player":"coach"} />
+              <BookingCard key={booking._id} booking={booking} userRole={user?.role === "player"? "player":"coach"} />
             ))}
           </div>
         )}
@@ -357,8 +357,6 @@ function MyBookings() {
                     <span className={`inline-block px-3 py-1.5 rounded-lg text-sm font-semibold ${
                       selectedVenueBooking.status === "confirmed" 
                         ? "bg-green-600/20 text-green-400" 
-                        : selectedVenueBooking.status === "pending"
-                        ? "bg-yellow-600/20 text-yellow-400"
                         : "bg-red-600/20 text-red-400"
                     }`}>
                       {selectedVenueBooking.status.toUpperCase()}

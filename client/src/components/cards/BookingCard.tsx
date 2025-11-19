@@ -37,7 +37,7 @@ interface BookingCardProps {
 function BookingCard({ booking, userRole }: BookingCardProps) {
 
   // Other User
-  const otherUser = userRole == "player" ? booking.coachId : booking.playerId;
+  const otherUser = userRole === "player" ? booking.coachId : booking.playerId;
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -50,7 +50,7 @@ function BookingCard({ booking, userRole }: BookingCardProps) {
   };
 
   return (
-    <div className="bg-card/80 backdrop-blur rounded-xl border border-primary/20 p-6 hover:shadow-lg transition-all group relative">
+    <div className="bg-card/80 backdrop-blur rounded-xl border border-primary/20 p-6 hover:shadow-lg transition-all group relative ">
       {/* Status - Top Right */}
       <div className="absolute top-4 right-4">
         {/* Accepted */}
@@ -129,7 +129,7 @@ function BookingCard({ booking, userRole }: BookingCardProps) {
             <p className="text-sm text-red-400 font-semibold mb-1">
               Reason for Rejection:
             </p>
-            <p className="text-sm text-red-300">{booking.rejectionReason}</p>
+            <p className="text-sm text-red-300 break-words">{booking.rejectionReason}</p>
           </div>
         </div>
       )}
@@ -141,7 +141,7 @@ function BookingCard({ booking, userRole }: BookingCardProps) {
             <p className="text-sm text-green-400 font-semibold mb-1">
               Booking Confirmed!
             </p>
-            <p className="text-sm text-green-300">
+            <p className="text-sm text-green-300 break-words">
               Your booking is confirmed. Don't forget to attend on time!
             </p>
           </div>

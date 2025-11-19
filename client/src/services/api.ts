@@ -1,6 +1,10 @@
 import { AuthResponse, RegisterResponse, User } from "../types/index";
 
-const BASE_URL = "/api";
+// Need to change base URL based on environment
+let BASE_URL = "https://sportsphere-f6f0.onrender.com";
+// if(process.env.NODE_ENV === "production") {
+//   BASE_URL = "https://sportsphere-f6f0.onrender.com";
+// }
 
 // Centralized request handler with auto JWT token and error handling
 const request = async <T>(
