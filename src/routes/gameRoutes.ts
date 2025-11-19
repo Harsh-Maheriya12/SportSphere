@@ -1,35 +1,46 @@
-import express from 'express';
-import {
-  createGame,
-  getGames,
-  joinGame,
-  approveRequest,
-  rejectRequest,
-} from '../controllers/gameControllers';
-import { protect } from '../middleware/authMiddleware';
-import { authorizeRoles, checkTimeSlotConflict, validateGameInput } from '../middleware/gameMiddleware';
+// src/routes/gameRoutes.ts
+import { Router } from "express";
+import { protect } from "../middleware/authMiddleware";
+import { authorizeRoles } from "../middleware/gameMiddleware";
+import type { Router as ExpressRouter } from "express";
 
+import { 
+  hostGame,
+  cancelGame,
+  leaveGame
+} from "../controllers/gameControllers/hostGame";
 
-const router = express.Router();
+import { getGameById } from "../controllers/gameControllers/getGames";
 
-// Fetch all open games
-router.get('/', protect, getGames);
+const router:ExpressRouter = Router();
 
-// Create a new game (only for authorized users)
+// Protected Routes
+// Host a game (only verified user, not venue owner)
 router.post(
-  '/',
+  "/host",
   protect,
-  validateGameInput, 
-  authorizeRoles('user'),
-  checkTimeSlotConflict,
-  createGame
+  authorizeRoles("player"),
+  hostGame
 );
 
-// Join a game (only for authorized users)
-router.post('/:id/join', protect, authorizeRoles('user'), joinGame);
+// Cancel hosted game
+router.patch(
+  "/:gameId/cancel",
+  protect,
+  authorizeRoles("player"),
+  cancelGame
+);
 
-// Approve or reject join requests (only for authorized users who are hosts)
-router.post('/:id/approve/:userId', protect, approveRequest);
-router.post('/:id/reject/:userId', protect, rejectRequest);
+// Leave game (after approval)
+router.delete(
+  "/:gameId/leave",
+  protect,
+  authorizeRoles( "player"),
+  leaveGame
+);
+
+// Public Routes
+// Get single game details
+router.get("/:gameId", getGameById);
 
 export default router;

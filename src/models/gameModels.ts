@@ -43,6 +43,7 @@ export interface IGame extends Document {
   joinRequests: IJoinRequest[]; // Array of join requests made by users.
   approxCostPerPlayer: number;
   status: 'Open' | 'Full' | 'Completed' | 'Cancelled' | 'NeedsHostAction'; // Current status of the game.
+  bookingStatus? : 'Booked' | 'NotBooked' ;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -112,6 +113,11 @@ const gameSchema = new Schema<IGame>(
       enum: ['Open', 'Full', 'Completed', 'Cancelled', 'NeedsHostAction'],
       default: 'Open',  // A new game starts as "Open" by default.
     },
+    bookingStatus: {
+      type: String,
+      enum: ['Booked', 'NotBooked'],
+      default: 'NotBooked'
+    }
   },
   { timestamps: true } // Automatically adds createdAt and updatedAt fields.
 );
