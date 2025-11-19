@@ -23,7 +23,8 @@ export interface IGame extends Document {
     coordinates: number[]; // [lng, lat]
   };
   approxCostPerPlayer: number;
-  status: 'Open' | 'Full' | 'Completed' | 'Cancelled'; // Current status of the game.
+  status: 'Open' | 'Full' | 'Completed' | 'Cancelled' | 'NeedsHostAction'; // Current status of the game.
+  bookingStatus? : 'Booked' | 'NotBooked' ;
   createdAt: Date;
 }
 
@@ -63,6 +64,11 @@ const gameSchema = new Schema<IGame>(
       enum: ['Open', 'Full', 'Completed', 'Cancelled'],
       default: 'Open',  // A new game starts as "Open" by default.
     },
+    bookingStatus: {
+      type: String,
+      enum: ['Booked', 'NotBooked'],
+      default: 'NotBooked'
+    }
   },
   { timestamps: true } // Automatically adds createdAt and updatedAt fields.
 );
