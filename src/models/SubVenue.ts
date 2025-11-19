@@ -1,4 +1,4 @@
-// src/models/SubVenue.ts
+// src/models/SubVenue.ts ***
 import mongoose, { Schema, Document } from "mongoose";
 import { SportsEnum } from "../constants/SportsEnum";
 
@@ -15,7 +15,7 @@ export interface ISubVenue extends Document {
   images?: string[];
 
   sports: ISubVenueSport[]; // sports playable here
-
+  price: number;   
   status: "active" | "inactive";
   createdAt: Date;
   updatedAt: Date;
@@ -32,7 +32,7 @@ const SubVenueSportSchema = new Schema<ISubVenueSport>(
 
 const SubVenueSchema = new Schema<ISubVenue>(
   {
-    venue: { type: Schema.Types.ObjectId, ref: "Venue", required: true, index: true },
+    venue: { type: Schema.Types.ObjectId, ref: "Venue", required: true },
 
     name: { type: String, required: true },
     description: String,
@@ -43,6 +43,8 @@ const SubVenueSchema = new Schema<ISubVenue>(
       required: true,
     },
 
+    price : { type: Number, required: true }, 
+
     status: {
       type: String,
       enum: ["active", "inactive"],
@@ -52,6 +54,6 @@ const SubVenueSchema = new Schema<ISubVenue>(
   { timestamps: true }
 );
 
-SubVenueSchema.index({ venue: 1 });
+//SubVenueSchema.index({ venue: 1 });
 
 export default mongoose.model<ISubVenue>("SubVenue", SubVenueSchema);

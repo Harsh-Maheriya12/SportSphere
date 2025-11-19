@@ -1,111 +1,239 @@
-// src/controllers/venueController.ts
 import { Request, Response } from "express";
-import { validationResult } from "express-validator";
-import mongoose from "mongoose";
+import SubVenue from "../models/SubVenue";
 import Venue from "../models/Venue";
+import { IUserRequest } from "../middleware/authMiddleware";
 
-// -----------------------------------------
-// CREATE VENUE
-// -----------------------------------------
-export const createVenue = async (req: Request, res: Response) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
+//Create Venue
+export const createVenue = async (req: IUserRequest, res: Response) => {
   try {
-    const owner = (req as any).user?._id;
-    if (!owner) {
-      return res.status(401).json({ message: "Unauthorized — no user found from token" });
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-
-    const {
-      name,
-      description,
-      address,
-      city,
-      latitude,
-      longitude,
-      capacity,
-      sports,
-      images,
-      pricePerHour,
-      amenities,
-    } = req.body;
-
-    if (!name || !address || !city || !pricePerHour) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    const newVenue = new Venue({
-      name,
-      description,
-      address,
-      city,
-      location: {
-        type: "Point",
-        coordinates: [parseFloat(longitude), parseFloat(latitude)],
-      },
-      capacity,
-      sports,
-      images,
-      pricePerHour,
-      amenities,
-      owner,
-    });
-
-    const savedVenue = await newVenue.save();
-    return res.status(201).json({
-      message: "Venue created successfully!",
-      venue: savedVenue,
-    });
-  } catch (error) {
-    console.error("Error creating venue:", error);
-    return res.status(500).json({ message: "Server error" });
+    const venue = await Venue.create({ ...req.body, owner: req.user._id });
+    return res.status(201).json({ success: true, venue });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// -----------------------------------------
-// GET ALL VENUES
-// -----------------------------------------
-export const getAllVenues = async (req: Request, res: Response) => {
+//Get All Venues
+export const getVenues = async (_req: Request, res: Response) => {
   try {
-    const venues = await Venue.find().populate("owner", "username email");
-    return res.status(200).json(venues);
-  } catch (error) {
-    console.error("Error fetching venues:", error);
-    return res.status(500).json({ message: "Server error" });
+    const venues = await Venue.find();
+    return res.status(200).json({ success: true, venues });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// -----------------------------------------
-// DELETE VENUE
-// -----------------------------------------
+//Get My Venues (for venue owner)
+export const getMyVenues = async (req: IUserRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const venues = await Venue.find({ owner: req.user._id });
+    return res.status(200).json({ success: true, venues });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//Get Venue By ID
+export const getVenueById = async (req: Request, res: Response) => {
+  try {
+    const venue = await Venue.findById(req.params.id);
+    if (!venue) {
+      return res.status(404).json({ success: false, message: "Venue not found" });
+    }
+    return res.status(200).json({ success: true, venue });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//Update Venue
+export const updateVenue = async (req: Request, res: Response) => {
+  try {
+    const venue = await Venue.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+
+    if (!venue) {
+      return res.status(404).json({ success: false, message: "Venue not found" });
+    }
+
+    return res.status(200).json({ success: true, venue });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//Delete Venue
 export const deleteVenue = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const venue = await Venue.findByIdAndDelete(req.params.id);
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid venue ID" });
-    }
-
-    const venue = await Venue.findById(id);
     if (!venue) {
-      return res.status(404).json({ message: "Venue not found" });
+      return res.status(404).json({ success: false, message: "Venue not found" });
     }
 
-    const user = (req as any).user;
-    const isOwner = user && venue.owner.toString() === user._id.toString();
-    const isAdmin = user && user.role === "admin";
+    // Optionally delete its subvenues too
+    await SubVenue.deleteMany({ venue: venue._id });
 
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: "Not authorized to delete this venue" });
-    }
-
-    await venue.deleteOne();
-    return res.status(200).json({ message: "Venue deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting venue:", error);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(200).json({ success: true, message: "Venue deleted successfully" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Helper function to update venue.sports based on its subvenues
+const updateVenueSports = async (venueId: string) => {
+  const subVenues = await SubVenue.find({ venue: venueId });
+
+  const sportsSet = new Set<string>();
+
+  subVenues.forEach((sv) => {
+    sv.sports.forEach((s) => sportsSet.add(s.name));
+  });
+
+  await Venue.findByIdAndUpdate(venueId, {
+    sports: Array.from(sportsSet),
+  });
+};
+
+//Create SubVenue
+export const createSubVenue = async (req: Request, res: Response) => {
+  try {
+    const { venue } = req.body;
+
+    const subVenue = await SubVenue.create(req.body);
+
+    // Auto-update venue.sports
+    await updateVenueSports(venue);
+
+    return res.status(201).json({ success: true, subVenue });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//Get SubVenues By Venue
+export const getSubVenuesByVenue = async (req: Request, res: Response) => {
+  try {
+    const subVenues = await SubVenue.find({ venue: req.params.venueId });
+
+    return res.status(200).json({ success: true, subVenues });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//Update SubVenue
+export const updateSubVenue = async (req: Request, res: Response) => {
+  try {
+    const subVenue = await SubVenue.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+
+    if (!subVenue) {
+      return res.status(404).json({ success: false, message: "SubVenue not found" });
+    }
+
+    // Auto-update venue sports
+    await updateVenueSports(subVenue.venue.toString());
+
+    return res.status(200).json({ success: true, subVenue });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//Delete SubVenue
+export const deleteSubVenue = async (req: Request, res: Response) => {
+  try {
+    const subVenue = await SubVenue.findByIdAndDelete(req.params.id);
+
+    if (!subVenue) {
+      return res.status(404).json({ success: false, message: "SubVenue not found" });
+    }
+
+    // Auto-update venue sports
+    await updateVenueSports(subVenue.venue.toString());
+
+    return res.status(200).json({ success: true, message: "SubVenue deleted successfully" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Rate/UpdateRating Venue
+export const rateVenue = async (req: Request, res: Response) => {
+  try {
+    const venueId = req.params.id;
+    const { userId, rating } = req.body;
+
+    if (!userId || !rating) {
+      return res.status(400).json({ success: false, message: "userId and rating are required" });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5" });
+    }
+
+    const venue = await Venue.findById(venueId);
+    if (!venue) {
+      return res.status(404).json({ success: false, message: "Venue not found" });
+    }
+
+    // Check if user already rated this venue
+    const existingRating = venue.ratings.find((r) => r.userId.toString() === userId);
+
+    if (existingRating) {
+      // Update user's existing rating
+      existingRating.rating = rating;
+    } else {
+      // Add a new rating entry
+      venue.ratings.push({ userId, rating });
+    }
+
+    // Recalculate venue average + totalRatings
+    const total = venue.ratings.reduce((sum, r) => sum + r.rating, 0);
+    venue.totalRatings = venue.ratings.length;
+    venue.averageRating = total / venue.totalRatings;
+
+    await venue.save();
+
+    return res.status(200).json({
+      success: true,
+      averageRating: venue.averageRating,
+      totalRatings: venue.totalRatings,
+      ratings: venue.ratings
+    });
+
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get Venue Ratings
+export const getVenueRatings = async (req: Request, res: Response) => {
+  try {
+    const venue = await Venue.findById(req.params.id);
+
+    if (!venue) {
+      return res.status(404).json({ success: false, message: "Venue not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      ratings: venue.ratings,
+      averageRating: venue.averageRating,
+      totalRatings: venue.totalRatings,
+    });
+
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+

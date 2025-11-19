@@ -17,7 +17,15 @@ import CoachProfile from "./pages/CoachProfile";
 import ManageCoachProfile from "./pages/coach/ManageCoachProfile";
 import ManageCoachBookings from "./pages/coach/ManageCoachBooking";
 import ManageCoachSlots from "./pages/coach/ManageCoachSlots";
+import ManageVenues from "./pages/venue-owner/ManageVenues";
+import ManageSubVenues from "./pages/venue-owner/ManageSubVenues";
+import ManageTimeSlots from "./pages/venue-owner/ManageTimeSlots";
 import OAuthSuccess from "./pages/OAuth2Success";
+import VenueDetails from "./pages/VenueDetails";
+import TimeSlotBooking from "./pages/TimeSlotBooking";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import Layout from "./components/Layout";
+
 
 // Protect routes requiring authentication
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
@@ -116,11 +124,49 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* Venue Owner Dashboard Routes */}
+      <Route
+        path="/venue-dashboard"
+        element={<Navigate to="/venue-dashboard/venues" replace />}
+      />
+      <Route
+        path="/venue-dashboard/venues"
+        element={
+          <ProtectedRoute>
+            <ManageVenues />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/venue-dashboard/subvenues"
+        element={
+          <ProtectedRoute>
+            <ManageSubVenues />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/venue-dashboard/slots"
+        element={
+          <ProtectedRoute>
+            <ManageTimeSlots />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/my-bookings"
         element={
           <ProtectedRoute>
             <MyBookings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/payment-success"
+        element={
+          <ProtectedRoute>
+            <PaymentSuccess />
           </ProtectedRoute>
         }
       />
@@ -148,6 +194,23 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
+
+      <Route 
+      path="/venue/:id" 
+      element={
+        // <ProtectedRoute>
+          <VenueDetails />
+        // </ProtectedRoute>
+      } />
+
+      <Route 
+      path="/venue/:id/book" 
+      element={
+        <ProtectedRoute>
+          <TimeSlotBooking />
+        </ProtectedRoute>
+      } />
+
 
       {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />

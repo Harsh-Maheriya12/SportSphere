@@ -361,3 +361,248 @@ export const apiGetMyCoachBookings = (): Promise<{
     method: "GET",
   });
 };
+
+// ============ Venue APIs ============
+
+// Get all venues
+export const apiGetAllVenues = (): Promise<{
+  success: boolean;
+  venues: any[];
+}> => {
+  return request("/venues", {
+    method: "GET",
+  });
+};
+
+// Get venue by ID
+export const apiGetVenueById = (id: string): Promise<{
+  success: boolean;
+  venue: any;
+}> => {
+  return request(`/venues/${id}`, {
+    method: "GET",
+  });
+};
+
+// Get subvenues for a venue
+export const apiGetSubVenuesByVenue = (venueId: string): Promise<{
+  success: boolean;
+  subVenues: any[];
+}> => {
+  return request(`/subvenues/venue/${venueId}`, {
+    method: "GET",
+  });
+};
+
+// Get time slots for a subvenue on a specific date
+export const apiGetSlotsForSubVenue = (
+  subVenueId: string,
+  date: string
+): Promise<{
+  success: boolean;
+  timeSlot?: any;
+  slots?: any[];
+}> => {
+  return request(`/timeslots/subvenue/${subVenueId}?date=${date}`, {
+    method: "GET",
+  });
+};
+
+// Book venue slot (direct booking)
+export const apiBookVenueSlot = (
+  subVenueId: string,
+  timeSlotDocId: string,
+  slotId: string,
+  sport: string
+): Promise<{
+  success: boolean;
+  url?: string;
+  bookingId?: string;
+  message?: string;
+}> => {
+  return request("/bookings/direct", {
+    method: "POST",
+    body: JSON.stringify({ subVenueId, timeSlotDocId, slotId, sport }),
+  });
+};
+
+// ============ Venue Owner APIs ============
+
+// Get my venues (for venue owners)
+export const apiGetMyVenues = (): Promise<{
+  success: boolean;
+  venues: any[];
+}> => {
+  return request("/venues/my-venues", {
+    method: "GET",
+  });
+};
+
+// Create venue (for venue owners)
+export const apiCreateVenue = (
+  name: string,
+  description: string,
+  phone: string,
+  address: string,
+  city: string,
+  state: string,
+  coordinates: [number, number],
+  amenities: string[],
+  images?: string[]
+): Promise<{
+  success: boolean;
+  venue: any;
+}> => {
+  return request("/venues", {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      description,
+      phone,
+      address,
+      city,
+      state,
+      location: {
+        type: "Point",
+        coordinates,
+      },
+      amenities,
+      images: images || [],
+    }),
+  });
+};
+
+// Update venue
+export const apiUpdateVenue = (
+  id: string,
+  updates: any
+): Promise<{
+  success: boolean;
+  venue: any;
+}> => {
+  return request(`/venues/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+};
+
+// Delete venue
+export const apiDeleteVenue = (id: string): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  return request(`/venues/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// Create subvenue
+export const apiCreateSubVenue = (
+  venueId: string,
+  name: string,
+  description: string,
+  sports: { name: string; minPlayers: number; maxPlayers: number }[],
+  images?: string[]
+): Promise<{
+  success: boolean;
+  subVenue: any;
+}> => {
+  return request("/subvenues", {
+    method: "POST",
+    body: JSON.stringify({
+      venue: venueId,
+      name,
+      description,
+      sports,
+      images: images || [],
+      status: "active",
+    }),
+  });
+};
+
+// Update subvenue
+export const apiUpdateSubVenue = (
+  id: string,
+  updates: any
+): Promise<{
+  success: boolean;
+  subVenue: any;
+}> => {
+  return request(`/subvenues/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+};
+
+// Delete subvenue
+export const apiDeleteSubVenue = (id: string): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  return request(`/subvenues/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// Generate time slots for a subvenue
+export const apiGenerateTimeSlots = (
+  subVenueId: string,
+  date: string
+): Promise<{
+  success: boolean;
+  timeSlot?: any;
+  message?: string;
+}> => {
+  return request("/timeslots/generate", {
+    method: "POST",
+    body: JSON.stringify({
+      subVenue: subVenueId,
+      date,
+    }),
+  });
+};
+
+// Update a specific time slot
+export const apiUpdateTimeSlot = (
+  slotId: string,
+  prices?: { [sport: string]: number },
+  status?: "available" | "booked" | "blocked",
+  bookedForSport?: string | null
+): Promise<{
+  success: boolean;
+  slot: any;
+  timeSlotId: string;
+}> => {
+  const body: any = {};
+  if (prices !== undefined) body.prices = prices;
+  if (status !== undefined) body.status = status;
+  if (bookedForSport !== undefined) body.bookedForSport = bookedForSport;
+
+  return request(`/timeslots/slot/${slotId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+};
+
+// Delete time slots for a subvenue on a specific date
+export const apiDeleteTimeSlots = (
+  subVenueId: string,
+  date: string
+): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  return request(`/timeslots/subvenue/${subVenueId}?date=${date}`, {
+    method: "DELETE",
+  });
+};
+
+// Get player's venue bookings
+export const apiGetMyVenueBookings = (): Promise<{
+  success: boolean;
+  bookings: any[];
+}> => {
+  return request("/bookings/my-bookings", {
+    method: "GET",
+  });
+};

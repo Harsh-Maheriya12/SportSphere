@@ -130,6 +130,17 @@ function Navbar() {
                       </Link>
                     )}
 
+                    {user?.role === "venue-owner" && (
+                      <Link
+                        to="/venue-dashboard"
+                        className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <UserCog className="w-5 h-5 mr-2" />
+                        Venue Dashboard
+                      </Link>
+                    )}
+
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
@@ -251,6 +262,19 @@ function Navbar() {
                     <div className="flex items-center hover:text-primary">
                       <Users className="w-5 h-5 mr-2" />
                       Coach Dashboard
+                    </div>
+                  </Link>
+                )}
+
+                {user?.role === "venue-owner" && (
+                  <Link
+                    to="/venue-dashboard"
+                    className="block text-sidebar-primary hover:bg-sidebar-accent px-3 py-2 rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center hover:text-primary">
+                      <UserCog className="w-5 h-5 mr-2" />
+                      Venue Dashboard
                     </div>
                   </Link>
                 )}
