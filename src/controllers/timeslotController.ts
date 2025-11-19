@@ -93,7 +93,7 @@ export const generateTimeSlots = async (req: Request, res: Response) => {
   }
 };
 
-//get slots for a subvenue + date
+//get slots for a subvenue + date 
 export const getSlotsForSubVenueDate = async (req: Request, res: Response) => {
   try {
     const { subVenueId } = req.params;
@@ -114,7 +114,7 @@ export const getSlotsForSubVenueDate = async (req: Request, res: Response) => {
     }
 
     const ts = await TimeSlot.findOne({ subVenue: subVenueId, date });
-
+      
     if (!ts) {
       return res.status(200).json({
         success: true,

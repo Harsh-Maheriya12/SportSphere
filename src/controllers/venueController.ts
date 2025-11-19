@@ -1,11 +1,15 @@
 import { Request, Response } from "express";
 import SubVenue from "../models/SubVenue";
 import Venue from "../models/Venue";
+import { IUserRequest } from "../middleware/authMiddleware";
 
 //Create Venue
-export const createVenue = async (req: Request, res: Response) => {
+export const createVenue = async (req: IUserRequest, res: Response) => {
   try {
-    const venue = await Venue.create(req.body);
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const venue = await Venue.create({ ...req.body, owner: req.user._id });
     return res.status(201).json({ success: true, venue });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
@@ -16,6 +20,19 @@ export const createVenue = async (req: Request, res: Response) => {
 export const getVenues = async (_req: Request, res: Response) => {
   try {
     const venues = await Venue.find();
+    return res.status(200).json({ success: true, venues });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//Get My Venues (for venue owner)
+export const getMyVenues = async (req: IUserRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const venues = await Venue.find({ owner: req.user._id });
     return res.status(200).json({ success: true, venues });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
