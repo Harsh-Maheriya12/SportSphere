@@ -12,6 +12,7 @@ import gameRoutes from "./routes/gameRoutes";
 import coachRoutes from "./routes/coachRoutes";
 import devtool from "./routes/developertools";
 import timeslotRoutes from "./routes/timeslotRoutes";
+import testLogin from './routes/testLogin';
 
 const app: Express = express();
 // Request logger
@@ -58,6 +59,8 @@ app.use("/api/venues", venueRoutes);
 app.use("/api/coaches", coachRoutes);
 app.use("/api/subvenues", subVenueRoutes);
 app.use("/api/timeslots", timeslotRoutes);
+// Debug/test routes (safe to remove later)
+app.use('/api', testLogin);
 // Global error handler
 app.use(errorHandler);
 
