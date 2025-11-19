@@ -1,6 +1,14 @@
 import { AuthResponse, RegisterResponse, User } from "../types/index";
 
-const BASE_URL = "/api";
+// Use Vite-provided API base if available, otherwise fall back to relative /api
+// Access Vite env via `import.meta.env.VITE_API_URL` (not `import.meta.VITE_API_URL`).
+const VITE_API = ((import.meta as any).env?.VITE_API_URL as string) || "";
+// `BASE_URL` is used by the request helper and keeps the existing behavior
+const BASE_URL = VITE_API ? VITE_API.replace(/\/$/, "") + "/api" : "/api";
+
+// `VITE_API_URL` is the origin/base (without the `/api` path). Components
+// that need to construct absolute URLs (e.g. OAuth callbacks) can use this.
+export const VITE_API_URL = VITE_API ? VITE_API.replace(/\/$/, "") : "";
 
 // Centralized request handler with auto JWT token and error handling
 const request = async <T>(
@@ -20,15 +28,25 @@ const request = async <T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  // Featch request
+  // Perform request
   const response = await fetch(`${BASE_URL}${url}`, { ...options, headers });
-  const data = await response.json();
+
+  // Safely parse JSON only when content-type indicates JSON
+  const contentType = response.headers.get("content-type") || "";
+  let data: any = null;
+  if (contentType.includes("application/json")) {
+    data = await response.json();
+  } else {
+    const text = await response.text();
+    // Throw with the text for easier debugging (this will be caught by caller)
+    throw new Error(`Expected JSON response but received ${response.status} ${response.statusText}: ${text.slice(0,400)}`);
+  }
 
   if (!response.ok) {
     let errorMessage = "An API error occurred";
-    if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+    if (data && data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
       errorMessage = data.errors[0].message || data.errors[0].msg;
-    } else if (data.message) {
+    } else if (data && data.message) {
       errorMessage = data.message;
     }
     throw new Error(errorMessage);
