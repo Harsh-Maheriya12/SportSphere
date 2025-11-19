@@ -398,7 +398,9 @@ function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Change this */}
+
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {venues.map((venue) => (
               <VenueCard
                 key={venue.id}
@@ -411,7 +413,7 @@ function HomePage() {
                 image={venue.image}
               />
             ))}
-          </div>
+          </div> */}
         </div>
       </section>
 
@@ -447,7 +449,7 @@ function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {games.map((game) => (
               <GameCard
                 key={game.id}
@@ -460,7 +462,7 @@ function HomePage() {
                 level={game.level}
               />
             ))}
-          </div>
+          </div> */}
         </div>
       </section>
 
@@ -470,7 +472,10 @@ function HomePage() {
           <h2 className="text-4xl sm:text-5xl font-black mb-6">
             {isAuthenticated && (
               <>
-                <h2>Keep Going <span className="text-primary mt-2">Champ !!!</span></h2>
+                <h2>
+                  Keep Going{" "}
+                  <span className="text-primary mt-2">Champ !!!</span>
+                </h2>
               </>
             )}
 
