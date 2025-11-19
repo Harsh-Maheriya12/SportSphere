@@ -16,7 +16,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: "http://localhost:5000", // Have to change this
+        target: "https://sportsphere-f6f0.onrender.com", // Have to change this
         changeOrigin: true,
         secure: false,
       },
