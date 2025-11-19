@@ -111,7 +111,6 @@ function Footer() {
                 </Link>
               </li>
               <li>
-                
                 <Link
                   to="/faq"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
