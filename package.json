@@ -12,10 +12,12 @@
     "test": "jest --detectOpenHandles --runInBand"
   },
   "dependencies": {
+    "@langchain/groq": "^1.0.1",
     "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
+    "country-state-city": "^3.2.1",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "express-async-handler": "^1.2.0",
@@ -39,6 +41,7 @@
     "@types/nodemailer": "^7.0.3",
     "@types/semver": "^7.7.1",
     "@types/supertest": "^6.0.2",
+    "baseline-browser-mapping": "^2.8.29",
     "concurrently": "^8.2.2",
     "jest": "^29.7.0",
     "mongodb-memory-server": "^9.1.6",

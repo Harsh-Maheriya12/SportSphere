@@ -1,6 +1,6 @@
 import { AuthResponse, RegisterResponse, User } from "../types/index";
 
-const BASE_URL = "/api";
+const BASE_URL = "http://localhost:5000/api";
 
 // Centralized request handler with auto JWT token and error handling
 const request = async <T>(

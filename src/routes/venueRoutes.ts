@@ -8,10 +8,14 @@ import {
   deleteVenue,
 } from "../controllers/venueController";
 import type { Router as ExpressRouter } from "express";
+import { protect } from "../middleware/authMiddleware";
+import { aiVenueSearch } from "../controllers/aiVenueSearchController";
+
+
 
 const router: ExpressRouter = Router();
 // Create venue
-router.post("/", createVenue);
+router.post("/", protect,createVenue);
 
 // Get all venues
 router.get("/", getVenues);
@@ -20,15 +24,18 @@ router.get("/", getVenues);
 router.get("/:id", getVenueById);
 
 // Update venue
-router.patch("/:id", updateVenue);
+router.patch("/:id",protect, updateVenue);
 
 // Delete venue
-router.delete("/:id", deleteVenue);
+router.delete("/:id",protect, deleteVenue);
 
 // Add a rating (or update existing)
-router.post("/:id/rate", rateVenue);
+router.post("/:id/rate",protect, rateVenue);
 
 // Get ratings for a venue
 router.get("/:id/ratings", getVenueRatings);
+
+// Search Venues
+router.post("/search", aiVenueSearch);
 
 export default router;

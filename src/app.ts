@@ -11,8 +11,12 @@ import gameRoutes from "./routes/gameRoutes";
 import coachRoutes from "./routes/coachRoutes";
 import devtool from "./routes/developertools";
 import timeslotRoutes from "./routes/timeslotRoutes";
+// import {aiVenueSearch} from "./controllers/aiVenueSearchController";
 
 const app: Express = express();
+
+
+
 // Request logger
 app.use(pinoHttp({ logger }));
 
@@ -32,6 +36,12 @@ app.use(express.json());
 // API routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/games", gameRoutes);
+app.use("/api/venues", venueRoutes);
+app.use("/api/coaches", coachRoutes);
+app.use("/api/subvenues", subVenueRoutes);
+app.use("/api/timeslots", timeslotRoutes);
+// app.use("/api", aiVenueSearch);
 
 if (process.env.NODE_ENV === 'development') {
   app.use("/api/dev", devtool);
@@ -50,11 +60,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Feature routes
-app.use("/api/games", gameRoutes);
-app.use("/api/venues", venueRoutes);
-app.use("/api/coaches", coachRoutes);
-app.use("/api/subvenues", subVenueRoutes);
-app.use("/api/timeslots", timeslotRoutes);
+
 // Global error handler
 app.use(errorHandler);
 
