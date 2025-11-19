@@ -1,33 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { apiGetAllVenues } from "../services/api";
+import { Venue } from "../types";
+import VenueCard from "../components/cards/VenueCard";
 
 function Venues() {
   const [search, setSearch] = useState("");
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Hardcoded sample data until backend is ready
-  const venues = [
-    {
-      id: 1,
-      name: "Elite Sports Arena",
-      location: "Bandra, Mumbai",
-      image:
-        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: 2,
-      name: "Green Turf Grounds",
-      location: "Andheri West",
-      image:
-        "https://images.unsplash.com/photo-1599058917212-d750089bc07d?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: 3,
-      name: "Prime Court Stadium",
-      location: "Lower Parel",
-      image:
-        "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=800&q=80",
-    },
-  ];
+  useEffect(() => {
+    const fetchVenues = async () => {
+      try {
+        setLoading(true);
+        const response = await apiGetAllVenues();
+        setVenues(response.venues);
+      } catch (err: any) {
+        setError(err.message || "Failed to load venues");
+        console.error("Error fetching venues:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVenues();
+  }, []);
 
   const filteredVenues = venues.filter((v) =>
     v.name.toLowerCase().includes(search.toLowerCase())
@@ -48,31 +46,40 @@ function Venues() {
         />
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center text-white/70 text-xl py-10">
+          Loading venues...
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="text-center text-red-400 text-xl py-10">
+          {error}
+        </div>
+      )}
+
       {/* Venues Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredVenues.map((venue) => (
-          <Link
-            to={`/venues/${venue.id}`}
-            key={venue.id}
-            className="bg-white/20 backdrop-blur rounded-2xl overflow-hidden shadow-md hover:scale-[1.02] transition cursor-pointer"
-          >
-            <img
-              src={venue.image}
-              alt={venue.name}
-              className="w-full h-48 object-cover"
+      {!loading && !error && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredVenues.map((venue) => (
+            <VenueCard
+              key={venue._id}
+              id={venue._id}
+              name={venue.name}
+              address={venue.address}
+              city={venue.city}
+              rating={venue.averageRating}
+              reviews={venue.totalRatings}
+              sports={venue.sports}
+              image={venue.images?.[0] || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"}
             />
+          ))}
+        </div>
+      )}
 
-            <div className="p-4">
-              <h2 className="text-2xl font-semibold text-white">
-                {venue.name}
-              </h2>
-              <p className="text-white/80">{venue.location}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {filteredVenues.length === 0 && (
+      {!loading && !error && filteredVenues.length === 0 && (
         <p className="text-white/70 mt-10 text-center text-xl">
           No venues found. Try another search.
         </p>

@@ -79,7 +79,7 @@ function VenueCard({
         )}
 
         {/* Link to venue details */}
-        <Link to={`/venues/${id}`}>
+        <Link to={`/venue/${id}`}>
           <Button className="button-style1">
             Book Now
           </Button>
