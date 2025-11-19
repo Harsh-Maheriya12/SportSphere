@@ -20,10 +20,15 @@ const app: Express = express();
 // Request logger
 app.use(pinoHttp({ logger }));
 
+
 // CORS config
+// Normalize CLIENT_ORIGIN (strip trailing slashes) to avoid exact-match CORS failures
+const rawClientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const clientOrigin = typeof rawClientOrigin === 'string' ? rawClientOrigin.replace(/\/+$/, '') : rawClientOrigin;
+
 const corsOptions = {
-  origin: 'http://localhost:5173',
-  optionsSuccessStatus: 200 ,
+  origin: clientOrigin,
+  optionsSuccessStatus: 200,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
