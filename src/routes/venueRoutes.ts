@@ -10,6 +10,10 @@ import {
   deleteVenue,
 } from "../controllers/venueController";
 import type { Router as ExpressRouter } from "express";
+import { protect } from "../middleware/authMiddleware";
+import { aiVenueSearch } from "../controllers/aiVenueSearchController";
+
+
 
 const router: ExpressRouter = Router();
 // Create venue
@@ -36,5 +40,7 @@ router.post("/:id/rate", protect, rateVenue);
 // Get ratings for a venue
 router.get("/:id/ratings", getVenueRatings);
 
+// Search Venues
+router.post("/search", aiVenueSearch);
 
 export default router;
