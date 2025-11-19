@@ -19,7 +19,7 @@ app.use(pinoHttp({ logger }));
 
 // CORS config
 const corsOptions = {
-  origin: 'http://localhost:5173',
+  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   optionsSuccessStatus: 200 ,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
