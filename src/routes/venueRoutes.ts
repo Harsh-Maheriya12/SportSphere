@@ -10,7 +10,6 @@ import {
   deleteVenue,
 } from "../controllers/venueController";
 import type { Router as ExpressRouter } from "express";
-import { protect } from "../middleware/authMiddleware";
 import { aiVenueSearch } from "../controllers/aiVenueSearchController";
 
 
