@@ -26,7 +26,8 @@
     "multer": "^2.0.2",
     "nodemailer": "^7.0.10",
     "pino": "^10.0.0",
-    "pino-http": "^11.0.0"
+    "pino-http": "^11.0.0",
+    "stripe": "19.2.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

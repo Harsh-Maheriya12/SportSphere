@@ -12,6 +12,8 @@ import coachRoutes from "./routes/coachRoutes";
 import devtool from "./routes/developertools";
 import timeslotRoutes from "./routes/timeslotRoutes";
 // import {aiVenueSearch} from "./controllers/aiVenueSearchController";
+import bookingRoutes from "./routes/bookingRoutes";
+import { stripeWebhook } from "./controllers/payment/stripeWebhook";
 
 const app: Express = express();
 
@@ -35,6 +37,12 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+app.post(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhook
+);
+
 // Parse JSON
 app.use(express.json());
 
@@ -47,6 +55,7 @@ app.use("/api/coaches", coachRoutes);
 app.use("/api/subvenues", subVenueRoutes);
 app.use("/api/timeslots", timeslotRoutes);
 // app.use("/api", aiVenueSearch);
+app.use("/api/bookings", bookingRoutes);
 
 if (process.env.NODE_ENV === 'development') {
   app.use("/api/dev", devtool);
