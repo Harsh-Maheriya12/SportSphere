@@ -14,6 +14,7 @@ import {
   Edit,
   X,
   KeyRound,
+  Ticket,
 } from "lucide-react";
 import {
   apiGetProfile,
@@ -476,6 +477,41 @@ function MyProfile() {
               </div>
             </>
           )}
+        </div>
+        
+        {/* Support Tickets Card */}
+        <div className="bg-card shadow-2xl rounded-2xl border border-border p-8 mb-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Ticket className="w-6 h-6 text-primary rounded-none" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">
+                Support Tickets
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Get help when you need it
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              View and manage your support tickets. Submit new tickets for assistance with any issues or questions you may have.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                to="/my-tickets"
+                className="flex-1 px-6 py-3 bg-primary text-secondary rounded-xl hover:border-white border-2 border-transparent hover:border-primary transition-colors shadow-md flex items-center justify-center gap-2 font-semibold"
+              >
+                <Ticket className="w-5 h-5" />
+                My Support Tickets
+              </Link>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Click "My Support Tickets" to view and manage all your support requests.
+            </p>
+          </div>
         </div>
 
         {/* Password Reset Card */}

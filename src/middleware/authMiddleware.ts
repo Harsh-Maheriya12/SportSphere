@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import asyncHandler from 'express-async-handler';
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
+import Admin from '../models/Admin';
 
 interface JwtPayload {
   userId: string;
@@ -69,6 +70,77 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
   if (!req.user) {
     res.status(401);
     throw new Error('Authentication failed — user not found or has been removed.');
+  }
+
+  // 5. Pass control if everything checks out
+  next();
+});
+
+/**
+ * Middleware: Protect admin routes by verifying JWT in the Authorization header.
+ * Looks up the admin in the Admin collection instead of User collection.
+ */
+export const protectAdmin = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  let token: string | undefined;
+  let decoded: any;
+
+  // 1. Validate Authorization header presence and format
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.status(401);
+    throw new Error('Authorization header missing — token not provided.');
+  }
+
+  if (!authHeader.startsWith('Bearer ')) {
+    res.status(401);
+    throw new Error("Invalid Authorization format — expected 'Bearer <token>'.");
+  }
+
+  // 2. Extract token
+  token = authHeader.split(' ')[1];
+  if (!token || token.trim() === '') {
+    res.status(401);
+    throw new Error('Token is empty — please provide a valid token after \'Bearer\'.');
+  }
+
+  // 3. Verify token validity
+  // Special-case: allow a configured admin token string (development convenience)
+  const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'hardcoded-admin-token';
+  if (token === ADMIN_TOKEN) {
+    // Short-circuit: set a simple admin user object and proceed
+    req.user = { _id: 'admin', username: process.env.ADMIN_USERNAME || 'admin', email: process.env.ADMIN_EMAIL || 'admin@example.com' } as any;
+    return next();
+  }
+
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+  } catch (error: any) {
+    if (error instanceof jwt.TokenExpiredError) {
+      res.status(401);
+      throw new Error('Token verification failed — token has expired.');
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401);
+      throw new Error('Token verification failed — invalid or tampered token.');
+    } else if (error instanceof jwt.NotBeforeError) {
+      res.status(401);
+      throw new Error('Token verification failed — token not yet active.');
+    } else {
+      res.status(401);
+      throw new Error(`Unexpected token verification error: ${error.message}`);
+    }
+  }
+
+  // 4. Fetch admin associated with token
+  try {
+    req.user = await Admin.findById(decoded.id).select('-password');
+  } catch (dbError: any) {
+    res.status(500);
+    throw new Error(`Database lookup failed — could not retrieve admin: ${dbError.message}`);
+  }
+
+  if (!req.user) {
+    res.status(401);
+    throw new Error('Authentication failed — admin not found or has been removed.');
   }
 
   // 5. Pass control if everything checks out

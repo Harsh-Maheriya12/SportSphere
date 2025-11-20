@@ -25,6 +25,15 @@ import VenueDetails from "./pages/VenueDetails";
 import TimeSlotBooking from "./pages/TimeSlotBooking";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Layout from "./components/Layout";
+import FaqPage from "./pages/FaqPage";
+import AdminUsers from "./pages/admin/Users";
+import AdminCoaches from "./pages/admin/Coaches";
+import AdminVenueOwners from "./pages/admin/VenueOwners";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import Overview from "./pages/admin/Overview";
+import AdminTickets from "./pages/admin/Tickets";
+import MyTickets from "./pages/MyTickets";
 
 
 // Protect routes requiring authentication
@@ -68,6 +77,7 @@ const App: React.FC = () => {
       <Route path="/games" element={<Games />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/oauth-success" element={<OAuthSuccess />} />
+      <Route path="/faq" element={<FaqPage />} />
 
       {/* Auth routes (redirect if logged in) */}
       <Route
@@ -179,6 +189,14 @@ const App: React.FC = () => {
         }
       />
       <Route
+        path="/my-tickets"
+        element={
+          <ProtectedRoute>
+            <MyTickets />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/my-venues"
         element={
           <ProtectedRoute>
@@ -211,7 +229,15 @@ const App: React.FC = () => {
         </ProtectedRoute>
       } />
 
-
+       
+      {/* Admin pages */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
+      <Route path="/admin/coaches" element={<AdminProtectedRoute><AdminCoaches /></AdminProtectedRoute>} />
+      <Route path="/admin/venue-owners" element={<AdminProtectedRoute><AdminVenueOwners /></AdminProtectedRoute>} />
+      <Route path="/admin/tickets" element={<AdminProtectedRoute><AdminTickets /></AdminProtectedRoute>} />
+      <Route path="/admin" element={<AdminProtectedRoute><Overview /></AdminProtectedRoute>} />
+      
       {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

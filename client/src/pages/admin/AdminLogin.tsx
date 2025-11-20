@@ -1,0 +1,99 @@
+import React, { useState } from 'react';
+import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { adminLogin } from '../../services/adminApi';
+
+const AdminLogin: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const data = await adminLogin(email, password);
+
+      // Store the JWT token returned from backend
+      if (data.token) {
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminUser', JSON.stringify(data.user || { username: 'admin', email }));
+        navigate('/admin');
+      } else {
+        throw new Error('No token received from server');
+      }
+    } catch (err: any) {
+      console.error('Admin login error:', err);
+      // Handle axios error response
+      const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white/10 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-primary mb-2">SportSphere</h1>
+          <h2 className="text-2xl font-semibold text-foreground">Admin Console</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Sign in with your admin credentials</p>
+        </div>
+
+        <div className="bg-card p-8 rounded-2xl shadow-lg">
+          {error && (
+            <div className="mb-4 p-3 bg-destructive/20 border border-destructive/50 text-destructive rounded-xl text-sm">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="admin-email" className="block text-sm font-medium text-foreground mb-1">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <input id="admin-email" value={email} onChange={(e)=>setEmail(e.target.value)} className="appearance-none block w-full pl-10 pr-3 py-3 border-border rounded-xl placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-input text-foreground hover:border-primary hover:border-2 border-2 transition-colors" placeholder="admin@example.com" required />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="admin-password" className="block text-sm font-medium text-foreground mb-1">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <input id="admin-password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e)=>setPassword(e.target.value)} className="appearance-none block w-full pl-10 pr-10 py-3 border-border rounded-xl placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-input text-foreground hover:border-primary hover:border-2 border-2 transition-colors" placeholder="••••••••" required />
+                <button type="button" onClick={()=>setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <button type="submit" disabled={loading} className={`group relative w-full flex justify-center py-3 px-4 border-transparent text-sm font-medium rounded-xl text-primary-foreground bg-primary hover:border-white/90 hover:border-2 box-border border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-primary-foreground" />
+                    Signing in...
+                  </>
+                ) : ('Sign in')}
+              </button>
+            </div>
+
+            <div className="flex items-center justify-center">
+              <button type="button" onClick={()=>{ localStorage.removeItem('adminToken'); localStorage.removeItem('adminUser'); alert('Cleared admin session'); }} className="text-sm text-muted-foreground">Clear admin session</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminLogin;
