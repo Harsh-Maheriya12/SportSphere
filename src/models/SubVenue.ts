@@ -43,7 +43,7 @@ const SubVenueSchema = new Schema<ISubVenue>(
       required: true,
     },
 
-    price : { type: Number, required: true }, 
+    price : { type: Number }, 
 
     status: {
       type: String,
