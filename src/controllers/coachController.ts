@@ -131,17 +131,22 @@ export const createOrUpdateCoachDetail = async ( req: Request, res: Response ) =
     });
 
     if (existingDetail) {
-      // Update existing details
-      if (sportsArray.length > 0) existingDetail.sports = sportsArray;
-      if (description) existingDetail.description = description;
-      if (experience) existingDetail.experience = parseInt(experience);
-      if (pricing) existingDetail.pricing = parseFloat(pricing);
-
-      // Update location
-        if (city && city !== "") existingDetail.location.city = city;
-        if (state && state !== "") existingDetail.location.state = state;
-        if (country && country !== "") existingDetail.location.country = country;
-        if (address && address !== "") existingDetail.location.address = address;
+      if (sports !== undefined) {
+        existingDetail.sports = sportsArray; 
+      }
+      if (description !== undefined) {
+        existingDetail.description = description;
+      }
+      if (experience !== undefined) {
+        existingDetail.experience = parseInt(experience) || 0;
+      }
+      if (pricing !== undefined) {
+        existingDetail.pricing = parseFloat(pricing) || 0;
+      }
+      if (city !== undefined) existingDetail.location.city = city;
+      if (state !== undefined) existingDetail.location.state = state;
+      if (country !== undefined) existingDetail.location.country = country;
+      if (address !== undefined) existingDetail.location.address = address;
 
       // Append new photos to existing gallery (max 10)
       if (photoGallery.length > 0) {
@@ -162,7 +167,7 @@ export const createOrUpdateCoachDetail = async ( req: Request, res: Response ) =
       // Create new coach details
       const newDetail = new CoachDetail({
         coachId: req.user._id,
-        sports: sportsArray.length > 0 ? sportsArray : ["Not specified"],
+        sports: sportsArray.length > 0 ? sportsArray : [""],
         description: description || "",
         experience: parseInt(experience) || 0,
         pricing: parseFloat(pricing) || 0,

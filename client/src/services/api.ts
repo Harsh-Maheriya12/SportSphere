@@ -1,7 +1,7 @@
 import { AuthResponse, RegisterResponse, User } from "../types/index";
 
 // Need to change base URL based on environment
-let BASE_URL = "https://sportsphere-f6f0.onrender.com";
+let BASE_URL = "/api";
 // let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
 
 // if(process.env.NODE_ENV === "production") {
@@ -240,16 +240,16 @@ export const apiCreateOrUpdateCoachDetail = (
 ): Promise<{ success: boolean; message: string; coachDetail: any }> => {
   const formData = new FormData();
 
-  if (sports && sports.length > 0) {
+  if (sports !== undefined) {
     formData.append("sports", JSON.stringify(sports));
   }
-  if (description) formData.append("description", description);
+  if (description !== undefined) formData.append("description", description);
   if (experience !== undefined)
     formData.append("experience", experience.toString());
   if (pricing !== undefined) formData.append("pricing", pricing.toString());
-  if (city) formData.append("city", city);
-  if (state) formData.append("state", state);
-  if (country) formData.append("country", country);
+  if (city !== undefined) formData.append("city", city);
+  if (state !== undefined) formData.append("state", state);
+  if (country !== undefined) formData.append("country", country);
   if (address !== undefined) formData.append("address", address);
 
   if (photos && photos.length > 0) {
