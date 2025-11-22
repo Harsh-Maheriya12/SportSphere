@@ -1,4 +1,5 @@
-import express, { Express } from "express";import cors from "cors";
+import express, { Express } from "express";
+import cors from "cors";
 import path from "path";
 import pinoHttp from "pino-http";
 import logger from "./config/logger";
