@@ -5,3 +5,4 @@ client/.env
 dist
 .DS_Store
 .early.coverage
+.vercel

@@ -50,18 +50,23 @@ function CoachCard({ coach }: { coach: Coach }) {
 
       <div className="p-5 space-y-4">
         {/* Location */}
-        {coach.location && (coach.location.city || coach.location.state) && (
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="w-4 h-4 text-primary" />
-            <span>
-              {coach.location.city}, {coach.location.state},
-              {coach.location.country}
-            </span>
-          </div>
-        )}
+
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <MapPin className="w-4 h-4 text-primary" />
+          <span>
+            {coach.location.city}, {coach.location.state},
+            {coach.location.country}
+          </span>
+        </div>
 
         {/* Sports */}
         <div className="flex flex-wrap gap-2">
+          {coach.sports.length === 0 && (
+            <span className="px-3 py-1 bg-muted/50 text-muted-foreground text-xs font-semibold rounded-full border border-primary/10">
+              No sports listed
+            </span>
+          )}
+
           {coach.sports.slice(0, 3).map((sport, index) => (
             <span
               key={index}

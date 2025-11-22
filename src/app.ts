@@ -12,6 +12,8 @@ import coachRoutes from "./routes/coachRoutes";
 import devtool from "./routes/developertools";
 import timeslotRoutes from "./routes/timeslotRoutes";
 // import {aiVenueSearch} from "./controllers/aiVenueSearchController";
+import bookingRoutes from "./routes/bookingRoutes";
+import { stripeWebhook } from "./controllers/payment/stripeWebhook";
 
 const app: Express = express();
 
@@ -20,15 +22,26 @@ const app: Express = express();
 // Request logger
 app.use(pinoHttp({ logger }));
 
+
 // CORS config
+// Normalize CLIENT_ORIGIN (strip trailing slashes) to avoid exact-match CORS failures
+const rawClientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const clientOrigin = typeof rawClientOrigin === 'string' ? rawClientOrigin.replace(/\/+$/, '') : rawClientOrigin;
+
 const corsOptions = {
-  origin: 'http://localhost:5173',
-  optionsSuccessStatus: 200 ,
+  origin: clientOrigin,
+  optionsSuccessStatus: 200,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
+
+app.post(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhook
+);
 
 // Parse JSON
 app.use(express.json());
@@ -41,7 +54,7 @@ app.use("/api/venues", venueRoutes);
 app.use("/api/coaches", coachRoutes);
 app.use("/api/subvenues", subVenueRoutes);
 app.use("/api/timeslots", timeslotRoutes);
-// app.use("/api", aiVenueSearch);
+app.use("/api/bookings", bookingRoutes);
 
 if (process.env.NODE_ENV === 'development') {
   app.use("/api/dev", devtool);
@@ -49,11 +62,11 @@ if (process.env.NODE_ENV === 'development') {
 
 if (process.env.NODE_ENV === 'production') {
   // Serve frontend in production
-  const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
-  app.use(express.static(clientBuildPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(clientBuildPath, 'index.html'));
-  });
+  // const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
+  // app.use(express.static(clientBuildPath));
+  // app.get('*', (req, res) => {
+  //   res.sendFile(path.resolve(clientBuildPath, 'index.html'));
+  // });
 } else {
     // Dev health check
     app.get("/", (req, res) => res.json({ status: "Development server is running" }));

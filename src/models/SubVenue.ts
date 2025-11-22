@@ -1,4 +1,4 @@
-// src/models/SubVenue.ts
+// src/models/SubVenue.ts ***
 import mongoose, { Schema, Document } from "mongoose";
 import { SportsEnum } from "../constants/SportsEnum";
 
@@ -43,7 +43,7 @@ const SubVenueSchema = new Schema<ISubVenue>(
       required: true,
     },
 
-    price : { type: Number, required: true }, 
+    price : { type: Number }, 
 
     status: {
       type: String,
@@ -54,6 +54,6 @@ const SubVenueSchema = new Schema<ISubVenue>(
   { timestamps: true }
 );
 
-SubVenueSchema.index({ venue: 1 });
+//SubVenueSchema.index({ venue: 1 });
 
 export default mongoose.model<ISubVenue>("SubVenue", SubVenueSchema);

@@ -3,25 +3,29 @@ import { Link } from "react-router-dom";
 import { MapPin, Star } from "lucide-react";
 import  {Button}  from "../ui/button";
 
-interface Venue {
+interface VenueCardProps {
   id: string;
   name: string;
-  location: string;
-  rating: number;
-  reviews: number;
-  sports: string;
+  address?: string;
+  city?: string;
+  rating?: number;
+  reviews?: number;
+  sports: string[] | string;
   image?: string;
+  pricePerHour?: number;
 }
 
 function VenueCard({
   id,
   name,
-  location,
+  address,
+  city,
   rating,
   reviews,
   sports,
   image,
-}: Venue) {
+  pricePerHour,
+}: VenueCardProps) {
   return (
     <div className="group relative overflow-hidden rounded-xl border border-primary/20 hover:border-primary/60 transition-all">
       {/* Image */}
@@ -40,35 +44,42 @@ function VenueCard({
         {/* Location */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
           <MapPin className="w-4 h-4 text-primary" />
-          <span>{location}</span>
+          <span>{city ? `${city}` : ""}{address ? (city ? ` • ${address}` : address) : ""}</span>
         </div>
 
         {/* Rating */}
-        <div className="flex items-center gap-1 mb-3">
-          <div className="flex gap-0.5">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  i < Math.floor(rating)
-                    ? "fill-orange-500 text-orange-500"
-                    : "text-gray-600"
-                }`}
-              />
-            ))}
+        {typeof rating === "number" && (
+          <div className="flex items-center gap-1 mb-3">
+            <div className="flex gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < Math.floor(rating)
+                      ? "fill-orange-500 text-orange-500"
+                      : "text-gray-600"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {rating} {typeof reviews === "number" ? `(${reviews})` : ""}
+            </span>
           </div>
-          <span className="text-sm text-muted-foreground">
-            {rating} ({reviews})
-          </span>
-        </div>
+        )}
 
         {/* Sports */}
-        <p className="text-sm text-muted-foreground mb-4">{sports}</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          {Array.isArray(sports) ? sports.join(", ") : sports}
+        </p>
 
-        {/* Price Have to be added */}
+        {/* Price */}
+        {typeof pricePerHour === "number" && (
+          <p className="text-sm text-foreground mb-4">Price: ₹{pricePerHour}/hr</p>
+        )}
 
-        {/* This link should have to be updated*/}
-        <Link to="/venues">
+        {/* Link to venue details */}
+        <Link to={`/venue/${id}`}>
           <Button className="button-style1">
             Book Now
           </Button>

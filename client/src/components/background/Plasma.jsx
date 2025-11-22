@@ -103,7 +103,7 @@ export const Plasma = ({
       webgl: 2,
       alpha: true,
       antialias: false,
-      dpr: 1, // Control pixel for performance
+      dpr: 0.1, // Control pixel for performance
     });
     const gl = renderer.gl;
     const canvas = gl.canvas;

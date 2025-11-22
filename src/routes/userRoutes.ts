@@ -1,11 +1,15 @@
-import { Router } from 'express';
-import { getUserProfile } from '../controllers/userController';
-import { protect } from '../middleware/authMiddleware'; // IMPORT THE PROTECT MIDDLEWARE
+import { Router } from "express";
+import asyncHandler from "express-async-handler";
+import {
+  getUserProfile,
+  updateUserProfile,
+} from "../controllers/userController";
+import { protect } from "../middleware/authMiddleware";
+import { upload } from "../middleware/multer";
 
 const router = Router();
 
-// APPLY THE 'protect' MIDDLEWARE TO THIS ROUTE.
-// Any request to this endpoint must include a valid JWT in the Authorization header.
-router.route('/profile').get(protect, getUserProfile);
+router.get("/profile", protect, asyncHandler(getUserProfile));
+router.put("/profile", protect, upload, asyncHandler(updateUserProfile));
 
 export default router;

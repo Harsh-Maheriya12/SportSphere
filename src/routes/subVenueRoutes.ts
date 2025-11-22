@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { protect } from "../middleware/authMiddleware";
 import type { Router as ExpressRouter } from "express";
 import {
   createSubVenue,
@@ -9,15 +10,15 @@ import {
 
 const router: ExpressRouter = Router();
 // Create a subvenue
-router.post("/", createSubVenue);
+router.post("/", protect, createSubVenue);
 
 // Get all subvenues under a venue
 router.get("/venue/:venueId", getSubVenuesByVenue);
 
 // Update subvenue
-router.patch("/:id", updateSubVenue);
+router.patch("/:id", protect, updateSubVenue);
 
 // Delete subvenue
-router.delete("/:id", deleteSubVenue);
+router.delete("/:id", protect, deleteSubVenue);
 
 export default router;
