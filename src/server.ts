@@ -2,6 +2,7 @@ import app from './app';
 import { connectDB } from './config/db';
 import logger from './config/logger';
 import dotenv from "dotenv";
+import { initBookingCleanup } from './services/bookingCleanup';
 
 
 dotenv.config();// Load .env file
@@ -15,7 +16,10 @@ const startServer = async () => {
     // First establish a connection to the database.
     // The application will not start listening for requests until this is successful.
     await connectDB();
-    
+
+    // Initialize background jobs
+    initBookingCleanup();
+
     // Once the database is connected, start the Express server.
     app.listen(PORT, () => {
       logger.info(`Server running in ${process.env.NODE_ENV} mode on http://localhost:${PORT}`);

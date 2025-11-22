@@ -27,18 +27,14 @@ export const verifyPayment: RequestHandler = asyncHandler(async (req: IUserReque
     throw new AppError("Session ID is required", 400);
   }
 
-  console.log('🔍 Verifying payment for session:', sessionId);
-
   // Retrieve the session from Stripe
   const stripeClient = getStripe();
   const session = await stripeClient.checkout.sessions.retrieve(sessionId);
 
-  console.log('💳 Stripe session status:', session.payment_status);
-
   // Find the booking
-  const booking = await Booking.findOne({ 
+  const booking = await Booking.findOne({
     stripeSessionId: sessionId,
-    user: userId 
+    user: userId
   });
 
   if (!booking) {
@@ -51,8 +47,6 @@ export const verifyPayment: RequestHandler = asyncHandler(async (req: IUserReque
     booking.stripePaymentIntentId = session.payment_intent as string;
     await booking.save();
 
-    console.log('✅ Booking updated to Paid:', booking._id);
-
     res.json({
       success: true,
       message: 'Payment verified successfully',
@@ -61,19 +55,10 @@ export const verifyPayment: RequestHandler = asyncHandler(async (req: IUserReque
         status: booking.status,
       }
     });
-  } else if (session.payment_status === 'unpaid') {
-    res.json({
-      success: false,
-      message: 'Payment not completed',
-      booking: {
-        id: booking._id,
-        status: booking.status,
-      }
-    });
   } else {
     res.json({
       success: false,
-      message: 'Payment status unknown',
+      message: `Payment not completed. Status: ${session.payment_status}`,
       booking: {
         id: booking._id,
         status: booking.status,

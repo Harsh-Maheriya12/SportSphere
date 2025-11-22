@@ -432,6 +432,20 @@ export const apiBookVenueSlot = (
   });
 };
 
+// Retry payment for a booking
+export const apiRetryPayment = (
+  bookingId: string
+): Promise<{
+  success: boolean;
+  url: string;
+  bookingId: string;
+}> => {
+  return request("/bookings/retry", {
+    method: "POST",
+    body: JSON.stringify({ bookingId }),
+  });
+};
+
 // ============ Venue Owner APIs ============
 
 // Get my venues (for venue owners)
