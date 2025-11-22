@@ -1,8 +1,8 @@
 import { AuthResponse, RegisterResponse, User } from "../types/index";
 
 // Need to change base URL based on environment
-let BASE_URL = "https://sportsphere-f6f0.onrender.com";
-// let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
+// let BASE_URL = "https://sportsphere-f6f0.onrender.com";
+ let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
 
 // if(process.env.NODE_ENV === "production") {
   // let BASE_URL = "https://sportsphere-f6f0.onrender.com";
