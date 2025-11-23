@@ -48,7 +48,7 @@ interface VenueBooking {
   startTime: string;
   endTime: string;
   price: number;
-  status: "confirmed" | "cancelled";
+  status: "confirmed" | "cancelled" | "pending" | "failed";
   createdAt: string;
 }
 
@@ -125,21 +125,19 @@ function MyBookings() {
           <div className="flex gap-3 mb-4">
             <button
               onClick={() => setBookingType("coach")}
-              className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${
-                bookingType === "coach"
-                  ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
-                  : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
-              }`}
+              className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${bookingType === "coach"
+                ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
+                : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
+                }`}
             >
               Coach Bookings
             </button>
             <button
               onClick={() => setBookingType("venue")}
-              className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${
-                bookingType === "venue"
-                  ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
-                  : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
-              }`}
+              className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${bookingType === "venue"
+                ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
+                : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
+                }`}
             >
               Venue Bookings
             </button>
@@ -153,11 +151,10 @@ function MyBookings() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as typeof activeTab)}
-                className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${
-                  activeTab === tab
-                    ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
-                    : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
-                }`}
+                className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${activeTab === tab
+                  ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
+                  : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
+                  }`}
               >
                 <span className="capitalize">{tab}</span>
                 <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-xs">
@@ -218,7 +215,7 @@ function MyBookings() {
         {!loading && !error && bookingType === "coach" && filteredCoachBookings.length > 0 && (
           <div className="grid gap-4">
             {filteredCoachBookings.map((booking) => (
-              <BookingCard key={booking._id} booking={booking} userRole={user?.role === "player"? "player":"coach"} />
+              <BookingCard key={booking._id} booking={booking} userRole={user?.role === "player" ? "player" : "coach"} />
             ))}
           </div>
         )}
@@ -227,8 +224,8 @@ function MyBookings() {
         {!loading && !error && bookingType === "venue" && venueBookings.length > 0 && (
           <div className="grid gap-4">
             {venueBookings.map((booking) => (
-              <div 
-                key={booking._id} 
+              <div
+                key={booking._id}
                 className="bg-card/80 backdrop-blur rounded-xl border border-primary/20 p-6 hover:border-primary/40 transition cursor-pointer"
                 onClick={() => setSelectedVenueBooking(booking)}
               >
@@ -244,17 +241,19 @@ function MyBookings() {
                     <div className="flex flex-wrap gap-2 mb-2">
                       <span className="px-2 py-1 bg-primary/20 text-primary text-xs rounded">{booking.subVenue.name}</span>
                       <span className="px-2 py-1 bg-blue-600/20 text-blue-400 text-xs rounded">{booking.sport}</span>
-                      <span className="px-2 py-1 bg-green-600/20 text-green-400 text-xs rounded">₹{booking.price}</span>
+                      <span className="px-2 py-1 bg-green-600/20 text-green-400 text-xs rounded">{booking.price.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>📅 {new Date(booking.date).toLocaleDateString()}</span>
-                      <span>🕐 {new Date(booking.startTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })} - {new Date(booking.endTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}</span>
+                      <span>{new Date(booking.date).toLocaleDateString('en-IN', { timeZone: 'UTC' })}</span>
+                      <span>{new Date(booking.startTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: 'UTC' })} - {new Date(booking.endTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: 'UTC' })}</span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={`px-3 py-1 rounded-lg text-sm font-semibold ${
-                      booking.status === "confirmed" ? "bg-green-600/20 text-green-400" : "bg-red-600/20 text-red-400"
-                    }`}>
+                    <span className={`px-3 py-1 rounded-lg text-sm font-semibold ${booking.status === "confirmed" ? "bg-green-600/20 text-green-400" :
+                      booking.status === "pending" ? "bg-yellow-600/20 text-yellow-400" :
+                        booking.status === "failed" ? "bg-red-600/20 text-red-400" :
+                          "bg-red-600/20 text-red-400"
+                      }`}>
                       {booking.status}
                     </span>
                   </div>
@@ -266,11 +265,11 @@ function MyBookings() {
 
         {/* Venue Booking Details Modal */}
         {selectedVenueBooking && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             onClick={() => setSelectedVenueBooking(null)}
           >
-            <div 
+            <div
               className="bg-card/95 backdrop-blur-xl rounded-2xl border border-primary/30 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
@@ -322,11 +321,12 @@ function MyBookings() {
                     <div className="flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-purple-400" />
                       <p className="text-lg font-semibold text-foreground">
-                        {new Date(selectedVenueBooking.date).toLocaleDateString('en-US', { 
-                          weekday: 'short', 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
+                        {new Date(selectedVenueBooking.date).toLocaleDateString('en-IN', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          timeZone: 'UTC'
                         })}
                       </p>
                     </div>
@@ -337,9 +337,9 @@ function MyBookings() {
                     <div className="flex items-center gap-2">
                       <Clock className="w-5 h-5 text-orange-400" />
                       <p className="text-lg font-semibold text-foreground">
-                        {new Date(selectedVenueBooking.startTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                        {new Date(selectedVenueBooking.startTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: 'UTC' })}
                         {" - "}
-                        {new Date(selectedVenueBooking.endTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                        {new Date(selectedVenueBooking.endTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: 'UTC' })}
                       </p>
                     </div>
                   </div>
@@ -348,21 +348,43 @@ function MyBookings() {
                     <p className="text-sm text-muted-foreground mb-1">Amount Paid</p>
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-5 h-5 text-green-400" />
-                      <p className="text-lg font-semibold text-foreground">₹{selectedVenueBooking.price}</p>
+                      <p className="text-lg font-semibold text-foreground">{selectedVenueBooking.price.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</p>
                     </div>
                   </div>
 
                   <div className="bg-card/80 rounded-xl p-4 border border-primary/20">
                     <p className="text-sm text-muted-foreground mb-1">Status</p>
-                    <span className={`inline-block px-3 py-1.5 rounded-lg text-sm font-semibold ${
-                      selectedVenueBooking.status === "confirmed" 
-                        ? "bg-green-600/20 text-green-400" 
+                    <span className={`inline-block px-3 py-1.5 rounded-lg text-sm font-semibold ${selectedVenueBooking.status === "confirmed"
+                      ? "bg-green-600/20 text-green-400"
+                      : selectedVenueBooking.status === "pending"
+                        ? "bg-yellow-600/20 text-yellow-400"
                         : "bg-red-600/20 text-red-400"
-                    }`}>
+                      }`}>
                       {selectedVenueBooking.status.toUpperCase()}
                     </span>
                   </div>
                 </div>
+
+                {/* Retry Payment Button */}
+                {(selectedVenueBooking.status === "pending" || selectedVenueBooking.status === "failed") && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { apiRetryPayment } = await import("../services/api");
+                        const res = await apiRetryPayment(selectedVenueBooking._id);
+                        if (res.success && res.url) {
+                          window.location.href = res.url;
+                        }
+                      } catch (err) {
+                        console.error("Retry payment failed", err);
+                        alert("Failed to retry payment. The slot might be taken.");
+                      }
+                    }}
+                    className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold text-lg hover:bg-primary/90 transition shadow-lg shadow-primary/20"
+                  >
+                    Pay Now
+                  </button>
+                )}
 
                 {/* Booking ID */}
                 <div className="bg-muted/20 rounded-xl p-4">
@@ -372,9 +394,9 @@ function MyBookings() {
 
                 {/* Booked At */}
                 <div className="text-sm text-muted-foreground text-center pt-4 border-t border-primary/10">
-                  Booked on {new Date(selectedVenueBooking.createdAt).toLocaleString('en-US', { 
-                    dateStyle: 'medium', 
-                    timeStyle: 'short' 
+                  Booked on {new Date(selectedVenueBooking.createdAt).toLocaleString('en-US', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
                   })}
                 </div>
               </div>

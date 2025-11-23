@@ -20,9 +20,11 @@ function validatePipeline(pipeline: any): { ok: boolean; reason?: string } {
     if (typeof stage !== "object") return { ok: false, reason: "Invalid stage" };
     const raw = JSON.stringify(stage);
 
-    if (forbidden.some(f => raw.includes(f))) {
-      return { ok: false, reason: `Forbidden operator found: ${f}` };
+    const found = forbidden.find(f => raw.includes(f));
+    if (found) {
+      return { ok: false, reason: `Forbidden operator found: ${found}` };
     }
+
   }
 
   return { ok: true };

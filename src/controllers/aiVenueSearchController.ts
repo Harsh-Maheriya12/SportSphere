@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 
 const Venue = mongoose.model("Venue");
 
-export async function aiVenueSearch(req: Request, res: Response) {
+export async function aiVenueSearch(req: Request, res: Response){
   try {
     const { question } = req.body;
     if (!question) return res.status(400).json({ error: "question required" });
@@ -25,8 +25,8 @@ export async function aiVenueSearch(req: Request, res: Response) {
 
     const result = await Venue.aggregate(pipeline).exec();
 
-    res.json({ success: true, count: result.length, data: result });
+    return res.json({ success: true, count: result.length, data: result });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }

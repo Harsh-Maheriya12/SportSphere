@@ -1,17 +1,29 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import GoogleLogo from "../assets/google.svg";
 
 function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Check for error in URL params
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const errorMsg = params.get("error");
+    if (errorMsg) {
+      setError(decodeURIComponent(errorMsg));
+      // Clean up the URL
+      navigate("/login", { replace: true });
+    }
+  }, [location, navigate]);
 
   // Redirect if already logged in
   React.useEffect(() => {

@@ -38,9 +38,11 @@ export const redirectToGoogle = asyncHandler(
 export const googleCallback = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const code = req.query.code as string;
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const base = frontendUrl.replace(/\/+$/, '');
 
     if (!code) {
-      return next(new AppError("Authorization code missing", 400));
+      return res.redirect(`${base}/login?error=Login+Failed!+Please+Retry!`);
     }
 
     try {
@@ -78,7 +80,7 @@ export const googleCallback = asyncHandler(
       });
 
       if (!googleUser.email) {
-        return next(new AppError("Google account has no email", 400));
+        return res.redirect(`${base}/login?error=Google+account+has+no+email`);
       }
 
       // 3. Check if user already exists
@@ -93,8 +95,6 @@ export const googleCallback = asyncHandler(
           { expiresIn: "3h" }
         );
 
-        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-        const base = frontendUrl.replace(/\/+$/, '');
         const redirectUrl = `${base}/oauth-success?token=${encodeURIComponent(token)}`;
 
         console.log('Redirecting existing user to:', redirectUrl);
@@ -103,10 +103,10 @@ export const googleCallback = asyncHandler(
 
       console.log('New user detected, creating verification record');
       // 4. New user - Mark email as verified and redirect to registration
-      
+
       // Delete any existing OTP records for this email
-      await UserEmailOtpVerification.deleteMany({ 
-        email: googleUser.email.toLowerCase().trim() 
+      await UserEmailOtpVerification.deleteMany({
+        email: googleUser.email.toLowerCase().trim()
       });
 
       // Create a verified record (no actual OTP needed)
@@ -120,25 +120,17 @@ export const googleCallback = asyncHandler(
       await verifiedRecord.save();
 
       // Redirect to registration with Google data
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-      const base = frontendUrl.replace(/\/+$/, '');
-      
       // Ensure we have all required data
       const userName = googleUser.name || googleUser.email.split('@')[0];
       const userPicture = googleUser.picture || '';
-      
+
       const redirectUrl = `${base}/oauth-success?email=${encodeURIComponent(googleUser.email)}&name=${encodeURIComponent(userName)}&picture=${encodeURIComponent(userPicture)}&provider=google`;
 
       console.log('Redirecting new Google user to:', redirectUrl);
       res.redirect(redirectUrl);
     } catch (error: any) {
       console.error("Google OAuth Error:", error.response?.data || error.message);
-      return next(
-        new AppError(
-          "Failed to authenticate with Google. Please try again.",
-          500
-        )
-      );
+      return res.redirect(`${base}/login?error=Google+Auth+Failed`);
     }
   }
 );

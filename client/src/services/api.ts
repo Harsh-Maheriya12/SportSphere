@@ -1,8 +1,8 @@
 import { AuthResponse, RegisterResponse, User } from "../types/index";
 
 // Need to change base URL based on environment
-let BASE_URL = "/api";
-// let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
+// let BASE_URL = "/api";
+let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
 
 // if(process.env.NODE_ENV === "production") {
   // let BASE_URL = "https://sportsphere-f6f0.onrender.com";
@@ -429,6 +429,20 @@ export const apiBookVenueSlot = (
   return request("/bookings/direct", {
     method: "POST",
     body: JSON.stringify({ subVenueId, timeSlotDocId, slotId, sport }),
+  });
+};
+
+// Retry payment for a booking
+export const apiRetryPayment = (
+  bookingId: string
+): Promise<{
+  success: boolean;
+  url: string;
+  bookingId: string;
+}> => {
+  return request("/bookings/retry", {
+    method: "POST",
+    body: JSON.stringify({ bookingId }),
   });
 };
 
