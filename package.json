@@ -14,7 +14,7 @@
     "test:mutation": "stryker run"
   },
   "dependencies": {
-    "@langchain/groq": "^1.0.1",
+    "@radix-ui/react-tabs": "^1.1.13",
     "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.8.0",
@@ -27,13 +27,15 @@
     "framer-motion": "^12.23.24",
     "groq-sdk": "^0.36.0",
     "jsonwebtoken": "^9.0.2",
+    "lodash.debounce": "^4.0.8",
     "mongoose": "^8.19.2",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
     "pino": "^10.0.0",
     "pino-http": "^11.0.0",
-    "stripe": "19.2.0"
+    "stripe": "19.2.0",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^9.3.0",
@@ -44,6 +46,7 @@
     "@types/express-serve-static-core": "^5.1.0",
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.6",
+    "@types/lodash.debounce": "^4.0.9",
     "@types/multer": "^2.0.0",
     "@types/node": "^20.19.25",
     "@types/node-cron": "^3.0.11",

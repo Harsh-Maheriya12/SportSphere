@@ -8,7 +8,8 @@ import { useAuth } from "../context/AuthContext";
 import VenueCard from "../components/cards/VenueCard";
 import CoachCard from "../components/cards/CoachCard";
 import GameCard from "../components/cards/GameCard";
-import { apiGetAllCoaches } from "../services/api";
+import { apiGetAllCoaches, apiGetGames } from "../services/api";
+import { Game } from "../types";
 
 interface Coach {
   id: string;
@@ -31,6 +32,7 @@ function HomePage() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
 
   // Fetch coaches
   useEffect(() => {
@@ -46,84 +48,19 @@ function HomePage() {
     fetchCoaches();
   }, []);
 
-  // This have to be updated......
-  const venues = [
-    {
-      id: "1",
-      name: "Elite Sports Arena",
-      location: "Downtown, City",
-      rating: 4.8,
-      reviews: 245,
-      image: Logo,
-      sports: "Basketball, Volleyball",
-    },
-    {
-      id: "2",
-      name: "Green Field Complex",
-      location: "Suburb, City",
-      rating: 4.6,
-      reviews: 189,
-      image: Logo,
-      sports: "Football, Cricket",
-    },
-    {
-      id: "3",
-      name: "Fitness Hub Studio",
-      location: "Central, City",
-      rating: 4.9,
-      reviews: 312,
-      image: Logo,
-      sports: "Fitness, Training",
-    },
-    {
-      id: "2",
-      name: "Elite Sports Arena",
-      location: "Downtown, City",
-      rating: 4.8,
-      reviews: 245,
-      image: Logo,
-      sports: "Basketball, Volleyball",
-    },
-    {
-      id: "2",
-      name: "Elite Sports Arena",
-      location: "Downtown, City",
-      rating: 4.8,
-      reviews: 245,
-      image: Logo,
-      sports: "Basketball, Volleyball",
-    },
-  ];
+  // Fetch games
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const response = await apiGetGames();
+        setGames((response.games || []).slice(0, 3));
+      } catch (error) {
+        console.error("Failed to load games:", error);
+      }
+    };
 
-  const games = [
-    {
-      id: 1,
-      title: "Friendly Basketball Match",
-      sport: "Basketball",
-      date: "Today, 6:00 PM",
-      players: 8,
-      venue: "Elite Sports Arena",
-      level: "Intermediate",
-    },
-    {
-      id: 2,
-      title: "Sunday Football Game",
-      sport: "Football",
-      date: "Tomorrow, 10:00 AM",
-      players: 12,
-      venue: "Green Field Complex",
-      level: "Beginner",
-    },
-    {
-      id: 3,
-      title: "Competitive Badminton",
-      sport: "Badminton",
-      date: "Tomorrow, 7:30 PM",
-      players: 4,
-      venue: "Fitness Hub Studio",
-      level: "Advanced",
-    },
-  ];
+    fetchGames();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -449,20 +386,11 @@ function HomePage() {
             </p>
           </div>
 
-          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {games.map((game) => (
-              <GameCard
-                key={game.id}
-                id={game.id.toString()}
-                title={game.title}
-                sport={game.sport}
-                date={game.date}
-                venue={game.venue}
-                players={game.players}
-                level={game.level}
-              />
+              <GameCard key={game._id} game={game} onOpen={(id) => navigate(`/games/${id}`)} />
             ))}
-          </div> */}
+          </div>
         </div>
       </section>
 

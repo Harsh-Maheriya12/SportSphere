@@ -1,4 +1,4 @@
-import { AuthResponse, RegisterResponse, User } from "../types/index";
+import { AuthResponse, RegisterResponse, User, Game, JoinRequest, ApiResponse } from "../types/index";
 
 // Need to change base URL based on environment
 let BASE_URL = "/api";
@@ -636,4 +636,139 @@ export const apiSendChatMessage = (
     method: "POST",
     body: JSON.stringify({ message }),
   });
+};
+
+// ============ Game APIs ============
+
+// Host a new game
+export const apiHostGame = (
+  payload: {
+    sport: string;
+    venueId: string;
+    subVenueId: string;
+    timeSlotDocId: string;
+    slotId: string;
+    description: string;
+    playersNeeded: { min: number; max: number };
+  }
+): Promise<{ success: boolean; message: string; game: Game }> => {
+  return request(`/games/host`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+// cancel a hosted game(host only)
+export const apiCancelGame = (
+  gameId: string
+): Promise<{ success: boolean; message: string }> => {
+  return request(`/games/${gameId}/cancel`, {
+    method: "PATCH",
+  });
+};
+
+// Leave a game(approved player only)
+export const apiLeaveGame = (
+  gameId: string
+): Promise<{ success: boolean; message: string; status: string }> => {
+  return request(`/games/${gameId}/leave`, {
+    method: "DELETE",
+  });
+};
+
+// create a join request
+export const apiCreateJoinRequest = (
+  gameId: string
+): Promise<{ success: boolean; message: string }> => {
+  return request(`/games/${gameId}/join`, {
+    method: "POST",
+  });
+};
+
+// cancel a join request
+export const apiCancelJoinRequest = (
+  gameId: string
+): Promise<{ success: boolean; message: string }> => {
+  return request(`/games/${gameId}/join/cancel-request`, {
+    method: "DELETE",
+  });
+};
+
+// approve a join request (host only)
+export const apiApproveJoinRequest = (
+  gameId: string,
+  playerId: string
+): Promise<{ success: boolean; message: string; currentApprovedPlayers: number; status: string }> => {
+  return request(`/games/${gameId}/approve/${playerId}`, {
+    method: "PATCH",
+  });
+};
+
+// reject a join request (host only)
+export const apiRejectJoinRequest = (
+  gameId: string,
+  playerId: string
+): Promise<{ success: boolean; message: string }> => {
+  return request(`/games/${gameId}/reject/${playerId}`, {
+    method: "PATCH",
+  });
+};
+
+// complete a game (host only)
+export const apiCompleteGame = (
+  gameId: string
+): Promise<{ success: boolean; message: string }> => {
+  return request(`/games/${gameId}/complete`, {
+    method: "PATCH",
+  });
+};
+
+// rate venue after game
+export const apiRateVenue = (
+  gameId: string,
+  rating: number
+): Promise<{ success: boolean; message: string }> => {
+  return request(`/games/${gameId}/rate`, {
+    method: "POST",
+    body: JSON.stringify({ rating }),
+  });
+};
+
+// get game by id
+export const apiGetGameById = (
+  gameId: string
+): Promise<{ success: boolean; game: Game }> => {
+  return request(`/games/${gameId}`, {
+    method: "GET",
+  });
+};
+
+// get all available games with filters
+export const apiGetGames = (filters?: {
+  sport?: string;
+  venueId?: string;
+  startDate?: string;
+  endDate?: string;
+  lng?: number;
+  lat?: number;
+  radius?: number;
+}): Promise<{ success: boolean; games: Game[] }> => {
+  const params = new URLSearchParams(filters as any).toString();
+  return request(`/games?${params}`, { method: "GET" });
+};
+
+// get my bookings 
+export const apiGetMyBookings = (): Promise<{
+  success: boolean;
+  bookings: {
+    hosted: Game[];
+    joined: Game[];
+    pending: Game[];
+    rejected: Game[];
+    cancelled: Game[];
+    booked: Game[];
+    completed: Game[];
+  };
+}> => {
+  return request(`/games/my-bookings`, { method: "GET" });
 };
