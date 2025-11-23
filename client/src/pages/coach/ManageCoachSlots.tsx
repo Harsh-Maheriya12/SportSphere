@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { Calendar, Clock, Plus, Trash2, CheckCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -147,25 +148,15 @@ function ManageCoachSlots() {
     });
   };
 
+  if (user?.role !== "coach") {
+    const navigate = useNavigate();
+    navigate("/");
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-white/10 p-2">
       <CoachDashboardNav />
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-destructive/20 border-l-4 border-destructive text-foreground p-4 rounded-lg flex items-center space-x-2 mb-4">
-          <div className="shrink-0 w-1 h-4 bg-destructive rounded-full" />
-          <p className="text-sm font-medium">{error}</p>
-        </div>
-      )}
-
-      {/* Success Message */}
-      {success && (
-        <div className="bg-green-500/20 border-l-4 border-green-500 text-foreground p-4 rounded-lg flex items-center space-x-2 mb-4">
-          <CheckCircle className="w-4 h-4 text-green-500" />
-          <p className="text-sm font-medium">{success}</p>
-        </div>
-      )}
 
       <div className="bg-card p-6 rounded-xl shadow-sm border">
         <div className="space-y-6">
@@ -246,6 +237,22 @@ function ManageCoachSlots() {
               </Button>
             </form>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-destructive/20 border-l-4 border-destructive text-foreground p-4 rounded-lg flex items-center space-x-2 mb-4">
+              <div className="shrink-0 w-1 h-4 bg-destructive rounded-full" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="bg-green-500/20 border-l-4 border-green-500 text-foreground p-4 rounded-lg flex items-center space-x-2 mb-4">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <p className="text-sm font-medium">{success}</p>
+            </div>
+          )}
 
           {/* Slots List */}
           <div className="bg-card/80 backdrop-blur rounded-xl border border-primary/20 p-8">

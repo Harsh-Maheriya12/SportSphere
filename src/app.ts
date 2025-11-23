@@ -18,6 +18,7 @@ import adminCoachesRoutes from "./routes/adminCoaches";
 import adminVenueOwnersRoutes from "./routes/adminVenueOwners";
 import adminOverviewRoutes from "./routes/adminOverview";
 import ticketsRoutes from "./routes/tickets";
+import chatbotRoutes from "./routes/chatbotRoutes";
 // import {aiVenueSearch} from "./controllers/aiVenueSearchController";
 
 const app: Express = express();
@@ -51,6 +52,7 @@ app.use("/api/venues", venueRoutes);
 app.use("/api/coaches", coachRoutes);
 app.use("/api/subvenues", subVenueRoutes);
 app.use("/api/timeslots", timeslotRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 // app.use("/api", aiVenueSearch);
 
 if (process.env.NODE_ENV === 'development') {
