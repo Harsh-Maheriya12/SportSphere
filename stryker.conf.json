@@ -1,0 +1,22 @@
+{
+    "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+    "_comment": "This config was generated using 'stryker init'",
+    "packageManager": "npm",
+    "reporters": [
+        "html",
+        "clear-text",
+        "progress"
+    ],
+    "testRunner": "jest",
+    "testRunner_comment": "We use Jest as test runner",
+    "coverageAnalysis": "perTest",
+    "jest": {
+        "projectType": "custom",
+        "configFile": "jest.config.js",
+        "enableFindRelatedTests": true
+    },
+    "mutate": [
+        "src/controllers/authController.ts",
+        "src/controllers/googleAuth.ts"
+    ]
+}

@@ -16,28 +16,28 @@ import {
 } from "../controllers/authController";
 import { redirectToGoogle, googleCallback } from "../controllers/googleAuth";
 import { protect } from "../middleware/authMiddleware";
-import { Request , Response } from "express";
+import { Request, Response } from "express";
 
 const router = express.Router();
 
 // Registration and login
-router.post("/register", upload, validateRegister, asyncHandler(register)); 
-router.post("/login", asyncHandler(login)); 
+router.post("/register", upload, validateRegister, asyncHandler(register));
+router.post("/login", asyncHandler(login));
 
 // Username and email availability checks
 router.post("/check-username", asyncHandler(checkUsername));
-router.post("/check-email", asyncHandler(checkEmail)); 
+router.post("/check-email", asyncHandler(checkEmail));
 
 // Email verification flow ( using otp)
-router.post("/send-otp", asyncHandler(sendOtp)); 
-router.post("/verify-otp", asyncHandler(verifyOtpController)); 
-router.post("/resend-otp", asyncHandler(resendOtp)); 
+router.post("/send-otp", asyncHandler(sendOtp));
+router.post("/verify-otp", asyncHandler(verifyOtpController));
+router.post("/resend-otp", asyncHandler(resendOtp));
 
 // Password reset Using otp
-router.post("/password-reset/send-otp", asyncHandler(sendPasswordResetOtpController)); 
+router.post("/password-reset/send-otp", asyncHandler(sendPasswordResetOtpController));
 
 // Send otp
-router.post("/password-reset/verify-otp", asyncHandler(verifyPasswordResetOtpController)); 
+router.post("/password-reset/verify-otp", asyncHandler(verifyPasswordResetOtpController));
 
 // Verify Otp
 router.post("/password-reset/reset", asyncHandler(resetPassword));
@@ -61,7 +61,7 @@ router.get(
   "/me",
   protect,
   asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({ success: true, user: req.user });
+    res.status(200).json({ success: true, user: (req as any).user });
   })
 );
 
