@@ -11,7 +11,7 @@ import {
 } from "../controllers/venueController";
 import type { Router as ExpressRouter } from "express";
 import { aiVenueSearch } from "../controllers/aiVenueSearchController";
-
+import {getVenueOwnerDashboard} from "../controllers/venueDashboardController";
 
 
 const router: ExpressRouter = Router();
@@ -41,5 +41,7 @@ router.get("/:id/ratings", getVenueRatings);
 
 // Search Venues
 router.post("/search", aiVenueSearch);
+
+router.get("/:venueId/owner-dashboard-llm", protect, getVenueOwnerDashboard)
 
 export default router;

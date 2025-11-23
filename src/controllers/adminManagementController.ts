@@ -30,7 +30,10 @@ export const listUsers = asyncHandler(async (req: Request, res: Response) => {
 export const getUserById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = await User.findById(id).select('-password');
-  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+  if (!user) {
+    res.status(404).json({ success: false, message: 'User not found' });
+    return;
+  }
   res.json({ success: true, data: user });
 });
 
@@ -38,7 +41,10 @@ export const getUserById = asyncHandler(async (req: Request, res: Response) => {
 export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = await User.findById(id);
-  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+  if (!user) {
+    res.status(404).json({ success: false, message: 'User not found' });
+    return;
+  }
 
   // Use deleteOne for clarity
   await User.deleteOne({ _id: user._id });
@@ -71,7 +77,10 @@ export const listCoaches = asyncHandler(async (req: Request, res: Response) => {
 export const deleteCoach = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = await User.findById(id);
-  if (!user || user.role !== 'coach') return res.status(404).json({ success: false, message: 'Coach not found' });
+  if (!user || user.role !== 'coach') {
+    res.status(404).json({ success: false, message: 'Coach not found' });
+    return;
+  }
 
   // Delete user and related coach detail atomically where possible
   await User.deleteOne({ _id: user._id });
@@ -110,7 +119,10 @@ export const listVenueOwners = asyncHandler(async (req: Request, res: Response) 
 export const deleteVenueOwner = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = await User.findById(id);
-  if (!user || user.role !== 'venue-owner') return res.status(404).json({ success: false, message: 'Venue owner not found' });
+  if (!user || user.role !== 'venue-owner') {
+    res.status(404).json({ success: false, message: 'Venue owner not found' });
+    return;
+  }
 
   // Optionally reassign or remove venues - for now we'll delete user only
   await User.deleteOne({ _id: user._id });

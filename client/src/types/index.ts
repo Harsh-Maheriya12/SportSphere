@@ -103,3 +103,61 @@ export interface TimeSlot {
   createdAt: string;
   updatedAt: string;
 }
+
+// Game JoinRequest
+export interface JoinRequest {
+  user: string;
+  status: "pending" | "approved" | "rejected";
+  requestedAt: string;
+}
+
+// Game
+export interface Game {
+  _id: string;
+  host: string | { _id: string; username: string };
+  sport: string;
+  description: string;
+
+  venue: {
+    venueId: string;
+    city: string;
+    state?: string;
+    coordinates: {
+      type: "Point";
+      coordinates: [number, number];  // [lng, lat]
+    };
+  };
+
+  subVenue: {
+    subVenueId: string;
+    name: string;
+  };
+
+  slot: {
+    timeSlotDocId: string;
+    slotId: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    price: number;
+  };
+
+  playersNeeded: { min: number; max: number };
+  approvedPlayers: string[];
+  joinRequests: JoinRequest[];
+
+  approxCostPerPlayer: number;
+  status: "Open" | "Full" | "Completed" | "Cancelled";
+  bookingStatus?: "Booked" | "NotBooked";
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Generic API Response
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  game?: T;
+  games?: T[];
+  bookings?: any;
+}

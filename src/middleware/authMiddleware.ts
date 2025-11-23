@@ -61,13 +61,20 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
 
   // 4. Fetch user associated with token
   try {
-    req.user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.userId).select("-password");
+    
+    req.user = {
+      _id: user._id.toString(),   
+      role: user.role,
+      email: user.email,
+      username: user.username,
+    };
   } catch (dbError: any) {
     res.status(500);
     throw new Error(`Database lookup failed — could not retrieve user: ${dbError.message}`);
   }
 
-  if (!req.user) {
+  if (!(req as any).user) {
     res.status(401);
     throw new Error('Authentication failed — user not found or has been removed.');
   }
@@ -108,7 +115,7 @@ export const protectAdmin = asyncHandler(async (req: Request, res: Response, nex
   const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'hardcoded-admin-token';
   if (token === ADMIN_TOKEN) {
     // Short-circuit: set a simple admin user object and proceed
-    req.user = { _id: 'admin', username: process.env.ADMIN_USERNAME || 'admin', email: process.env.ADMIN_EMAIL || 'admin@example.com' } as any;
+    (req as any).user = { _id: 'admin', username: process.env.ADMIN_USERNAME || 'admin', email: process.env.ADMIN_EMAIL || 'admin@example.com' } as any;
     return next();
   }
 
@@ -132,13 +139,13 @@ export const protectAdmin = asyncHandler(async (req: Request, res: Response, nex
 
   // 4. Fetch admin associated with token
   try {
-    req.user = await Admin.findById(decoded.id).select('-password');
+    (req as any).user = await Admin.findById(decoded.id).select('-password');
   } catch (dbError: any) {
     res.status(500);
     throw new Error(`Database lookup failed — could not retrieve admin: ${dbError.message}`);
   }
 
-  if (!req.user) {
+  if (!(req as any).user) {
     res.status(401);
     throw new Error('Authentication failed — admin not found or has been removed.');
   }
