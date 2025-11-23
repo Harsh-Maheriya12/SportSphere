@@ -211,14 +211,20 @@ function CoachProfile() {
                     Specialties
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {coach.sports.map((sport, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20"
-                      >
-                        {sport}
+                    {coach.sports.length === 0 ? (
+                      <span className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20">
+                        No sports listed
                       </span>
-                    ))}
+                    ) : (
+                      coach.sports.map((sport, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20"
+                        >
+                          {sport}
+                        </span>
+                      ))
+                    )}
                   </div>
                 </div>
 

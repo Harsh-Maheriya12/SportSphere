@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User, Plus, X, Edit2, Save, CheckCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -123,9 +124,8 @@ function ManageCoachProfile() {
       setError("");
       setSuccess("");
 
-      // Save the updated details
       const response = await apiCreateOrUpdateCoachDetail(
-        sports.length > 0 ? sports : undefined,
+        sports,
         description,
         experience,
         pricing,
@@ -218,6 +218,13 @@ function ManageCoachProfile() {
   const totalPhotos =
     (coachDetail?.photoGallery?.length || 0) + selectedPhotos.length;
 
+
+    if(user?.role !== "coach") {
+     const navigate = useNavigate();
+     navigate('/');
+     return null;
+  }
+
   return (
     <div className="min-h-screen bg-white/10 p-2">
       <CoachDashboardNav />
@@ -287,22 +294,28 @@ function ManageCoachProfile() {
                 </label>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {sports.map((sport, index) => (
-                    <div
-                      key={index}
-                      className="px-4 py-2 bg-primary/8 border border-primary/25 rounded-full flex items-center gap-2 hover:bg-primary/12 transition-all"
-                    >
-                      <span className="text-sm font-medium">{sport}</span>
-                      {isEditing && (
-                        <button
-                          onClick={() => handleRemoveSport(index)}
-                          className="text-muted-foreground hover:text-destructive transition-colors rounded-xl"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  {sports.length === 0 ? (
+                    <span className="px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20">
+                      No sports listed
+                    </span>
+                  ) : (
+                    sports.map((sport, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20 flex items-center gap-2 hover:bg-primary/20 transition-all"
+                      >
+                        <span className="text-sm font-medium">{sport}</span>
+                        {isEditing && (
+                          <button
+                            onClick={() => handleRemoveSport(index)}
+                            className="text-muted-foreground hover:text-destructive transition-colors rounded-xl"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 {/* Add Sport Input */}
@@ -411,7 +424,11 @@ function ManageCoachProfile() {
                   <input
                     type="number"
                     value={experience === 0 ? "" : experience}
-                    onChange={(e) => setExperience(e.target.value === "" ? 0 : Number(e.target.value))}
+                    onChange={(e) =>
+                      setExperience(
+                        e.target.value === "" ? 0 : Number(e.target.value)
+                      )
+                    }
                     disabled={!isEditing}
                     min={0}
                     placeholder="Enter years of experience"
@@ -427,7 +444,11 @@ function ManageCoachProfile() {
                   <input
                     type="number"
                     value={pricing === 0 ? "" : pricing}
-                    onChange={(e) => setPricing(e.target.value === "" ? 0 : Number(e.target.value))}
+                    onChange={(e) =>
+                      setPricing(
+                        e.target.value === "" ? 0 : Number(e.target.value)
+                      )
+                    }
                     disabled={!isEditing}
                     min={0}
                     placeholder="Enter rate per session"

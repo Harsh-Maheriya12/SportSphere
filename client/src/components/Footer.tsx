@@ -112,12 +112,12 @@ function Footer() {
               </li>
               <li>
                 
-                <a
-                  href="#"
+                <Link
+                  to="/faq"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
                 <a

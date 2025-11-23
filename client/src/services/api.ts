@@ -1,11 +1,11 @@
 import { AuthResponse, RegisterResponse, User } from "../types/index";
 
 // Need to change base URL based on environment
-// let BASE_URL = "/api";
-let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
+let BASE_URL = "/api";
+// let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
 
 // if(process.env.NODE_ENV === "production") {
-//   let BASE_URL = "https://sportsphere-f6f0.onrender.com";
+  // let BASE_URL = "https://sportsphere-f6f0.onrender.com";
 // }
 
 // Centralized request handler with auto JWT token and error handling
@@ -240,16 +240,16 @@ export const apiCreateOrUpdateCoachDetail = (
 ): Promise<{ success: boolean; message: string; coachDetail: any }> => {
   const formData = new FormData();
 
-  if (sports && sports.length > 0) {
+  if (sports !== undefined) {
     formData.append("sports", JSON.stringify(sports));
   }
-  if (description) formData.append("description", description);
+  if (description !== undefined) formData.append("description", description);
   if (experience !== undefined)
     formData.append("experience", experience.toString());
   if (pricing !== undefined) formData.append("pricing", pricing.toString());
-  if (city) formData.append("city", city);
-  if (state) formData.append("state", state);
-  if (country) formData.append("country", country);
+  if (city !== undefined) formData.append("city", city);
+  if (state !== undefined) formData.append("state", state);
+  if (country !== undefined) formData.append("country", country);
   if (address !== undefined) formData.append("address", address);
 
   if (photos && photos.length > 0) {
@@ -432,6 +432,20 @@ export const apiBookVenueSlot = (
   });
 };
 
+// Retry payment for a booking
+export const apiRetryPayment = (
+  bookingId: string
+): Promise<{
+  success: boolean;
+  url: string;
+  bookingId: string;
+}> => {
+  return request("/bookings/retry", {
+    method: "POST",
+    body: JSON.stringify({ bookingId }),
+  });
+};
+
 // ============ Venue Owner APIs ============
 
 // Get my venues (for venue owners)
@@ -610,5 +624,16 @@ export const apiGetMyVenueBookings = (): Promise<{
 }> => {
   return request("/bookings/my-bookings", {
     method: "GET",
+  });
+};
+
+// Chatbot
+
+export const apiSendChatMessage = (
+  message: string
+): Promise<{ success: boolean; message: string }> => {
+  return request("/chatbot", {
+    method: "POST",
+    body: JSON.stringify({ message }),
   });
 };

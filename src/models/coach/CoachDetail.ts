@@ -27,48 +27,48 @@ const CoachDetailSchema: Schema = new Schema(
     },
     sports: {
       type: [String],
-      required: true,
+      default: [],
       validate: {
         validator: function (sports: string[]) {
-          return sports.length > 0 && sports.length <= 10;
+          return sports.length <= 10;
         },
-        message: "Must specify at least 1 sport and maximum 10 sports",
+        message: "Maximum 10 sports allowed",
       },
     },
     description: {
       type: String,
-      required: true,
+      // required: true,
       maxlength: 2000,
     },
     experience: {
       type: Number,
-      required: true,
+      // required: true,
       min: 0,
     },
     pricing: {
       type: Number,
-      required: true,
+      // required: true,
       min: 0,
     },
     location: {
       city: {
         type: String,
-        required: true,
+        // required: true,
         trim: true,
       },
       state: {
         type: String,
-        required: true,
+        //required: true,
         trim: true,
       },
       country: {
         type: String,
-        required: true,
+        // required: true,
         trim: true,
       },
       address: {
         type: String,
-        required: false,
+        // required: false,
         trim: true,
         default: "",
       },

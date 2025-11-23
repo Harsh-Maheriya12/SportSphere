@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import {
   Calendar,
@@ -159,6 +160,12 @@ function ManageCoachBookings() {
   };
 
   const pendingBookings = bookings.filter((b) => b.status === "pending"); // Show only pending bookings
+
+  if(user?.role !== "coach") {
+     const navigate = useNavigate();
+     navigate('/');
+     return null;
+  }
 
   return (
     <div className="min-h-screen bg-white/10 p-2 ">

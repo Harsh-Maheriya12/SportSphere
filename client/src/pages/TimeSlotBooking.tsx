@@ -100,7 +100,7 @@ export default function TimeSlotBooking() {
 
   const formatTime = (iso: string) => {
     const d = new Date(iso);
-    return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+    return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: 'IST' });
   };
 
   const handleBook = async (slot: Slot, subVenueId: string, subVenueName: string) => {
@@ -118,7 +118,6 @@ export default function TimeSlotBooking() {
 
     try {
       const response = await apiBookVenueSlot(subVenueId, slotData.timeSlotDocId, slot._id, selectedSport);
-      
       // Redirect to Stripe checkout
       if (response.url) {
         window.location.href = response.url;

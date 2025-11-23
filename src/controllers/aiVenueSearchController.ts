@@ -12,9 +12,8 @@ export async function aiVenueSearch(req: Request, res: Response){
     const pipeline = await getPipelineFromNL(question);
     
     // To Ensure $geoNear is the first stage
-
     const geoIndex = pipeline.findIndex((stage: any) => stage.$geoNear);
-        
+    
     if (geoIndex > -1 && geoIndex !== 0) {
       const geoStage = pipeline.splice(geoIndex, 1)[0];
       pipeline.unshift(geoStage);
@@ -25,7 +24,6 @@ export async function aiVenueSearch(req: Request, res: Response){
     pipeline.push({ $limit: 100 });
 
     const result = await Venue.aggregate(pipeline).exec();
-
 
     return res.json({ success: true, count: result.length, data: result });
   } catch (err: any) {
