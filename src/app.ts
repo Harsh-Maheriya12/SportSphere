@@ -80,8 +80,8 @@ if (process.env.NODE_ENV === 'production') {
   //   res.sendFile(path.resolve(clientBuildPath, 'index.html'));
   // });
 } else {
-    // Dev health check
-    app.get("/", (req, res) => res.json({ status: "Development server is running" }));
+  // Dev health check
+  app.get("/", (req, res) => res.json({ status: "Development server is running" }));
 }
 
 // Feature routes

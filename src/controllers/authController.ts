@@ -20,9 +20,9 @@ export const register = async (req: Request, res: Response) => {
     // Verify email OTP was completed (or Google verified)
     const emailVerified = await isEmailVerified(email);
     if (!emailVerified) {
-      res.json({ 
-        success: false, 
-        message: "Please verify your email with OTP before registering" 
+      res.status(400).json({
+        success: false,
+        message: "Please verify your email with OTP before registering"
       });
       return;
     }
@@ -30,11 +30,11 @@ export const register = async (req: Request, res: Response) => {
     // For Google OAuth, profile photo is optional (can use Google picture)
     // For local registration, profile photo is required
     const isGoogleAuth = authProvider === "google";
-    
+
     if (!isGoogleAuth && (!files || files.length === 0)) {
-      res.json({ 
-        success: false, 
-        message: "Profile photo is required" 
+      res.status(400).json({
+        success: false,
+        message: "Profile photo is required"
       });
       return;
     }
@@ -44,25 +44,25 @@ export const register = async (req: Request, res: Response) => {
 
     // For local auth, profile photo is mandatory
     if (!isGoogleAuth && !profilePhoto) {
-      res.json({ 
-        success: false, 
-        message: "Profile photo is required" 
+      res.status(400).json({
+        success: false,
+        message: "Profile photo is required"
       });
       return;
     }
 
     // Coach and venue-owner must provide proof document
     if ((role === "coach" || role === "venue-owner") && !proof) {
-      res.json({ 
-        success: false, 
-        message: "Proof document is required for coach and venue-owner roles" 
+      res.status(400).json({
+        success: false,
+        message: "Proof document is required for coach and venue-owner roles"
       });
       return;
     }
 
     // Upload files to Cloudinary (if provided)
     let profilePhotoUrl: string = "";
-    
+
     if (profilePhoto) {
       profilePhotoUrl = await uploadToCloudinary(profilePhoto.path, "profile-photos");
     } else if (isGoogleAuth) {
@@ -70,7 +70,7 @@ export const register = async (req: Request, res: Response) => {
       // We'll use a default placeholder - the frontend can fetch Google picture separately
       profilePhotoUrl = "https://ui-avatars.com/api/?name=" + encodeURIComponent(username) + "&size=200&background=ff8c00&color=fff";
     }
-    
+
     let proofUrl: string | undefined;
     if (proof) {
       proofUrl = await uploadToCloudinary(proof.path, "proof-documents");
@@ -111,7 +111,7 @@ export const register = async (req: Request, res: Response) => {
         { expiresIn: "3h" }
       );
 
-      res.json({
+      res.status(201).json({
         success: true,
         message: "Registration successful!",
         token,
@@ -127,7 +127,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     // For local registration, redirect to login
-    res.json({
+    res.status(201).json({
       success: true,
       message: "User registered successfully. Please login to continue.",
       user: {
@@ -152,18 +152,18 @@ export const login = async (req: Request, res: Response) => {
 
     const user = await User.findOne({ email }).select("+password");
     if (!user || user.authProvider !== "local") {
-      res.json({ 
-        success: false, 
-        message: "Invalid credentials" 
+      res.status(400).json({
+        success: false,
+        message: "Invalid credentials"
       });
       return;
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      res.json({ 
-        success: false, 
-        message: "Invalid credentials" 
+      res.status(400).json({
+        success: false,
+        message: "Invalid credentials"
       });
       return;
     }
@@ -201,17 +201,17 @@ export const checkUsername = async (req: Request, res: Response) => {
   try {
     const { username } = req.body;
     if (!username) {
-      res.json({ 
-        success: false, 
-        message: "Username is required" 
+      res.json({
+        success: false,
+        message: "Username is required"
       });
       return;
     }
 
     const existingUser = await User.findOne({ username });
-    res.json({ 
+    res.json({
       success: true,
-      available: !existingUser 
+      available: !existingUser
     });
   } catch (error) {
     throw error;
@@ -223,9 +223,9 @@ export const checkEmail = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
     if (!email) {
-      res.json({ 
-        success: false, 
-        message: "Email is required" 
+      res.json({
+        success: false,
+        message: "Email is required"
       });
       return;
     }
@@ -234,9 +234,9 @@ export const checkEmail = async (req: Request, res: Response) => {
       email: email.toLowerCase().trim(),
     });
 
-    res.json({ 
+    res.json({
       success: true,
-      available: !existingUser 
+      available: !existingUser
     });
   } catch (error) {
     throw error;
@@ -249,9 +249,9 @@ export const sendOtp = async (req: Request, res: Response) => {
     const { email } = req.body;
 
     if (!email) {
-      res.json({ 
-        success: false, 
-        message: "Email is required" 
+      res.json({
+        success: false,
+        message: "Email is required"
       });
       return;
     }
@@ -259,9 +259,9 @@ export const sendOtp = async (req: Request, res: Response) => {
     const result = await sendOtpVerificationMail(email);
 
     if (!result.success) {
-      res.json({ 
-        success: false, 
-        message: result.message 
+      res.json({
+        success: false,
+        message: result.message
       });
       return;
     }
@@ -282,9 +282,9 @@ export const verifyOtpController = async (req: Request, res: Response) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      res.json({ 
-        success: false, 
-        message: "Email and OTP are required" 
+      res.json({
+        success: false,
+        message: "Email and OTP are required"
       });
       return;
     }
@@ -292,9 +292,9 @@ export const verifyOtpController = async (req: Request, res: Response) => {
     const result = await verifyOtp(email, otp);
 
     if (!result.success) {
-      res.json({ 
-        success: false, 
-        message: result.message 
+      res.json({
+        success: false,
+        message: result.message
       });
       return;
     }
@@ -315,9 +315,9 @@ export const resendOtp = async (req: Request, res: Response) => {
     const { email } = req.body;
 
     if (!email) {
-      res.json({ 
-        success: false, 
-        message: "Email is required" 
+      res.json({
+        success: false,
+        message: "Email is required"
       });
       return;
     }
@@ -325,9 +325,9 @@ export const resendOtp = async (req: Request, res: Response) => {
     const result = await sendOtpVerificationMail(email);
 
     if (!result.success) {
-      res.json({ 
-        success: false, 
-        message: result.message 
+      res.json({
+        success: false,
+        message: result.message
       });
       return;
     }
@@ -348,9 +348,9 @@ export const sendPasswordResetOtpController = async (req: Request, res: Response
     const { email } = req.body;
 
     if (!email) {
-      res.json({ 
-        success: false, 
-        message: "Email is required" 
+      res.json({
+        success: false,
+        message: "Email is required"
       });
       return;
     }
@@ -358,9 +358,9 @@ export const sendPasswordResetOtpController = async (req: Request, res: Response
     const result = await sendPasswordResetOtp(email);
 
     if (!result.success) {
-      res.json({ 
-        success: false, 
-        message: result.message 
+      res.json({
+        success: false,
+        message: result.message
       });
       return;
     }
@@ -380,9 +380,9 @@ export const verifyPasswordResetOtpController = async (req: Request, res: Respon
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      res.json({ 
-        success: false, 
-        message: "Email and OTP are required" ,
+      res.json({
+        success: false,
+        message: "Email and OTP are required",
       });
       return;
     }
@@ -410,9 +410,9 @@ export const resetPassword = async (req: Request, res: Response) => {
     const { email, otp, newPassword } = req.body;
 
     if (!email || !otp || !newPassword) {
-      res.json({ 
-        success: false, 
-        message: "Email, OTP, and new password are required" 
+      res.json({
+        success: false,
+        message: "Email, OTP, and new password are required"
       });
       return;
     }
@@ -420,18 +420,18 @@ export const resetPassword = async (req: Request, res: Response) => {
     // Verify OTP for security
     const otpVerification = await verifyOtp(email, otp);
     if (!otpVerification.verified) {
-      res.json({ 
-        success: false, 
-        message: "Invalid or expired OTP" 
+      res.json({
+        success: false,
+        message: "Invalid or expired OTP"
       });
       return;
     }
 
     const user = await User.findOne({ email: email.toLowerCase().trim() }).select("+password");
     if (!user) {
-      res.json({ 
-        success: false, 
-        message: "User not found" 
+      res.json({
+        success: false,
+        message: "User not found"
       });
       return;
     }

@@ -5,6 +5,7 @@ import asyncHandler from "express-async-handler";
 import User from "../models/User";
 import AppError from "../utils/AppError";
 import UserEmailOtpVerification from "../models/UserEmailOtpVerification";
+import logger from "../config/logger";
 
 /**
  * Step 1: Redirect user to Google OAuth 2.0 consent screen
@@ -72,12 +73,12 @@ export const googleCallback = asyncHandler(
 
       const googleUser = profileResponse.data;
 
-      console.log('Google user data received:', {
+      logger.info({
         email: googleUser.email,
         name: googleUser.name,
         picture: googleUser.picture,
         sub: googleUser.sub
-      });
+      }, 'Google user data received');
 
       if (!googleUser.email) {
         return res.redirect(`${base}/login?error=Google+account+has+no+email`);
@@ -87,7 +88,7 @@ export const googleCallback = asyncHandler(
       const existingUser = await User.findOne({ email: googleUser.email.toLowerCase().trim() });
 
       if (existingUser) {
-        console.log('Existing user found, logging in:', existingUser.email);
+        logger.info({ email: existingUser.email }, 'Existing user found, logging in');
         // User exists - perform normal login
         const token = jwt.sign(
           { userId: existingUser._id, role: existingUser.role },
@@ -97,11 +98,11 @@ export const googleCallback = asyncHandler(
 
         const redirectUrl = `${base}/oauth-success?token=${encodeURIComponent(token)}`;
 
-        console.log('Redirecting existing user to:', redirectUrl);
+        logger.info({ redirectUrl }, 'Redirecting existing user');
         return res.redirect(redirectUrl);
       }
 
-      console.log('New user detected, creating verification record');
+      logger.info('New user detected, creating verification record');
       // 4. New user - Mark email as verified and redirect to registration
 
       // Delete any existing OTP records for this email
@@ -126,10 +127,10 @@ export const googleCallback = asyncHandler(
 
       const redirectUrl = `${base}/oauth-success?email=${encodeURIComponent(googleUser.email)}&name=${encodeURIComponent(userName)}&picture=${encodeURIComponent(userPicture)}&provider=google`;
 
-      console.log('Redirecting new Google user to:', redirectUrl);
+      logger.info({ redirectUrl }, 'Redirecting new Google user');
       res.redirect(redirectUrl);
     } catch (error: any) {
-      console.error("Google OAuth Error:", error.response?.data || error.message);
+      logger.error({ error: error.response?.data || error.message }, 'Google OAuth Error');
       return res.redirect(`${base}/login?error=Google+Auth+Failed`);
     }
   }

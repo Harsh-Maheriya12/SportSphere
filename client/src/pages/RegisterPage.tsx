@@ -44,7 +44,7 @@ function RegisterPage() {
   const [usernameStatus, setUsernameStatus] = useState<
     "checking" | "available" | "taken" | "idle"
   >("idle");
-  
+
   // Google OAuth specific states
   const [isGoogleOAuth, setIsGoogleOAuth] = useState(false);
   const [googlePictureUrl, setGooglePictureUrl] = useState("");
@@ -53,25 +53,25 @@ function RegisterPage() {
   useEffect(() => {
     const oauth = searchParams.get("oauth");
     console.log("RegisterPage - Checking OAuth param:", oauth);
-    
+
     if (oauth === "google") {
       const googleDataStr = sessionStorage.getItem("googleOAuthData");
       console.log("RegisterPage - Google OAuth data from session:", googleDataStr);
-      
+
       if (googleDataStr) {
         try {
           const googleData = JSON.parse(googleDataStr);
           console.log("RegisterPage - Parsed Google data:", googleData);
-          
+
           // Pre-fill email and skip to details step
           setEmail(googleData.email);
           setUsername(googleData.name.replace(/\s+/g, '').toLowerCase() || "");
           setIsGoogleOAuth(true);
           setGooglePictureUrl(googleData.picture || "");
           setStep("details");
-          
+
           console.log("RegisterPage - Set isGoogleOAuth to true, skipping to details");
-          
+
           // Don't clear session storage immediately - keep it for verification
           // sessionStorage.removeItem("googleOAuthData");
         } catch (error) {
@@ -118,9 +118,14 @@ function RegisterPage() {
 
     try {
       const data = await apiSendOtp(email);
-      setSuccess("OTP sent successfully! Check your email.");
-      setStep("otp");
-      setOtpTimer(600); // 10 minutes timer
+
+      if (data.success) {
+        setSuccess("OTP sent successfully! Check your email.");
+        setStep("otp");
+        setOtpTimer(600); // 10 minutes timer
+      } else {
+        setError(data.message || "Failed to send OTP");
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -276,19 +281,16 @@ function RegisterPage() {
         {/* Progress Indicator */}
         <div className="flex items-center justify-center gap-2">
           <div
-            className={`h-2 w-16 rounded-full ${
-              step === "email" ? "bg-primary" : "bg-primary/30"
-            }`}
+            className={`h-2 w-16 rounded-full ${step === "email" ? "bg-primary" : "bg-primary/30"
+              }`}
           />
           <div
-            className={`h-2 w-16 rounded-full ${
-              step === "otp" ? "bg-primary" : "bg-primary/30"
-            }`}
+            className={`h-2 w-16 rounded-full ${step === "otp" ? "bg-primary" : "bg-primary/30"
+              }`}
           />
           <div
-            className={`h-2 w-16 rounded-full ${
-              step === "details" ? "bg-primary" : "bg-primary/30"
-            }`}
+            className={`h-2 w-16 rounded-full ${step === "details" ? "bg-primary" : "bg-primary/30"
+              }`}
           />
         </div>
 
@@ -565,11 +567,10 @@ function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setGender("male")}
-                  className={`py-3 px-4 rounded-xl border-2 transition-all ${
-                    gender === "male"
+                  className={`py-3 px-4 rounded-xl border-2 transition-all ${gender === "male"
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-background text-foreground hover:border-primary/50"
-                  }`}
+                    }`}
                   disabled={isLoading}
                 >
                   Male
@@ -579,11 +580,10 @@ function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setGender("female")}
-                  className={`py-3 px-4 rounded-xl border-2 transition-all ${
-                    gender === "female"
+                  className={`py-3 px-4 rounded-xl border-2 transition-all ${gender === "female"
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-background text-foreground hover:border-primary/50"
-                  }`}
+                    }`}
                   disabled={isLoading}
                 >
                   Female
@@ -593,11 +593,10 @@ function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setGender("other")}
-                  className={`py-3 px-4 rounded-xl border-2 transition-all ${
-                    gender === "other"
+                  className={`py-3 px-4 rounded-xl border-2 transition-all ${gender === "other"
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-background text-foreground hover:border-primary/50"
-                  }`}
+                    }`}
                   disabled={isLoading}
                 >
                   Other
@@ -610,12 +609,12 @@ function RegisterPage() {
               <label className="block text-sm font-medium text-foreground mb-2">
                 Profile Photo {!isGoogleOAuth && <span className="text-destructive">*</span>}
               </label>
-              
+
               {isGoogleOAuth && googlePictureUrl && (
                 <div className="mb-3 flex items-center gap-3 p-3 bg-muted rounded-xl border border-border">
-                  <img 
-                    src={googlePictureUrl} 
-                    alt="Google profile" 
+                  <img
+                    src={googlePictureUrl}
+                    alt="Google profile"
                     className="w-12 h-12 rounded-full"
                   />
                   <div className="flex-1">
@@ -624,7 +623,7 @@ function RegisterPage() {
                   </div>
                 </div>
               )}
-              
+
               <div className="relative">
                 <input
                   type="file"
@@ -641,10 +640,10 @@ function RegisterPage() {
                 >
                   <Upload className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm text-foreground">
-                    {profilePhoto 
-                      ? profilePhoto.name 
-                      : isGoogleOAuth 
-                        ? "Upload custom photo (optional)" 
+                    {profilePhoto
+                      ? profilePhoto.name
+                      : isGoogleOAuth
+                        ? "Upload custom photo (optional)"
                         : "Choose profile photo"}
                   </span>
                 </label>

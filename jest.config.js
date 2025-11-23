@@ -10,6 +10,8 @@ module.exports = {
   testTimeout: 20000,
   testEnvironment: "node",
   transform: {
-    ...tsJestTransformCfg,
+    "^.+\\.tsx?$": ["ts-jest", {
+      isolatedModules: true
+    }]
   },
 };
