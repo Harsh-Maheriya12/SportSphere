@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import Venues from "./pages/Venues";
 import Coaches from "./pages/Coaches";
 import Games from "./pages/Games";
+import GameDetails from "./pages/GameDetails";
 import MyBookings from "./pages/MyBookings";
 import MyVenues from "./pages/MyVenues";
 import MyProfile from "./pages/MyProfile";
@@ -75,6 +76,7 @@ const App: React.FC = () => {
       <Route path="/coaches" element={<Coaches />} />
       <Route path="/coach/:id" element={<CoachProfile />} />
       <Route path="/games" element={<Games />} />
+      <Route path="/games/:gameId" element={<GameDetails />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/oauth-success" element={<OAuthSuccess />} />
       <Route path="/faq" element={<FaqPage />} />
