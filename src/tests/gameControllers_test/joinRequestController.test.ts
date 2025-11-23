@@ -1,14 +1,19 @@
 import { Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { createJoinRequest, approveJoinRequest, rejectJoinRequest, cancelJoinRequest } from '../../../controllers/gameControllers/joinRequestController';
-import Game from '../../../models/gameModels';
-import AppError from '../../../utils/AppError';
-import { IUserRequest } from '../../../middleware/authMiddleware';
-import { checkNoTimeOverlapForUser } from '../../../utils/checkNoTimeOverlapForUser';
+import { 
+  createJoinRequest,
+  approveJoinRequest, 
+  rejectJoinRequest, 
+  cancelJoinRequest 
+} from '../../controllers/gameControllers/joinRequestController';
+import Game from '../../models/gameModels';
+import AppError from '../../utils/AppError';
+import { IUserRequest } from '../../middleware/authMiddleware';
+import { checkNoTimeOverlapForUser } from '../../utils/checkNoTimeOverlapForUser';
 
 // Mock the models and utilities
-jest.mock('../../../models/gameModels');
-jest.mock('../../../utils/checkNoTimeOverlapForUser');
+jest.mock('../../models/gameModels');
+jest.mock('../../utils/checkNoTimeOverlapForUser');
 
 // Mock mongoose.Types.ObjectId to return the input value as-is for testing
 jest.spyOn(mongoose.Types, 'ObjectId').mockImplementation((id: any) => id as any);

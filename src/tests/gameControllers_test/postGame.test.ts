@@ -1,14 +1,14 @@
 import { Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { rateVenueAfterGame, completeGame } from '../../../controllers/gameControllers/postGame';
-import Game from '../../../models/gameModels';
-import Venue from '../../../models/Venue';
-import AppError from '../../../utils/AppError';
-import { IUserRequest } from '../../../middleware/authMiddleware';
+import { rateVenueAfterGame, completeGame } from '../../controllers/gameControllers/postGame';
+import Game from '../../models/gameModels';
+import Venue from '../../models/Venue';
+import AppError from '../../utils/AppError';
+import { IUserRequest } from '../../middleware/authMiddleware';
 
 // Mock the models
-jest.mock('../../../models/gameModels');
-jest.mock('../../../models/Venue');
+jest.mock('../../models/gameModels');
+jest.mock('../../models/Venue');
 
 // Mock mongoose.Types.ObjectId to return the input value as-is for testing
 jest.spyOn(mongoose.Types, 'ObjectId').mockImplementation((id: any) => id as any);

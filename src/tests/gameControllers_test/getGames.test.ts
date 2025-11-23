@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { getGameById, getMyBookings, getGames } from '../../../controllers/gameControllers/getGames';
-import Game from '../../../models/gameModels';
-import AppError from '../../../utils/AppError';
-import { IUserRequest } from '../../../middleware/authMiddleware';
+import { getGameById, getMyBookings, getGames } from '../../controllers/gameControllers/getGames';
+import Game from '../../models/gameModels';
+import AppError from '../../utils/AppError';
+import { IUserRequest } from '../../middleware/authMiddleware';
 
 // Mock the models
-jest.mock('../../../models/gameModels');
+jest.mock('../../models/gameModels');
 
 describe('Game Controllers - getGames.ts', () => {
   let mockRequest: Partial<IUserRequest>;

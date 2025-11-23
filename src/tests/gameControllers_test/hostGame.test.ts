@@ -1,28 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { hostGame, cancelGame, leaveGame } from '../../../controllers/gameControllers/hostGame';
-import Game from '../../../models/gameModels';
-import Venue from '../../../models/Venue';
-import SubVenue from '../../../models/SubVenue';
-import AppError from '../../../utils/AppError';
-import { IUserRequest } from '../../../middleware/authMiddleware';
-import { slotAvailabilityCheck } from '../../../utils/slotAvailabilityCheck';
-import { checkNoTimeOverlapForUser } from '../../../utils/checkNoTimeOverlapForUser';
-
-declare module '../../../models/gameModels' {
-  interface IGame {
-    slot?: any;
-    venue?: any;
-    subVenue?: any;
-  }
-}
+import { hostGame, cancelGame, leaveGame } from '../../controllers/gameControllers/hostGame';
+import Game from '../../models/gameModels';
+import Venue from '../../models/Venue';
+import SubVenue from '../../models/SubVenue';
+import AppError from '../../utils/AppError';
+import { IUserRequest } from '../../middleware/authMiddleware';
+import { slotAvailabilityCheck } from '../../utils/slotAvailabilityCheck';
+import { checkNoTimeOverlapForUser } from '../../utils/checkNoTimeOverlapForUser';
 
 // Mock the models and utilities
-jest.mock('../../../models/gameModels');
-jest.mock('../../../models/Venue');
-jest.mock('../../../models/SubVenue');
-jest.mock('../../../utils/slotAvailabilityCheck');
-jest.mock('../../../utils/checkNoTimeOverlapForUser');
+jest.mock('../../models/gameModels');
+jest.mock('../../models/Venue');
+jest.mock('../../models/SubVenue');
+jest.mock('../../utils/slotAvailabilityCheck');
+jest.mock('../../utils/checkNoTimeOverlapForUser');
 
 describe('Game Controllers - hostGame.ts', () => {
   let mockRequest: Partial<IUserRequest>;
@@ -366,15 +358,21 @@ describe('Game Controllers - hostGame.ts', () => {
     });
 
     it('should handle slot prices as object instead of Map', async () => {
+      const mockPrices: any = {
+        football: 1000,
+        cricket: 800,
+        get: function(sport: string): number | undefined {
+          return this[sport];
+        }
+      };
+      
       const mockSlotWithObject = {
         _id: 'slot123',
         startTime: new Date('2025-12-01T10:00:00Z'),
         endTime: new Date('2025-12-01T12:00:00Z'),
-        prices: {
-          football: 1000,
-          cricket: 800,
-        },
+        prices: mockPrices,
       };
+      
       (slotAvailabilityCheck as jest.Mock) = jest.fn().mockResolvedValue(mockSlotWithObject);
       mockRequest.body = validRequestBody;
 
