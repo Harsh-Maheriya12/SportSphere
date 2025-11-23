@@ -110,14 +110,17 @@ function Navbar() {
                       My Bookings
                     </Link>
 
-                    <Link
-                      to="/host-game"
-                      className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <PackagePlus className="w-5 h-5 mr-2" />
-                      Host Game
-                    </Link>
+                    {/* Only show Host Game for players */}
+                    {user?.role === "player" && (
+                      <Link
+                        to="/host-game"
+                        className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <PackagePlus className="w-5 h-5 mr-2" />
+                        Host Game
+                      </Link>
+                    )}
 
                     {user?.role === "coach" && (
                       <Link
@@ -244,14 +247,17 @@ function Navbar() {
                   </div>
                 </Link>
 
-                <Link
-                  to="/host-game"
-                  className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
-                  onClick={() => setIsUserMenuOpen(false)}
-                >
-                  <PackagePlus className="w-5 h-5 mr-2" />
-                  Host Game
-                </Link>
+                {/* Only show Host Game for players */}
+                {user?.role === "player" && (
+                  <Link
+                    to="/host-game"
+                    className=" px-4 py-2 text-card-foreground hover:bg-muted flex items-center transition-colors"
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
+                    <PackagePlus className="w-5 h-5 mr-2" />
+                    Host Game
+                  </Link>
+                )}
 
                 {user?.role === "coach" && (
                   <Link
