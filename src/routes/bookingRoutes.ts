@@ -16,6 +16,9 @@ import { verifyPayment } from "../controllers/Booking/verifyPayment";
 // Stripe webhook
 import { stripeWebhook } from "../controllers/payment/stripeWebhook";
 
+// Retry payment
+import { retryPayment } from "../controllers/Booking/retryPayment";
+
 const router: express.Router = express.Router();
 
 router.get(
@@ -40,6 +43,12 @@ router.post(
   "/game/:gameId",
   protect,
   startGameBooking
+);
+
+router.post(
+  "/retry",
+  protect,
+  retryPayment
 );
 
 router.post(
