@@ -1,20 +1,22 @@
 import axios from "axios";
 import { Request, Response } from "express";
 
-export const chatbotController = async (req: Request, res: Response) => {
+export const chatbotController = async (req: Request, res: Response): Promise<void> => {
   if (!req.body || !req.body.message) {
-    return res.json({
+    res.json({
       success: false,
       message: "Message is required",
     });
+    return;
   }
 
   // Only for players
   if (req.user?.role !== "player") {
-    return res.json({
+    res.json({
       success: false,
       message: "Only players can access the chatbot",
     });
+    return;
   }
 
   const userMessage = req.body.message;
@@ -31,13 +33,13 @@ export const chatbotController = async (req: Request, res: Response) => {
       }
     );
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: responseMessage.data.reply,
     });
   } catch (error) {
     // console.log("Error processing chatbot message:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Failed to process chatbot message",
     });
