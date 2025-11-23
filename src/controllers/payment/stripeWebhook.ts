@@ -46,7 +46,6 @@ export const stripeWebhook = async (req: Request, res: Response): Promise<void> 
           booking.status = "Paid";
           booking.stripePaymentIntentId = session.payment_intent as string;
           await booking.save();
-
           logger.info(`Booking ${booking._id} marked as Paid`);
         } else {
           logger.warn(`No booking found for session ${session.id}`);

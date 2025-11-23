@@ -61,7 +61,14 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
 
   // 4. Fetch user associated with token
   try {
-    (req as any).user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.userId).select("-password");
+    
+    req.user = {
+      _id: user._id.toString(),   
+      role: user.role,
+      email: user.email,
+      username: user.username,
+    };
   } catch (dbError: any) {
     res.status(500);
     throw new Error(`Database lookup failed — could not retrieve user: ${dbError.message}`);

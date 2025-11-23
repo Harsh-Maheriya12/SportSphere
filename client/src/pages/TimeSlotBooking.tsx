@@ -118,7 +118,6 @@ export default function TimeSlotBooking() {
 
     try {
       const response = await apiBookVenueSlot(subVenueId, slotData.timeSlotDocId, slot._id, selectedSport);
-
       // Redirect to Stripe checkout
       if (response.url) {
         window.location.href = response.url;

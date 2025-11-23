@@ -31,7 +31,6 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
   const userId = req.user._id;
 
 
-
   if (!subVenueId || !timeSlotDocId || !slotId || !sport) {
     throw new AppError("Missing required fields", 400);
   }
@@ -55,7 +54,6 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
     // If it's already a plain object
     price = (slot.prices as any)[sport];
   }
-
   if (!price) throw new AppError("Sport price not available for this slot", 400);
 
   // Convert price to paise (Stripe requires smallest currency unit)
