@@ -626,3 +626,14 @@ export const apiGetMyVenueBookings = (): Promise<{
     method: "GET",
   });
 };
+
+// Chatbot
+
+export const apiSendChatMessage = (
+  message: string
+): Promise<{ success: boolean; message: string }> => {
+  return request("/chatbot", {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+};

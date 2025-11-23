@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User, Plus, X, Edit2, Save, CheckCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -216,6 +217,13 @@ function ManageCoachProfile() {
 
   const totalPhotos =
     (coachDetail?.photoGallery?.length || 0) + selectedPhotos.length;
+
+
+    if(user?.role !== "coach") {
+     const navigate = useNavigate();
+     navigate('/');
+     return null;
+  }
 
   return (
     <div className="min-h-screen bg-white/10 p-2">

@@ -19,6 +19,7 @@ import adminCoachesRoutes from "./routes/adminCoaches";
 import adminVenueOwnersRoutes from "./routes/adminVenueOwners";
 import adminOverviewRoutes from "./routes/adminOverview";
 import ticketsRoutes from "./routes/tickets";
+import chatbotRoutes from "./routes/chatbotRoutes";
 // import {aiVenueSearch} from "./controllers/aiVenueSearchController";
 import bookingRoutes from "./routes/bookingRoutes";
 import { stripeWebhook } from "./controllers/payment/stripeWebhook";
@@ -65,6 +66,7 @@ app.use("/api/venues", venueRoutes);
 app.use("/api/coaches", coachRoutes);
 app.use("/api/subvenues", subVenueRoutes);
 app.use("/api/timeslots", timeslotRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 // app.use("/api", aiVenueSearch);
 app.use("/api/bookings", bookingRoutes);
 
