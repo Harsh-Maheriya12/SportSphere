@@ -33,8 +33,20 @@ export const rateVenueAfterGame = asyncHandler(async (req: IUserRequest, res) =>
   const venue = await Venue.findById(game.venue.venueId);
   if (!venue) throw new AppError("Venue not found", 404);
 
-  venue.ratings.push({ userId, rating });
+  // Check if user already rated this venue
+  const existingRatingIndex = venue.ratings.findIndex(
+    (r: any) => r.userId.toString() === userId.toString()
+  );
 
+  if (existingRatingIndex !== -1) {
+    // Update existing rating
+    venue.ratings[existingRatingIndex].rating = rating;
+  } else {
+    // Add new rating
+    venue.ratings.push({ userId, rating });
+  }
+
+  // Recalculate average rating
   venue.averageRating =
     venue.ratings.reduce((s: number, r: any) => s + r.rating, 0) /
     venue.ratings.length;
@@ -45,7 +57,9 @@ export const rateVenueAfterGame = asyncHandler(async (req: IUserRequest, res) =>
 
   res.json({
     success: true,
-    message: "Thanks for rating the venue!",
+    message: existingRatingIndex !== -1 
+      ? "Rating updated successfully!" 
+      : "Thanks for rating the venue!",
     averageRating: venue.averageRating,
   });
 });

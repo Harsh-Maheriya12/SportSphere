@@ -130,7 +130,11 @@ export const cancelGame = asyncHandler(async (req: IUserRequest, res) => {
   if (game.host.toString() !== req.user._id.toString()) {
     throw new AppError("Only the host can cancel this game", 403);
   }
-
+  // Prevent cancelling if slot has already been booked
+  if (game.bookingStatus === "Booked") {
+    throw new AppError("Cannot cancel a game after the slot is booked.", 400);
+  }
+  
   // Must cancel at least 2 hours before game start
   const now = new Date();
   const gameStartTime = new Date(game.slot.startTime);
