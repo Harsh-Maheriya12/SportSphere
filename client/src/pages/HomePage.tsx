@@ -64,7 +64,7 @@ function HomePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="relative min-h-[600px] w-full">
+      <div className="relative min-h-[600px] w-auto overflow-hidden">
         <div className="absolute inset-0 z-0 p-2">
           {/* Background Effect */}
           <Plasma
