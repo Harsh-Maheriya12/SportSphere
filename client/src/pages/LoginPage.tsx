@@ -109,6 +109,14 @@ function LoginPage() {
                 >
                   Password
                 </label>
+
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-primary/70 hover:text-primary font-medium transition"
+                >
+                  Forgot password?
+                </Link>
+
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

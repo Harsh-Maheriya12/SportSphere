@@ -8,8 +8,8 @@ function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex flex-col bg-background text-foreground space-y-5">
       <Navbar />
       <main>{children}</main>
-      <Footer />
       <Chatbot />
+      <Footer />
     </div>
   );
 }
