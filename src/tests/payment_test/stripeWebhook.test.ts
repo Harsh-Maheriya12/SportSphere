@@ -74,6 +74,7 @@ describe('stripeWebhook Controller', () => {
                 _id: 'booking123',
                 status: 'Pending',
                 stripeSessionId: 'sess_completed',
+                stripePaymentIntentId: undefined,
                 save: jest.fn().mockResolvedValue(true)
             };
             (Booking.findOne as jest.Mock).mockResolvedValue(mockBooking);

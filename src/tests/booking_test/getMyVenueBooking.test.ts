@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import { getMyVenueBookings } from '../../controllers/Booking/getMyVenueBooking';
 import { IUserRequest } from '../../middleware/authMiddleware';
 import Booking from '../../models/Booking';
@@ -9,6 +9,7 @@ jest.mock('../../models/Booking');
 describe('getMyVenueBookings Controller', () => {
     let req: Partial<IUserRequest>;
     let res: Partial<Response>;
+    let next: NextFunction;
 
     beforeEach(() => {
         req = {
@@ -18,6 +19,8 @@ describe('getMyVenueBookings Controller', () => {
         res = {
             json: jest.fn()
         } as Partial<Response>;
+
+        next = jest.fn() as NextFunction;
 
         jest.clearAllMocks();
 
@@ -82,7 +85,7 @@ describe('getMyVenueBookings Controller', () => {
 
         (Booking.find as jest.Mock).mockReturnValue(mockQuery);
 
-        await getMyVenueBookings(req as IUserRequest, res as Response);
+        await getMyVenueBookings(req as IUserRequest, res as Response, next);
 
         expect(Booking.find).toHaveBeenCalledWith({ user: 'user123' });
         expect(mockQuery.populate).toHaveBeenCalledTimes(2);
@@ -160,7 +163,7 @@ describe('getMyVenueBookings Controller', () => {
 
         (Booking.find as jest.Mock).mockReturnValue(mockQuery);
 
-        await getMyVenueBookings(req as IUserRequest, res as Response);
+        await getMyVenueBookings(req as IUserRequest, res as Response, next);
 
         expect(res.json).toHaveBeenCalledWith({
             success: true,
@@ -198,7 +201,7 @@ describe('getMyVenueBookings Controller', () => {
 
         (Booking.find as jest.Mock).mockReturnValue(mockQuery);
 
-        await getMyVenueBookings(req as IUserRequest, res as Response);
+        await getMyVenueBookings(req as IUserRequest, res as Response, next);
 
         expect(res.json).toHaveBeenCalledWith({
             success: true,
@@ -238,7 +241,7 @@ describe('getMyVenueBookings Controller', () => {
 
         (Booking.find as jest.Mock).mockReturnValue(mockQuery);
 
-        await getMyVenueBookings(req as IUserRequest, res as Response);
+        await getMyVenueBookings(req as IUserRequest, res as Response, next);
 
         const response = (res.json as jest.Mock).mock.calls[0][0];
         expect(response.bookings[0].sport).toBe('N/A');
