@@ -19,6 +19,9 @@ import { stripeWebhook } from "../controllers/payment/stripeWebhook";
 // Retry payment
 import { retryPayment } from "../controllers/Booking/retryPayment";
 
+// Get calendar link
+import { getCalendarLink } from "../controllers/Booking/getCalendarLink";
+
 const router: express.Router = express.Router();
 
 router.get(
@@ -55,6 +58,12 @@ router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
   stripeWebhook
+);
+
+router.get(
+  "/:bookingId/calendar", 
+  protect, 
+  getCalendarLink
 );
 
 export default router;

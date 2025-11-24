@@ -123,8 +123,8 @@ const gameSchema = new Schema<IGame>(
   { timestamps: true } // Automatically adds createdAt and updatedAt fields.
 );
 
-// Create a 2dsphere index on venueLocation for geospatial queries.
-gameSchema.index({ venueLocation: '2dsphere' });
+// Create a 2dsphere index on venue.coordinates for geospatial queries.
+gameSchema.index({ 'venue.coordinates': '2dsphere' });
 
 // Index for fast upcoming games queries
 gameSchema.index({ "slot.startTime": 1 });

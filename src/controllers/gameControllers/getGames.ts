@@ -1,10 +1,12 @@
 import asyncHandler from "express-async-handler";
-import {IUserRequest} from "../../middleware/authMiddleware";
+import { IUserRequest } from "../../middleware/authMiddleware";
 import Game from "../../models/gameModels";
 import AppError from "../../utils/AppError";
+import Booking from "../../models/Booking";
 
 export const getGameById = asyncHandler(async (req: IUserRequest, res) => {
   const { gameId } = req.params;
+  const userId = req.user?._id?.toString();
 
   const game = await Game.findById(gameId)
     .populate("host", "username email")
@@ -12,9 +14,25 @@ export const getGameById = asyncHandler(async (req: IUserRequest, res) => {
 
   if (!game) throw new AppError("Game not found", 404);
 
+  // If game has a booking, return calendar link
+  const booking = await Booking.findOne({ gameId: gameId, status: "Paid" });
+
+  let calendarLink = null;
+  // Only expose calendar link if requester is host or approved player
+  if (booking && userId) {
+    const isAllowed =
+      game.host.toString() === userId ||
+      game.approvedPlayers.some((p: any) => p.toString() === userId);
+
+    if (isAllowed) {
+      calendarLink = booking.calendarLink; // expose link
+    }
+  }
+
   res.json({
     success: true,
     game,
+    calendarLink
   });
 });
 
@@ -114,8 +132,8 @@ export const getGames = asyncHandler(async (req: IUserRequest, res, next): Promi
   const query: any = {
     status: 'Open',
     // Use $expr to compare array size with playersNeeded.max so DB filters out full games
-    $expr: { 
-      $lt: [{ $size: '$approvedPlayers' }, '$playersNeeded.max'] 
+    $expr: {
+      $lt: [{ $size: '$approvedPlayers' }, '$playersNeeded.max']
     },
   };
 
@@ -124,7 +142,7 @@ export const getGames = asyncHandler(async (req: IUserRequest, res, next): Promi
     query['slot.startTime'] = {};
     if (startDate) query['slot.startTime'].$gte = new Date(startDate);
     if (endDate) query['slot.startTime'].$lte = new Date(endDate);
-    
+
     if (!startDate) query['slot.startTime'].$gte = now;
   } else {
     query['slot.startTime'] = { $gte: now };

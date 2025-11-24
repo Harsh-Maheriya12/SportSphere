@@ -77,7 +77,7 @@ export const startGameBooking: RequestHandler = asyncHandler(async (req: IUserRe
       gameId: (game._id as mongoose.Types.ObjectId).toString(), // FIX
     },
 
-    success_url: `${process.env.FRONTEND_URL}/payment-success`,
+    success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
   });
 

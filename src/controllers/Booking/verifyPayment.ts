@@ -53,7 +53,8 @@ export const verifyPayment: RequestHandler = asyncHandler(async (req: IUserReque
       booking: {
         id: booking._id,
         status: booking.status,
-      }
+      },
+      calenderLink: booking.calendarLink
     });
   } else {
     res.json({

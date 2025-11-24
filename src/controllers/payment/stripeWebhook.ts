@@ -4,6 +4,7 @@ import AppError from "../../utils/AppError";
 import logger from "../../config/logger";
 import Booking from "../../models/Booking";
 import TimeSlot from "../../models/TimeSlot";
+import { generateGoogleCalendarLink } from "../../utils/generateGoogleCalendarLink";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2025-10-29.clover",
@@ -45,8 +46,21 @@ export const stripeWebhook = async (req: Request, res: Response): Promise<void> 
         if (booking) {
           booking.status = "Paid";
           booking.stripePaymentIntentId = session.payment_intent as string;
+
+          // Generate calendar link
+          const title = booking.gameId
+            ? `SportSphere Game Booking`
+            : `SportSphere Venue Booking`;
+
+          booking.calendarLink = generateGoogleCalendarLink(
+            title,
+            booking.startTime,
+            booking.endTime,
+            "SportSphere Booking"
+          );
+
           await booking.save();
-          logger.info(`Booking ${booking._id} marked as Paid`);
+          logger.info(`Booking ${booking._id} marked as Paid and Calendar link generated.`);
         } else {
           logger.warn(`No booking found for session ${session.id}`);
         }

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import SubVenue from "../models/SubVenue";
 import Venue from "../models/Venue";
 import { IUserRequest } from "../middleware/authMiddleware";
+import Booking from "../models/Booking";
 
 //Create Venue
 export const createVenue = async (req: IUserRequest, res: Response) => {
@@ -33,7 +34,14 @@ export const getMyVenues = async (req: IUserRequest, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
     const venues = await Venue.find({ owner: req.user._id });
-    return res.status(200).json({ success: true, venues });
+    
+    // Also get calendar link for any paid booking
+    const booking = await Booking.findOne({ venueOwner: req.user._id, status: "Paid" });
+    return res.status(200).json({ 
+      success: true, 
+      venues, 
+      calendarLink: booking? booking.calendarLink: null 
+    });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }

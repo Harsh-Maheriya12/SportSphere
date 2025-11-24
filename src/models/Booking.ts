@@ -27,6 +27,7 @@ export interface IBooking extends Document {
   stripeChargeId?: string;
 
   status: "Pending" | "Paid" | "Failed" | "Refunded";
+  calendarLink?: string;
 
   createdAt: Date;
   updatedAt: Date;
@@ -84,6 +85,8 @@ const BookingSchema = new Schema<IBooking>(
       enum: ["Pending", "Paid", "Failed", "Refunded"],
       default: "Pending",
     },
+    calendarLink: { type: String },
+
   },
   { timestamps: true }
 );
