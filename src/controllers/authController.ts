@@ -198,257 +198,225 @@ export const login = async (req: Request, res: Response) => {
 
 // Check if username is available for registration
 export const checkUsername = async (req: Request, res: Response) => {
-  try {
-    const { username } = req.body;
-    if (!username) {
-      res.json({
-        success: false,
-        message: "Username is required"
-      });
-      return;
-    }
-
-    const existingUser = await User.findOne({ username });
+  const { username } = req.body;
+  if (!username) {
     res.json({
-      success: true,
-      available: !existingUser
+      success: false,
+      message: "Username is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
+
+  const existingUser = await User.findOne({ username });
+  res.json({
+    success: true,
+    available: !existingUser
+  });
 };
 
 // Check if email is available for registration
 export const checkEmail = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      res.json({
-        success: false,
-        message: "Email is required"
-      });
-      return;
-    }
-
-    const existingUser = await User.findOne({
-      email: email.toLowerCase().trim(),
-    });
-
+  const { email } = req.body;
+  if (!email) {
     res.json({
-      success: true,
-      available: !existingUser
+      success: false,
+      message: "Email is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
+
+  const existingUser = await User.findOne({
+    email: email.toLowerCase().trim(),
+  });
+
+  res.json({
+    success: true,
+    available: !existingUser
+  });
 };
 
 // Send OTP for email verification before registration
 export const sendOtp = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
+  const { email } = req.body;
 
-    if (!email) {
-      res.json({
-        success: false,
-        message: "Email is required"
-      });
-      return;
-    }
-
-    const result = await sendOtpVerificationMail(email);
-
-    if (!result.success) {
-      res.json({
-        success: false,
-        message: result.message
-      });
-      return;
-    }
-
+  if (!email) {
     res.json({
-      success: true,
-      message: result.message,
-      data: result.data,
+      success: false,
+      message: "Email is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
+
+  const result = await sendOtpVerificationMail(email);
+
+  if (!result.success) {
+    res.json({
+      success: false,
+      message: result.message
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+    data: result.data,
+  });
 };
 
 // Verify OTP for email verification
 export const verifyOtpController = async (req: Request, res: Response) => {
-  try {
-    const { email, otp } = req.body;
+  const { email, otp } = req.body;
 
-    if (!email || !otp) {
-      res.json({
-        success: false,
-        message: "Email and OTP are required"
-      });
-      return;
-    }
-
-    const result = await verifyOtp(email, otp);
-
-    if (!result.success) {
-      res.json({
-        success: false,
-        message: result.message
-      });
-      return;
-    }
-
+  if (!email || !otp) {
     res.json({
-      success: true,
-      message: result.message,
-      verified: result.verified,
+      success: false,
+      message: "Email and OTP are required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
+
+  const result = await verifyOtp(email, otp);
+
+  if (!result.success) {
+    res.json({
+      success: false,
+      message: result.message
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+    verified: result.verified,
+  });
 };
 
 // Resend OTP if expired or not received
 export const resendOtp = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
+  const { email } = req.body;
 
-    if (!email) {
-      res.json({
-        success: false,
-        message: "Email is required"
-      });
-      return;
-    }
-
-    const result = await sendOtpVerificationMail(email);
-
-    if (!result.success) {
-      res.json({
-        success: false,
-        message: result.message
-      });
-      return;
-    }
-
+  if (!email) {
     res.json({
-      success: true,
-      message: result.message,
-      data: result.data,
+      success: false,
+      message: "Email is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
+
+  const result = await sendOtpVerificationMail(email);
+
+  if (!result.success) {
+    res.json({
+      success: false,
+      message: result.message
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+    data: result.data,
+  });
 };
 
 // Send OTP for password reset
 export const sendPasswordResetOtpController = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
+  const { email } = req.body;
 
-    if (!email) {
-      res.json({
-        success: false,
-        message: "Email is required"
-      });
-      return;
-    }
-
-    const result = await sendPasswordResetOtp(email);
-
-    if (!result.success) {
-      res.json({
-        success: false,
-        message: result.message
-      });
-      return;
-    }
-
+  if (!email) {
     res.json({
-      success: true,
-      message: result.message,
+      success: false,
+      message: "Email is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
+
+  const result = await sendPasswordResetOtp(email);
+
+  if (!result.success) {
+    res.json({
+      success: false,
+      message: result.message
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+  });
 };
 
 // Verify OTP for password reset
 export const verifyPasswordResetOtpController = async (req: Request, res: Response) => {
-  try {
-    const { email, otp } = req.body;
+  const { email, otp } = req.body;
 
-    if (!email || !otp) {
-      res.json({
-        success: false,
-        message: "Email and OTP are required",
-      });
-      return;
-    }
-
-    const result = await verifyOtp(email, otp);
-
-    if (!result.success) {
-      res.json({ success: false, message: result.message });
-      return;
-    }
-
+  if (!email || !otp) {
     res.json({
-      success: true,
-      message: result.message,
-      verified: result.verified,
+      success: false,
+      message: "Email and OTP are required",
     });
-  } catch (error) {
-    throw error;
+    return;
   }
+
+  const result = await verifyOtp(email, otp);
+
+  if (!result.success) {
+    res.json({ success: false, message: result.message });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+    verified: result.verified,
+  });
 };
 
 // Reset password with verified OTP
 export const resetPassword = async (req: Request, res: Response) => {
-  try {
-    const { email, otp, newPassword } = req.body;
+  const { email, otp, newPassword } = req.body;
 
-    if (!email || !otp || !newPassword) {
-      res.json({
-        success: false,
-        message: "Email, OTP, and new password are required"
-      });
-      return;
-    }
-
-    // Verify OTP for security
-    const otpVerification = await verifyOtp(email, otp);
-    if (!otpVerification.verified) {
-      res.json({
-        success: false,
-        message: "Invalid or expired OTP"
-      });
-      return;
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).select("+password");
-    if (!user) {
-      res.json({
-        success: false,
-        message: "User not found"
-      });
-      return;
-    }
-
-    user.password = newPassword;
-    await user.save();
-
-    // delete otp successful password reset
-    await UserEmailOtpVerification.deleteMany({
-      email: email.toLowerCase().trim(),
-    });
-
+  if (!email || !otp || !newPassword) {
     res.json({
-      success: true,
-      message: "Password reset successful",
+      success: false,
+      message: "Email, OTP, and new password are required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
+
+  // Verify OTP for security
+  const otpVerification = await verifyOtp(email, otp);
+  if (!otpVerification.verified) {
+    res.json({
+      success: false,
+      message: "Invalid or expired OTP"
+    });
+    return;
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase().trim() }).select("+password");
+  if (!user) {
+    res.json({
+      success: false,
+      message: "User not found"
+    });
+    return;
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  // delete otp successful password reset
+  await UserEmailOtpVerification.deleteMany({
+    email: email.toLowerCase().trim(),
+  });
+
+  res.json({
+    success: true,
+    message: "Password reset successful",
+  });
 };

@@ -66,12 +66,17 @@ describe('Booking Cleanup Integration Tests', () => {
     });
 
     beforeEach(async () => {
+        // Reset all mocks first
+        mockStripeSessionExpire.mockReset();
+        mockStripeSessionRetrieve.mockReset();
+        mockStripeWebhookConstructEvent.mockReset();
+        jest.clearAllMocks();
+
         await User.deleteMany({});
         await Venue.deleteMany({});
         await SubVenue.deleteMany({});
         await TimeSlot.deleteMany({});
         await Booking.deleteMany({});
-        jest.clearAllMocks();
 
         // Setup basic data
         user = await User.create({
@@ -185,6 +190,85 @@ describe('Booking Cleanup Integration Tests', () => {
 
             expect(mockStripeSessionRetrieve).not.toHaveBeenCalled();
             expect(mockStripeSessionExpire).not.toHaveBeenCalled();
+        });
+
+        it('should log warning when session is already expired but booking is still Pending', async () => {
+            const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+            await Booking.create({
+                user: user._id,
+                venueId: venue._id,
+                subVenueId: subVenue._id,
+                sport: 'Cricket',
+                coordinates: { type: 'Point', coordinates: [0, 0] },
+                startTime: timeSlot.slots[0].startTime,
+                endTime: timeSlot.slots[0].endTime,
+                amount: 1000,
+                currency: 'inr',
+                stripeSessionId: 'sess_already_expired',
+                status: 'Pending',
+                createdAt: fifteenMinutesAgo
+            });
+
+            // Mock Stripe to return already expired session
+            mockStripeSessionRetrieve.mockResolvedValue({
+                status: 'expired'
+            });
+
+            await cleanupExpiredBookings();
+
+            expect(mockStripeSessionRetrieve).toHaveBeenCalledWith('sess_already_expired');
+            expect(mockStripeSessionExpire).not.toHaveBeenCalled(); // Should not try to expire again
+        });
+
+        it('should handle Stripe API errors gracefully', async () => {
+            const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+            await Booking.create({
+                user: user._id,
+                venueId: venue._id,
+                subVenueId: subVenue._id,
+                sport: 'Cricket',
+                coordinates: { type: 'Point', coordinates: [0, 0] },
+                startTime: timeSlot.slots[0].startTime,
+                endTime: timeSlot.slots[0].endTime,
+                amount: 1000,
+                currency: 'inr',
+                stripeSessionId: 'sess_error',
+                status: 'Pending',
+                createdAt: fifteenMinutesAgo
+            });
+
+            // Mock Stripe to throw an error
+            mockStripeSessionRetrieve.mockRejectedValue(new Error('Stripe API Error'));
+
+            // Should not throw, just log error
+            await expect(cleanupExpiredBookings()).resolves.not.toThrow();
+
+            expect(mockStripeSessionRetrieve).toHaveBeenCalledWith('sess_error');
+        });
+
+        it('should handle no expired bookings gracefully', async () => {
+            // Don't create any expired bookings
+            // The cleanup should just return early
+
+            await cleanupExpiredBookings();
+
+            // Should not call Stripe at all
+            expect(mockStripeSessionRetrieve).not.toHaveBeenCalled();
+            expect(mockStripeSessionExpire).not.toHaveBeenCalled();
+        });
+
+        it('should handle database errors gracefully', async () => {
+            // Mock Booking.find to throw a database error
+            const mockBookingFind = jest.spyOn(Booking, 'find');
+            mockBookingFind.mockRejectedValue(new Error('Database connection error'));
+
+            // Should not throw, just log error
+            await expect(cleanupExpiredBookings()).resolves.not.toThrow();
+
+            // Restore the original implementation
+            mockBookingFind.mockRestore();
         });
     });
 
