@@ -29,11 +29,6 @@ export const createJoinRequest = asyncHandler(async (req: IUserRequest, res) => 
   if (game.status !== "Open") {
     throw new AppError("Cannot join a closed/cancelled game", 400);
   }
-  
-  // Cannot join if slot is booked
-  if (game.bookingStatus === "Booked") {
-    throw new AppError("Cannot join. Slot already booked", 400);
-  }
 
   // Cannot join after start time
   if (new Date(game.slot.startTime) <= new Date()) {
@@ -85,10 +80,6 @@ export const approveJoinRequest = asyncHandler(async (req: IUserRequest, res) =>
 
   if(game.status !== "Open") {
     throw new AppError("Cannot approve join requests for closed/cancelled/completed games", 400);
-  }
-
-  if (game.bookingStatus === "Booked") {
-    throw new AppError("Cannot approve players after slot is booked", 400);
   }
 
   if(new Date(game.slot.startTime) <= new Date()) {
@@ -151,11 +142,7 @@ export const rejectJoinRequest = asyncHandler(async (req: IUserRequest, res) => 
   if(game.status !== "Open") {
     throw new AppError("Cannot reject join requests for closed/cancelled/completed games", 400);
   } 
-  if (game.bookingStatus === "Booked") {
-    throw new AppError("Cannot reject players after slot is booked", 400);
-  }
-
-
+  
   const jr = getJoinRequest(game, playerId);
   if (!jr) {
     throw new AppError("Join request not found", 404);
