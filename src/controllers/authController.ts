@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import asyncHandler from "express-async-handler";
 import User, { IUser } from "../models/User";
 import UserEmailOtpVerification from "../models/UserEmailOtpVerification";
 import { uploadToCloudinary } from "../utils/cloudinaryUploader";
@@ -12,7 +13,7 @@ import {
 } from "../utils/EmailAndPwdHelper";
 
 // Register a new user
-export const register = async (req: Request, res: Response) => {
+export const register = asyncHandler(async (req: Request, res: Response) => {
   const { username, email, password, role, age, gender, authProvider = "local" } = req.body;
   const files = req.files as Express.Multer.File[];
 
@@ -143,10 +144,10 @@ export const register = async (req: Request, res: Response) => {
     }
     throw error;
   }
-};
+});
 
 // Authenticate user and return JWT token
-export const login = async (req: Request, res: Response) => {
+export const login = asyncHandler(async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -194,261 +195,229 @@ export const login = async (req: Request, res: Response) => {
       message: "An error occurred during login. Please try again.",
     });
   }
-};
+});
 
 // Check if username is available for registration
-export const checkUsername = async (req: Request, res: Response) => {
-  try {
-    const { username } = req.body;
-    if (!username) {
-      res.json({
-        success: false,
-        message: "Username is required"
-      });
-      return;
-    }
-
-    const existingUser = await User.findOne({ username });
+export const checkUsername = asyncHandler(async (req: Request, res: Response) => {
+  const { username } = req.body;
+  if (!username) {
     res.json({
-      success: true,
-      available: !existingUser
+      success: false,
+      message: "Username is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
-};
+
+  const existingUser = await User.findOne({ username });
+  res.json({
+    success: true,
+    available: !existingUser
+  });
+});
 
 // Check if email is available for registration
-export const checkEmail = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      res.json({
-        success: false,
-        message: "Email is required"
-      });
-      return;
-    }
-
-    const existingUser = await User.findOne({
-      email: email.toLowerCase().trim(),
-    });
-
+export const checkEmail = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email) {
     res.json({
-      success: true,
-      available: !existingUser
+      success: false,
+      message: "Email is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
-};
+
+  const existingUser = await User.findOne({
+    email: email.toLowerCase().trim(),
+  });
+
+  res.json({
+    success: true,
+    available: !existingUser
+  });
+});
 
 // Send OTP for email verification before registration
-export const sendOtp = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
+export const sendOtp = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
 
-    if (!email) {
-      res.json({
-        success: false,
-        message: "Email is required"
-      });
-      return;
-    }
-
-    const result = await sendOtpVerificationMail(email);
-
-    if (!result.success) {
-      res.json({
-        success: false,
-        message: result.message
-      });
-      return;
-    }
-
+  if (!email) {
     res.json({
-      success: true,
-      message: result.message,
-      data: result.data,
+      success: false,
+      message: "Email is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
-};
+
+  const result = await sendOtpVerificationMail(email);
+
+  if (!result.success) {
+    res.json({
+      success: false,
+      message: result.message
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+    data: result.data,
+  });
+});
 
 // Verify OTP for email verification
-export const verifyOtpController = async (req: Request, res: Response) => {
-  try {
-    const { email, otp } = req.body;
+export const verifyOtpController = asyncHandler(async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
 
-    if (!email || !otp) {
-      res.json({
-        success: false,
-        message: "Email and OTP are required"
-      });
-      return;
-    }
-
-    const result = await verifyOtp(email, otp);
-
-    if (!result.success) {
-      res.json({
-        success: false,
-        message: result.message
-      });
-      return;
-    }
-
+  if (!email || !otp) {
     res.json({
-      success: true,
-      message: result.message,
-      verified: result.verified,
+      success: false,
+      message: "Email and OTP are required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
-};
+
+  const result = await verifyOtp(email, otp);
+
+  if (!result.success) {
+    res.json({
+      success: false,
+      message: result.message
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+    verified: result.verified,
+  });
+});
 
 // Resend OTP if expired or not received
-export const resendOtp = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
+export const resendOtp = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
 
-    if (!email) {
-      res.json({
-        success: false,
-        message: "Email is required"
-      });
-      return;
-    }
-
-    const result = await sendOtpVerificationMail(email);
-
-    if (!result.success) {
-      res.json({
-        success: false,
-        message: result.message
-      });
-      return;
-    }
-
+  if (!email) {
     res.json({
-      success: true,
-      message: result.message,
-      data: result.data,
+      success: false,
+      message: "Email is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
-};
+
+  const result = await sendOtpVerificationMail(email);
+
+  if (!result.success) {
+    res.json({
+      success: false,
+      message: result.message
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+    data: result.data,
+  });
+});
 
 // Send OTP for password reset
-export const sendPasswordResetOtpController = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
+export const sendPasswordResetOtpController = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
 
-    if (!email) {
-      res.json({
-        success: false,
-        message: "Email is required"
-      });
-      return;
-    }
-
-    const result = await sendPasswordResetOtp(email);
-
-    if (!result.success) {
-      res.json({
-        success: false,
-        message: result.message
-      });
-      return;
-    }
-
+  if (!email) {
     res.json({
-      success: true,
-      message: result.message,
+      success: false,
+      message: "Email is required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
-};
+
+  const result = await sendPasswordResetOtp(email);
+
+  if (!result.success) {
+    res.json({
+      success: false,
+      message: result.message
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+  });
+});
 
 // Verify OTP for password reset
-export const verifyPasswordResetOtpController = async (req: Request, res: Response) => {
-  try {
-    const { email, otp } = req.body;
+export const verifyPasswordResetOtpController = asyncHandler(async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
 
-    if (!email || !otp) {
-      res.json({
-        success: false,
-        message: "Email and OTP are required",
-      });
-      return;
-    }
-
-    const result = await verifyOtp(email, otp);
-
-    if (!result.success) {
-      res.json({ success: false, message: result.message });
-      return;
-    }
-
+  if (!email || !otp) {
     res.json({
-      success: true,
-      message: result.message,
-      verified: result.verified,
+      success: false,
+      message: "Email and OTP are required",
     });
-  } catch (error) {
-    throw error;
+    return;
   }
-};
+
+  const result = await verifyOtp(email, otp);
+
+  if (!result.success) {
+    res.json({ success: false, message: result.message });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: result.message,
+    verified: result.verified,
+  });
+});
 
 // Reset password with verified OTP
-export const resetPassword = async (req: Request, res: Response) => {
-  try {
-    const { email, otp, newPassword } = req.body;
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email, otp, newPassword } = req.body;
 
-    if (!email || !otp || !newPassword) {
-      res.json({
-        success: false,
-        message: "Email, OTP, and new password are required"
-      });
-      return;
-    }
-
-    // Verify OTP for security
-    const otpVerification = await verifyOtp(email, otp);
-    if (!otpVerification.verified) {
-      res.json({
-        success: false,
-        message: "Invalid or expired OTP"
-      });
-      return;
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).select("+password");
-    if (!user) {
-      res.json({
-        success: false,
-        message: "User not found"
-      });
-      return;
-    }
-
-    user.password = newPassword;
-    await user.save();
-
-    // delete otp successful password reset
-    await UserEmailOtpVerification.deleteMany({
-      email: email.toLowerCase().trim(),
-    });
-
+  if (!email || !otp || !newPassword) {
     res.json({
-      success: true,
-      message: "Password reset successful",
+      success: false,
+      message: "Email, OTP, and new password are required"
     });
-  } catch (error) {
-    throw error;
+    return;
   }
-};
+
+  // Verify OTP for security
+  const otpVerification = await verifyOtp(email, otp);
+  if (!otpVerification.verified) {
+    res.json({
+      success: false,
+      message: "Invalid or expired OTP"
+    });
+    return;
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase().trim() }).select("+password");
+  if (!user) {
+    res.json({
+      success: false,
+      message: "User not found"
+    });
+    return;
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  // delete otp successful password reset
+  await UserEmailOtpVerification.deleteMany({
+    email: email.toLowerCase().trim(),
+  });
+
+  res.json({
+    success: true,
+    message: "Password reset successful",
+  });
+});
