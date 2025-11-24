@@ -25,6 +25,32 @@ export const registerAdmin = async (req: Request, res: Response) => {
 export const loginAdmin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body as { email: string; password: string };
+
+    // If the email + password match environment variables, issue a JWT without DB lookup.
+    if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+      if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+        const payload = {
+          id: 'admin-env',
+          email: process.env.ADMIN_EMAIL,
+          username: process.env.ADMIN_USERNAME || 'Admin'
+        };
+
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+          console.error('JWT_SECRET not set');
+          return res.status(500).json({ message: 'Server configuration error' });
+        }
+
+        const token = jwt.sign(payload, secret, { expiresIn: '1h' });
+
+        return res.json({
+          message: 'Login successful (env admin)',
+          token,
+          user: { id: 'admin-env', username: process.env.ADMIN_USERNAME || 'Admin', email: process.env.ADMIN_EMAIL }
+        });
+      }
+    }
+
     const admin = await Admin.findOne({ email });
     if (!admin) return res.status(401).json({ message: 'Invalid credentials' });
 
