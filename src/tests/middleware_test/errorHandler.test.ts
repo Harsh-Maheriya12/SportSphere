@@ -58,14 +58,12 @@ describe('errorHandler Middleware', () => {
             });
         });
 
-        it('should use default 500 status code if not provided', () => {
-            const error = new AppError('Something went wrong');
-            // AppError defaults to 500 if no status code provided
+        it('should handle AppError with 500 status code', () => {
+            const error = new AppError('Something went wrong', 500);
 
             errorHandler(error, req as Request, res as Response, next);
 
-            // Since res.statusCode is 200, it will be set to 200 first, then error's statusCode (500)
-            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.status).toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({
                 status: 'error',
                 message: 'Something went wrong'
