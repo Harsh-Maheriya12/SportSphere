@@ -21,7 +21,7 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
   let token: string | undefined;
   let decoded: JwtPayload;
 
-  // 1. Validate Authorization header presence and format
+  // Validate Authorization header presence and format
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     res.status(401);
@@ -33,14 +33,14 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
     throw new Error("Invalid Authorization format — expected 'Bearer <token>'.");
   }
 
-  // 2. Extract token
+  // Extract token
   token = authHeader.split(' ')[1];
   if (!token || token.trim() === '') {
     res.status(401);
     throw new Error('Token is empty — please provide a valid token after \'Bearer\'.');
   }
 
-  // 3. Verify token validity
+  // Verify token validity
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
   } catch (error: any) {
@@ -59,24 +59,19 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
     }
   }
 
-  // 4. Fetch user associated with token
+  // Fetch user associated with token
   try {
     const user = await User.findById(decoded.userId).select("-password");
-    
-    req.user = {
-      _id: user._id.toString(),   
-      role: user.role,
-      email: user.email,
-      username: user.username,
-    };
+
+    if (!user) {
+      res.status(401);
+      throw new Error('Authentication failed — user not found or has been removed.');
+    }
+
+    req.user = user;
   } catch (dbError: any) {
     res.status(500);
     throw new Error(`Database lookup failed — could not retrieve user: ${dbError.message}`);
-  }
-
-  if (!(req as any).user) {
-    res.status(401);
-    throw new Error('Authentication failed — user not found or has been removed.');
   }
 
   // 5. Pass control if everything checks out

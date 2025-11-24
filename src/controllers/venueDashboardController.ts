@@ -13,14 +13,7 @@ const groq = new Groq({
 });
 
 // Types 
-interface AuthUser {
-  _id: string;
-  role: string;
-}
 
-interface AuthedRequest extends Request {
-  user?: AuthUser;
-}
 
 interface RevenueByMonth {
   year: number;
@@ -109,7 +102,7 @@ Generate 3–6 highly actionable insights.
 
 // Main Dashboard Controller
 export const getVenueOwnerDashboard = async (
-  req: AuthedRequest,
+  req: Request,
   res: Response
 ) => {
   try {
@@ -127,7 +120,7 @@ export const getVenueOwnerDashboard = async (
 
     // Authorization
     if (
-      venue.owner.toString() !== req.user._id &&
+      venue.owner.toString() !== req.user._id.toString() &&
       req.user.role !== "admin"
     ) {
       return res.status(403).json({ message: "Forbidden" });

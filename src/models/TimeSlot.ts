@@ -22,7 +22,7 @@ export interface ITimeSlot extends Document {
   subVenue: mongoose.Types.ObjectId;
   date: string; // YYYY-MM-DD
 
-  slots: ISlot[];
+  slots: mongoose.Types.DocumentArray<ISlot>;
 
   createdAt: Date;
   updatedAt: Date;

@@ -1,5 +1,3 @@
-//hostGame.ts
-// controllers/gameControllers/hostGame.ts
 import asyncHandler from "express-async-handler";
 import { IUserRequest } from "../../middleware/authMiddleware";
 import mongoose from "mongoose";
