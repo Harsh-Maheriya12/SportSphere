@@ -8,3 +8,6 @@ dist
 .vercel
 coverage/
 uploads/
+.stryker-tmp/
+stryker-tmp/
+reports/mutation/

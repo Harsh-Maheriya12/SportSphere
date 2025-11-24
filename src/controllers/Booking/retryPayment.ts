@@ -8,7 +8,6 @@ import Stripe from "stripe";
 import mongoose from "mongoose";
 import logger from "../../config/logger";
 
-// Lazy-load Stripe
 let stripe: Stripe;
 const getStripe = () => {
     if (!stripe) {
