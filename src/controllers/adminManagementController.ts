@@ -6,7 +6,7 @@ import CoachDetail from '../models/coach/CoachDetail';
 import Ticket from '../models/Ticket';
 
 // List & search users
-export const listUsers = asyncHandler(async (req: Request, res: Response) => {
+export const listUsers = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { q, role, page = 1, limit = 50 } = req.query as any;
   const filter: any = {};
   if (role) filter.role = role;
@@ -27,7 +27,7 @@ export const listUsers = asyncHandler(async (req: Request, res: Response) => {
 });
 
 // Get single user
-export const getUserById = asyncHandler(async (req: Request, res: Response) => {
+export const getUserById = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const user = await User.findById(id).select('-password');
   if (!user) {
@@ -38,7 +38,7 @@ export const getUserById = asyncHandler(async (req: Request, res: Response) => {
 });
 
 // Delete user
-export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
+export const deleteUser = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const user = await User.findById(id);
   if (!user) {
@@ -46,13 +46,12 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
     return;
   }
 
-  // Use deleteOne for clarity
   await User.deleteOne({ _id: user._id });
   res.json({ success: true, message: 'User deleted' });
 });
 
-// List coaches (users with role coach + coach details)
-export const listCoaches = asyncHandler(async (req: Request, res: Response) => {
+// List coaches
+export const listCoaches = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { q, status, page = 1, limit = 50 } = req.query as any;
   const userFilter: any = { role: 'coach' };
   if (q) {
@@ -60,21 +59,25 @@ export const listCoaches = asyncHandler(async (req: Request, res: Response) => {
     userFilter.$or = [{ username: regex }, { email: regex }];
   }
 
-  const users = await User.find(userFilter).select('-password').sort({ createdAt: -1 })
-    .skip((Number(page) - 1) * Number(limit)).limit(Number(limit));
+  const users = await User.find(userFilter)
+    .select('-password')
+    .sort({ createdAt: -1 })
+    .skip((Number(page) - 1) * Number(limit))
+    .limit(Number(limit));
 
-  // Optionally include coach details
-  const results = await Promise.all(users.map(async (u) => {
-    const detail = await CoachDetail.findOne({ coachId: u._id });
-    return { user: u, detail };
-  }));
+  const results = await Promise.all(
+    users.map(async (u) => {
+      const detail = await CoachDetail.findOne({ coachId: u._id });
+      return { user: u, detail };
+    })
+  );
 
   const total = await User.countDocuments(userFilter);
   res.json({ success: true, data: results, total });
 });
 
-// Delete coach (user)
-export const deleteCoach = asyncHandler(async (req: Request, res: Response) => {
+// Delete coach
+export const deleteCoach = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const user = await User.findById(id);
   if (!user || user.role !== 'coach') {
@@ -82,19 +85,17 @@ export const deleteCoach = asyncHandler(async (req: Request, res: Response) => {
     return;
   }
 
-  // Delete user and related coach detail atomically where possible
   await User.deleteOne({ _id: user._id });
   try {
     await CoachDetail.deleteOne({ coachId: user._id });
   } catch (e) {
-    // non-fatal
     console.warn('Failed to delete coach detail', e);
   }
   res.json({ success: true, message: 'Coach deleted' });
 });
 
-// List venue owners (users who own venues)
-export const listVenueOwners = asyncHandler(async (req: Request, res: Response) => {
+// List venue owners
+export const listVenueOwners = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { q, page = 1, limit = 50 } = req.query as any;
   const userFilter: any = { role: 'venue-owner' };
   if (q) {
@@ -102,21 +103,25 @@ export const listVenueOwners = asyncHandler(async (req: Request, res: Response) 
     userFilter.$or = [{ username: regex }, { email: regex }];
   }
 
-  const users = await User.find(userFilter).select('-password').sort({ createdAt: -1 })
-    .skip((Number(page) - 1) * Number(limit)).limit(Number(limit));
+  const users = await User.find(userFilter)
+    .select('-password')
+    .sort({ createdAt: -1 })
+    .skip((Number(page) - 1) * Number(limit))
+    .limit(Number(limit));
 
-  // Optionally include venue count
-  const results = await Promise.all(users.map(async (u) => {
-    const venues = await Venue.find({ owner: u._id }).select('name');
-    return { user: u, venues };
-  }));
+  const results = await Promise.all(
+    users.map(async (u) => {
+      const venues = await Venue.find({ owner: u._id }).select('name');
+      return { user: u, venues };
+    })
+  );
 
   const total = await User.countDocuments(userFilter);
   res.json({ success: true, data: results, total });
 });
 
-// Delete venue owner (user)
-export const deleteVenueOwner = asyncHandler(async (req: Request, res: Response) => {
+// Delete venue owner
+export const deleteVenueOwner = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const user = await User.findById(id);
   if (!user || user.role !== 'venue-owner') {
@@ -124,13 +129,12 @@ export const deleteVenueOwner = asyncHandler(async (req: Request, res: Response)
     return;
   }
 
-  // Optionally reassign or remove venues - for now we'll delete user only
   await User.deleteOne({ _id: user._id });
   res.json({ success: true, message: 'Venue owner deleted' });
 });
 
-// Get overview statistics
-export const getOverviewStats = asyncHandler(async (req: Request, res: Response) => {
+// Overview stats
+export const getOverviewStats = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const totalUsers = await User.countDocuments({ role: { $ne: 'admin' } });
   const totalVenueOwners = await User.countDocuments({ role: 'venue-owner' });
   const totalCoaches = await User.countDocuments({ role: 'coach' });
@@ -138,12 +142,7 @@ export const getOverviewStats = asyncHandler(async (req: Request, res: Response)
 
   res.json({
     success: true,
-    data: {
-      totalUsers,
-      totalVenueOwners,
-      totalCoaches,
-      pendingTickets,
-    },
+    data: { totalUsers, totalVenueOwners, totalCoaches, pendingTickets },
   });
 });
 
