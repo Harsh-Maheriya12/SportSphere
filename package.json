@@ -17,6 +17,7 @@
     "test:mutation": "stryker run"
   },
   "dependencies": {
+    "@langchain/groq": "^1.0.1",
     "@radix-ui/react-tabs": "^1.1.13",
     "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
@@ -37,8 +38,8 @@
     "nodemailer": "^7.0.10",
     "pino": "^10.0.0",
     "pino-http": "^11.0.0",
-    "stripe": "19.2.0",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "stripe": "19.2.0"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^9.3.0",

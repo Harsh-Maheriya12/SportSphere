@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import asyncHandler from "express-async-handler";
 import User, { IUser } from "../models/User";
 import UserEmailOtpVerification from "../models/UserEmailOtpVerification";
 import { uploadToCloudinary } from "../utils/cloudinaryUploader";
@@ -12,7 +13,7 @@ import {
 } from "../utils/EmailAndPwdHelper";
 
 // Register a new user
-export const register = async (req: Request, res: Response) => {
+export const register = asyncHandler(async (req: Request, res: Response) => {
   const { username, email, password, role, age, gender, authProvider = "local" } = req.body;
   const files = req.files as Express.Multer.File[];
 
@@ -143,10 +144,10 @@ export const register = async (req: Request, res: Response) => {
     }
     throw error;
   }
-};
+});
 
 // Authenticate user and return JWT token
-export const login = async (req: Request, res: Response) => {
+export const login = asyncHandler(async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -194,10 +195,10 @@ export const login = async (req: Request, res: Response) => {
       message: "An error occurred during login. Please try again.",
     });
   }
-};
+});
 
 // Check if username is available for registration
-export const checkUsername = async (req: Request, res: Response) => {
+export const checkUsername = asyncHandler(async (req: Request, res: Response) => {
   const { username } = req.body;
   if (!username) {
     res.json({
@@ -212,10 +213,10 @@ export const checkUsername = async (req: Request, res: Response) => {
     success: true,
     available: !existingUser
   });
-};
+});
 
 // Check if email is available for registration
-export const checkEmail = async (req: Request, res: Response) => {
+export const checkEmail = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
   if (!email) {
     res.json({
@@ -233,10 +234,10 @@ export const checkEmail = async (req: Request, res: Response) => {
     success: true,
     available: !existingUser
   });
-};
+});
 
 // Send OTP for email verification before registration
-export const sendOtp = async (req: Request, res: Response) => {
+export const sendOtp = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
 
   if (!email) {
@@ -262,10 +263,10 @@ export const sendOtp = async (req: Request, res: Response) => {
     message: result.message,
     data: result.data,
   });
-};
+});
 
 // Verify OTP for email verification
-export const verifyOtpController = async (req: Request, res: Response) => {
+export const verifyOtpController = asyncHandler(async (req: Request, res: Response) => {
   const { email, otp } = req.body;
 
   if (!email || !otp) {
@@ -291,10 +292,10 @@ export const verifyOtpController = async (req: Request, res: Response) => {
     message: result.message,
     verified: result.verified,
   });
-};
+});
 
 // Resend OTP if expired or not received
-export const resendOtp = async (req: Request, res: Response) => {
+export const resendOtp = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
 
   if (!email) {
@@ -320,10 +321,10 @@ export const resendOtp = async (req: Request, res: Response) => {
     message: result.message,
     data: result.data,
   });
-};
+});
 
 // Send OTP for password reset
-export const sendPasswordResetOtpController = async (req: Request, res: Response) => {
+export const sendPasswordResetOtpController = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
 
   if (!email) {
@@ -348,10 +349,10 @@ export const sendPasswordResetOtpController = async (req: Request, res: Response
     success: true,
     message: result.message,
   });
-};
+});
 
 // Verify OTP for password reset
-export const verifyPasswordResetOtpController = async (req: Request, res: Response) => {
+export const verifyPasswordResetOtpController = asyncHandler(async (req: Request, res: Response) => {
   const { email, otp } = req.body;
 
   if (!email || !otp) {
@@ -374,10 +375,10 @@ export const verifyPasswordResetOtpController = async (req: Request, res: Respon
     message: result.message,
     verified: result.verified,
   });
-};
+});
 
 // Reset password with verified OTP
-export const resetPassword = async (req: Request, res: Response) => {
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
   const { email, otp, newPassword } = req.body;
 
   if (!email || !otp || !newPassword) {
@@ -419,4 +420,4 @@ export const resetPassword = async (req: Request, res: Response) => {
     success: true,
     message: "Password reset successful",
   });
-};
+});
