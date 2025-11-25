@@ -1,18 +1,22 @@
 import axios from 'axios';
 
-// Get API base URL from environment, normalize it (remove trailing slashes and /api if present)
-const getApiBase = () => {
+// Get API base URL from environment; fall back to same-origin relative paths
+const getApiRoot = () => {
   let base = (import.meta as any).env?.VITE_API_BASE || '';
-  // Remove trailing slashes
-  base = base.replace(/\/+$/, '');
-  // If base already ends with /api, remove it (we add /api in the URL construction)
-  if (base.endsWith('/api')) {
-    base = base.slice(0, -4);
+  if (!base && typeof window !== 'undefined') {
+    base = window.location.origin;
   }
-  return base;
+  if (!base) return '';
+  return base.replace(/\/+$/, '');
 };
 
-const API_BASE = getApiBase();
+const API_ROOT = getApiRoot();
+const API_PREFIX = API_ROOT
+  ? (API_ROOT.endsWith('/api') ? API_ROOT : `${API_ROOT}/api`)
+  : '/api';
+
+const ensureLeadingSlash = (path: string) => (path.startsWith('/') ? path : `/${path}`);
+const buildAdminUrl = (path: string) => `${API_PREFIX}${ensureLeadingSlash(path)}`;
 
 const getAuthHeader = (token?: string | null) => {
   // Prefer explicit token (passed from context). If missing, fall back to adminToken stored separately.
@@ -21,54 +25,54 @@ const getAuthHeader = (token?: string | null) => {
 };
 
 export const fetchUsers = async (token?: string | null, params?: any) => {
-  const res = await axios.get(`${API_BASE}/api/admin/users`, { params, ...getAuthHeader(token) });
+  const res = await axios.get(buildAdminUrl('/admin/users'), { params, ...getAuthHeader(token) });
   return res.data;
 };
 
 export const getUser = async (token: string | null, id: string) => {
-  const res = await axios.get(`${API_BASE}/api/admin/users/${id}`, getAuthHeader(token));
+  const res = await axios.get(buildAdminUrl(`/admin/users/${id}`), getAuthHeader(token));
   return res.data;
 };
 
 export const deleteUserApi = async (token: string | null, id: string) => {
-  const res = await axios.delete(`${API_BASE}/api/admin/users/${id}`, getAuthHeader(token));
+  const res = await axios.delete(buildAdminUrl(`/admin/users/${id}`), getAuthHeader(token));
   return res.data;
 };
 
 export const fetchCoaches = async (token?: string | null, params?: any) => {
-  const res = await axios.get(`${API_BASE}/api/admin/coaches`, { params, ...getAuthHeader(token) });
+  const res = await axios.get(buildAdminUrl('/admin/coaches'), { params, ...getAuthHeader(token) });
   return res.data;
 };
 
 export const deleteCoachApi = async (token: string | null, id: string) => {
-  const res = await axios.delete(`${API_BASE}/api/admin/coaches/${id}`, getAuthHeader(token));
+  const res = await axios.delete(buildAdminUrl(`/admin/coaches/${id}`), getAuthHeader(token));
   return res.data;
 };
 
 export const fetchVenueOwners = async (token?: string | null, params?: any) => {
-  const res = await axios.get(`${API_BASE}/api/admin/venue-owners`, { params, ...getAuthHeader(token) });
+  const res = await axios.get(buildAdminUrl('/admin/venue-owners'), { params, ...getAuthHeader(token) });
   return res.data;
 };
 
 export const deleteVenueOwnerApi = async (token: string | null, id: string) => {
-  const res = await axios.delete(`${API_BASE}/api/admin/venue-owners/${id}`, getAuthHeader(token));
+  const res = await axios.delete(buildAdminUrl(`/admin/venue-owners/${id}`), getAuthHeader(token));
   return res.data;
 };
 
 export const getOverviewStats = async (token?: string | null) => {
-  const res = await axios.get(`${API_BASE}/api/admin/overview/stats`, getAuthHeader(token));
+  const res = await axios.get(buildAdminUrl('/admin/overview/stats'), getAuthHeader(token));
   return res.data;
 };
 
 // Admin Tickets
 export const fetchTickets = async (token?: string | null) => {
-  const res = await axios.get(`${API_BASE}/api/admin/tickets`, getAuthHeader(token));
+  const res = await axios.get(buildAdminUrl('/admin/tickets'), getAuthHeader(token));
   return res.data;
 };
 
 export const replyToTicket = async (token: string | null, ticketId: string, message: string) => {
   const res = await axios.post(
-    `${API_BASE}/api/admin/tickets/${ticketId}/reply`,
+    buildAdminUrl(`/admin/tickets/${ticketId}/reply`),
     { message },
     getAuthHeader(token)
   );
@@ -77,7 +81,7 @@ export const replyToTicket = async (token: string | null, ticketId: string, mess
 
 export const closeTicket = async (token: string | null, ticketId: string) => {
   const res = await axios.patch(
-    `${API_BASE}/api/admin/tickets/${ticketId}/close`,
+    buildAdminUrl(`/admin/tickets/${ticketId}/close`),
     {},
     getAuthHeader(token)
   );
@@ -86,7 +90,7 @@ export const closeTicket = async (token: string | null, ticketId: string) => {
 
 // Admin Authentication
 export const adminLogin = async (email: string, password: string) => {
-  const url = `${API_BASE}/api/admin/auth/loginAdmin`;
+  const url = buildAdminUrl('/admin/auth/loginAdmin');
   // Log in development to help debug
   if ((import.meta as any).env?.DEV) {
     console.log('Admin login URL:', url);
