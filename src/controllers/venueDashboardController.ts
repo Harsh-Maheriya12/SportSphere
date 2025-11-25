@@ -259,7 +259,7 @@ export const getVenueOwnerDashboard = async (
       });
     }
 
-    return res.json({
+    return res.status(200).json({
       venue: llmPayload.venue,
       period: { from: start, to: now, previousFrom: prevStart, previousTo: prevEnd },
       kpis,
