@@ -111,7 +111,7 @@ function Chatbot() {
 
       {/* Chatbot */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[600px] flex flex-col bg-card border-2 border-primary/10 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[80vw]  h-[600px] flex flex-col bg-card border-2 border-primary/10 rounded-2xl shadow-2xl overflow-hidden">
           {/* Header */}
           <div className="p-4 flex items-center justify-between bg-gradient-to-r from-secondary/20 to-primary/10 backdrop-blur border-b border-primary/20">
             <div className="flex items-center gap-3">
