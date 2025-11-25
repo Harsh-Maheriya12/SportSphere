@@ -13,7 +13,12 @@
     "jest": {
         "projectType": "custom",
         "configFile": "jest.config.js",
-        "enableFindRelatedTests": true
+        "enableFindRelatedTests": true,
+        "config": {
+            "testPathIgnorePatterns": [
+                "/MongoConn.test.ts"
+            ]
+        }
     },
     "mutate": [
         "src/controllers/authController.ts",

@@ -75,37 +75,46 @@ export const stripeWebhook = async (req: Request, res: Response): Promise<void> 
         if (expiredBooking) {
           expiredBooking.status = "Failed";
           await expiredBooking.save();
+          logger.info(`Booking ${expiredBooking._id} marked as Failed (expired)`);
+        }
 
-          // Release the slot
-          // We need to find the TimeSlot that contains this booking's slot
-          // The booking has venueId, subVenueId, startTime, endTime
-          // But TimeSlot is indexed by subVenueId and date
+        // Release the slot using metadata (Robust method)
+        if (expiredSession.metadata && expiredSession.metadata.timeSlotDocId && expiredSession.metadata.slotId) {
+          const { timeSlotDocId, slotId } = expiredSession.metadata;
 
-          if (expiredBooking.subVenueId) {
-            const dateStr = expiredBooking.startTime.toISOString().split('T')[0]; // YYYY-MM-DD
-
-            const timeSlot = await TimeSlot.findOne({
-              subVenue: expiredBooking.subVenueId,
-              date: dateStr
-            });
-
-            if (timeSlot) {
-              // Find the specific slot
-              const slotIndex = timeSlot.slots.findIndex((s: any) =>
-                new Date(s.startTime).getTime() === new Date(expiredBooking.startTime).getTime() &&
-                new Date(s.endTime).getTime() === new Date(expiredBooking.endTime).getTime()
-              );
-
-              if (slotIndex !== -1) {
-                timeSlot.slots[slotIndex].status = "available";
-                timeSlot.slots[slotIndex].bookedForSport = null;
-                await timeSlot.save();
-                logger.info(`Slot released for booking ${expiredBooking._id}`);
+          await TimeSlot.findOneAndUpdate(
+            { _id: timeSlotDocId, "slots._id": slotId },
+            {
+              $set: {
+                "slots.$.status": "available",
+                "slots.$.bookedForSport": null
               }
             }
-          }
+          );
+          logger.info(`Slot released via metadata for session ${expiredSession.id}`);
+        } else if (expiredBooking && expiredBooking.subVenueId) {
+          // Fallback: Release the slot using booking data (Fragile method)
+          const dateStr = expiredBooking.startTime.toISOString().split('T')[0]; // YYYY-MM-DD
 
-          logger.info(`Booking ${expiredBooking._id} marked as Failed (expired)`);
+          const timeSlot = await TimeSlot.findOne({
+            subVenue: expiredBooking.subVenueId,
+            date: dateStr
+          });
+
+          if (timeSlot) {
+            // Find the specific slot
+            const slotIndex = timeSlot.slots.findIndex((s: any) =>
+              new Date(s.startTime).getTime() === new Date(expiredBooking.startTime).getTime() &&
+              new Date(s.endTime).getTime() === new Date(expiredBooking.endTime).getTime()
+            );
+
+            if (slotIndex !== -1) {
+              timeSlot.slots[slotIndex].status = "available";
+              timeSlot.slots[slotIndex].bookedForSport = null;
+              await timeSlot.save();
+              logger.info(`Slot released via fallback for booking ${expiredBooking._id}`);
+            }
+          }
         }
         break;
 

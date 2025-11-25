@@ -254,8 +254,7 @@ export const sendOtp = asyncHandler(async (req: Request, res: Response) => {
     res.json({
       success: false,
       message: result.message
-    });
-    return;
+    });    return;
   }
 
   res.json({

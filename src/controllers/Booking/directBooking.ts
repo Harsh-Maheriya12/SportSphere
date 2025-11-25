@@ -57,8 +57,7 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
   if (!price) throw new AppError("Sport price not available for this slot", 400);
 
   // Convert price to paise (Stripe requires smallest currency unit)
-  // If price is already in paise (>= 1000), use as is, otherwise convert rupees to paise
-  const priceInPaise = price >= 1000 ? price : price * 100;
+  const priceInPaise = price *100;
 
   // Fetch subvenue → venue
   const subVenue = await SubVenue.findById(subVenueId);
@@ -88,11 +87,15 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
   }
 
   try {
+    // Pre-generate Booking ID
+    const bookingId = new mongoose.Types.ObjectId();
+
     // Create Stripe session
     const stripeClient = getStripe();
     const session = await stripeClient.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
+      expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes from now
 
       line_items: [
         {
@@ -108,7 +111,9 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
       metadata: {
         type: "direct",
         userId: userId.toString(),
-        bookingId: "", // Will be updated after booking creation
+        bookingId: bookingId.toString(),
+        timeSlotDocId: timeSlotDocId.toString(),
+        slotId: slotId.toString()
       },
 
       success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
@@ -117,6 +122,7 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
 
     // Create Booking record
     const booking = await Booking.create({
+      _id: bookingId,
       user: userId,
       venueId: venue._id,
       subVenueId: subVenueId,

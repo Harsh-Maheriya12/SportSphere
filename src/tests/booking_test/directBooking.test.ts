@@ -118,7 +118,24 @@ describe('createDirectBooking Controller', () => {
 
         expect(TimeSlot.findOneAndUpdate).toHaveBeenCalled();
         expect(Booking.create).toHaveBeenCalled();
-        expect(mockStripeSessionCreate).toHaveBeenCalled();
+        expect(mockStripeSessionCreate).toHaveBeenCalledWith(expect.objectContaining({
+            mode: 'payment',
+            expires_at: expect.any(Number),
+            line_items: [
+                expect.objectContaining({
+                    price_data: expect.objectContaining({
+                        unit_amount: 100000 // 1000 * 100
+                    })
+                })
+            ],
+            metadata: expect.objectContaining({
+                type: 'direct',
+                userId: 'user123',
+                bookingId: expect.any(String),
+                timeSlotDocId: 'tsDoc123',
+                slotId: 'slot123'
+            })
+        }));
         expect(res.status).toHaveBeenCalledWith(201);
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
             success: true,
