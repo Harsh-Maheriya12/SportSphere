@@ -7,7 +7,7 @@ import {
   Ticket,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getOverviewStats } from '../../services/adminApi';
+import { getOverviewStats, fetchTickets } from '../../services/adminApi';
 
 const Overview: React.FC = () => {
   const [stats, setStats] = useState({
@@ -87,16 +87,7 @@ const Overview: React.FC = () => {
   const loadRecentTickets = async () => {
     try {
       const adminToken = getAdminToken();
-      const res = await fetch('/api/admin/tickets', {
-        method: 'GET',
-        headers: {
-          ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
-        },
-      });
-      if (!res.ok) {
-        throw new Error('Failed to fetch tickets');
-      }
-      const data = await res.json();
+      const data = await fetchTickets(adminToken);
       // Get first 5 most recent tickets
       const tickets = (data.tickets || []).slice(0, 5).map((t: any) => ({
         id: t._id, // Use _id for navigation
@@ -111,8 +102,9 @@ const Overview: React.FC = () => {
         }),
       }));
       setRecentTickets(tickets);
-    } catch (err) {
+    } catch (err: any) {
       console.error('loadRecentTickets error', err);
+      // Silently fail for recent tickets - don't show error toast as it's not critical
     }
   };
 

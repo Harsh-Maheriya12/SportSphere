@@ -10,7 +10,7 @@ import { uploadToCloudinary } from '../utils/cloudinaryUploader';
 export const createTicket = async (req: Request, res: Response) => {
   // Basic request validation
   const errors: Record<string, string> = {};
-  const { subject, category, description, userName, userEmail, files } = req.body;
+  const { subject, category, description, userName, userEmail } = req.body;
   if (!subject || typeof subject !== 'string' || !subject.trim()) errors.subject = 'Subject is required';
   if (!category || typeof category !== 'string' || !category.trim()) errors.category = 'Category is required';
   if (!description || typeof description !== 'string' || !description.trim()) errors.description = 'Description is required';
@@ -21,12 +21,13 @@ export const createTicket = async (req: Request, res: Response) => {
 
   try {
     // Handle multiple files from multer (using .any() which supports multiple files)
-    const filesArr: any[] = Array.isArray(files) ? [...files] : [];
+    // Files are stored in req.files by multer, not in req.body
     const uploadedFiles = (req as any).files || [];
+    const filesArr: any[] = [];
     
     // Upload files to Cloudinary and get URLs
     const fileUploadPromises = uploadedFiles.map(async (f: any) => {
-      const tempFilePath = path.join('uploads/temp', f.filename);
+      const tempFilePath = path.join('tmp/uploads/sportsphere', f.filename);
       const fileType = f.mimetype.startsWith('image/') ? 'image' : f.mimetype === 'application/pdf' ? 'pdf' : 'doc';
       
       try {
@@ -43,7 +44,9 @@ export const createTicket = async (req: Request, res: Response) => {
         try {
           await fs.promises.unlink(tempFilePath);
         } catch (unlinkErr) {
-          console.error(`Failed to delete temp file ${tempFilePath}:`, unlinkErr);
+          if ((unlinkErr as any).code !== 'ENOENT') {
+            console.error(`Failed to delete temp file ${tempFilePath}:`, unlinkErr);
+          }
         }
         throw new Error(`Failed to upload file ${f.originalname}`);
       }
@@ -78,16 +81,13 @@ export const createTicket = async (req: Request, res: Response) => {
     console.error('createTicket error', err);
     
     // Clean up any remaining temp files if ticket creation failed
-    // Note: Files that were successfully uploaded to Cloudinary are already deleted by uploadToCloudinary
     const uploadedFiles = (req as any).files || [];
     for (const f of uploadedFiles) {
-      const filePath = path.join('uploads/temp', f.filename);
+      const filePath = path.join('tmp/uploads/sportsphere', f.filename);
       try {
-        // Check if file still exists before trying to delete
         await fs.promises.access(filePath);
         await fs.promises.unlink(filePath);
       } catch (unlinkErr: any) {
-        // File might already be deleted or doesn't exist - that's okay
         if (unlinkErr.code !== 'ENOENT') {
           console.error(`Failed to delete temp file ${filePath} after error:`, unlinkErr);
         }
