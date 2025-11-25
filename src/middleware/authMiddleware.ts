@@ -106,14 +106,6 @@ export const protectAdmin = asyncHandler(async (req: Request, res: Response, nex
   }
 
   // 3. Verify token validity
-  // Special-case: allow a configured admin token string (development convenience)
-  const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'hardcoded-admin-token';
-  if (token === ADMIN_TOKEN) {
-    // Short-circuit: set a simple admin user object and proceed
-    (req as any).user = { _id: 'admin', username: process.env.ADMIN_USERNAME || 'admin', email: process.env.ADMIN_EMAIL || 'admin@example.com' } as any;
-    return next();
-  }
-
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET as string);
   } catch (error: any) {
@@ -132,7 +124,18 @@ export const protectAdmin = asyncHandler(async (req: Request, res: Response, nex
     }
   }
 
-  // 4. Fetch admin associated with token
+  // 4. Handle admin authentication
+  // If admin is env-based (id === 'admin-env'), create user object from env vars
+  if (decoded.id === 'admin-env') {
+    (req as any).user = {
+      _id: 'admin-env',
+      username: process.env.ADMIN_USERNAME || 'Admin',
+      email: process.env.ADMIN_EMAIL || 'admin@example.com'
+    };
+    return next();
+  }
+
+  // Otherwise, fetch admin from database
   try {
     (req as any).user = await Admin.findById(decoded.id).select('-password');
   } catch (dbError: any) {

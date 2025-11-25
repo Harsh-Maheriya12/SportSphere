@@ -170,7 +170,7 @@ const FaqPage: React.FC = () => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmitTicket = () => {
+  const handleSubmitTicket = async () => {
     if (!subject || !category || !description) {
       setToast({
         isVisible: true,
@@ -190,51 +190,57 @@ const FaqPage: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    // Use FormData to include multiple optional files
-    const form = new FormData();
-    form.append('subject', subject);
-    form.append('category', category);
-    form.append('description', description);
-    form.append('userName', user?.username || 'Guest User');
-    form.append('userEmail', user?.email || 'guest@example.com');
-    // Append all files - multer.any() will handle multiple files with any field name
-    files.forEach((fileItem) => {
-      if (fileItem.file) {
-        form.append('attachments', fileItem.file, fileItem.file.name);
-      }
-    });
-
-      fetch('/api/tickets', {
-      method: 'POST',
-      headers: {
-        // Do NOT set Content-Type; browser will set multipart boundary
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: form,
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message || 'Failed to submit ticket');
+    try {
+      // Use FormData to include multiple optional files
+      const form = new FormData();
+      form.append('subject', subject);
+      form.append('category', category);
+      form.append('description', description);
+      form.append('userName', user?.username || 'Guest User');
+      form.append('userEmail', user?.email || 'guest@example.com');
+      // Append all files - multer.any() will handle multiple files with any field name
+      files.forEach((fileItem) => {
+        if (fileItem.file) {
+          form.append('attachments', fileItem.file, fileItem.file.name);
         }
-        return res.json();
-      })
-      .then((_data) => {
-        // Reset form
-        setSubject('');
-        setCategory('');
-        setDescription('');
-        setFiles([]);
-        setIsTicketModalOpen(false);
-        setIsSubmitting(false);
-
-        // Show success toast
-        setToast({ isVisible: true, message: 'Ticket submitted successfully!', type: 'success' });
-      })
-      .catch((err) => {
-        setIsSubmitting(false);
-        setToast({ isVisible: true, message: err.message || 'Submission failed', type: 'error' });
       });
+
+      // Use BASE_URL from environment or relative path
+      const API_BASE = (import.meta as any).env?.VITE_API_BASE || '';
+      const apiUrl = `${API_BASE}/api/tickets`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          // Do NOT set Content-Type; browser will set multipart boundary automatically
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        const errorMessage = err.message || err.errors?.message || 'Failed to submit ticket';
+        throw new Error(errorMessage);
+      }
+      
+      const data = await response.json();
+      // Reset form
+      setSubject('');
+      setCategory('');
+      setDescription('');
+      setFiles([]);
+      setIsTicketModalOpen(false);
+      setIsSubmitting(false);
+
+      // Show success toast
+      setToast({ isVisible: true, message: 'Ticket submitted successfully!', type: 'success' });
+    } catch (err: any) {
+      setIsSubmitting(false);
+      console.error('Ticket submission error:', err);
+      const errorMessage = err.message || 'Submission failed. Please try again.';
+      setToast({ isVisible: true, message: errorMessage, type: 'error' });
+    }
   };
 
   return (

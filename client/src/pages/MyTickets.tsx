@@ -23,6 +23,8 @@ interface Ticket {
   attachment?: string;
 }
 
+const API_BASE = (import.meta as any).env?.VITE_API_BASE || "";
+
 const MyTickets: React.FC = () => {
   const { token } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -35,7 +37,7 @@ const MyTickets: React.FC = () => {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/tickets/mine", {
+      const res = await fetch(`${API_BASE}/api/tickets/mine`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch tickets");

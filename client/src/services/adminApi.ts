@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE || '';
+// Get API base URL from environment, normalize it (remove trailing slashes and /api if present)
+const getApiBase = () => {
+  let base = (import.meta as any).env?.VITE_API_BASE || '';
+  // Remove trailing slashes
+  base = base.replace(/\/+$/, '');
+  // If base already ends with /api, remove it (we add /api in the URL construction)
+  if (base.endsWith('/api')) {
+    base = base.slice(0, -4);
+  }
+  return base;
+};
+
+const API_BASE = getApiBase();
 
 const getAuthHeader = (token?: string | null) => {
   // Prefer explicit token (passed from context). If missing, fall back to adminToken stored separately.
@@ -48,9 +60,38 @@ export const getOverviewStats = async (token?: string | null) => {
   return res.data;
 };
 
+// Admin Tickets
+export const fetchTickets = async (token?: string | null) => {
+  const res = await axios.get(`${API_BASE}/api/admin/tickets`, getAuthHeader(token));
+  return res.data;
+};
+
+export const replyToTicket = async (token: string | null, ticketId: string, message: string) => {
+  const res = await axios.post(
+    `${API_BASE}/api/admin/tickets/${ticketId}/reply`,
+    { message },
+    getAuthHeader(token)
+  );
+  return res.data;
+};
+
+export const closeTicket = async (token: string | null, ticketId: string) => {
+  const res = await axios.patch(
+    `${API_BASE}/api/admin/tickets/${ticketId}/close`,
+    {},
+    getAuthHeader(token)
+  );
+  return res.data;
+};
+
 // Admin Authentication
 export const adminLogin = async (email: string, password: string) => {
-  const res = await axios.post(`${API_BASE}/api/admin/auth/loginAdmin`, {
+  const url = `${API_BASE}/api/admin/auth/loginAdmin`;
+  // Log in development to help debug
+  if ((import.meta as any).env?.DEV) {
+    console.log('Admin login URL:', url);
+  }
+  const res = await axios.post(url, {
     email,
     password,
   });
