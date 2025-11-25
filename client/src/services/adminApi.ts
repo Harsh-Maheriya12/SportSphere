@@ -1,14 +1,8 @@
 import axios from 'axios';
 
-const buildApiPrefix = () => {
-  const raw = (import.meta as any).env?.VITE_API_BASE || '';
-  if (!raw) return '/api';
-
-  const trimmed = raw.replace(/\/+$/, '');
-  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
-};
-
-const API_PREFIX = buildApiPrefix();
+// While local, uncomment first line, and during production, uncomment second line
+//let API_PREFIX = "/api";
+let API_PREFIX = "https://sportsphere-f6f0.onrender.com/api";
 
 const ensureLeadingSlash = (path: string) => (path.startsWith('/') ? path : `/${path}`);
 const buildAdminUrl = (path: string) => `${API_PREFIX}${ensureLeadingSlash(path)}`;
