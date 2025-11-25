@@ -23,7 +23,18 @@ interface Ticket {
   attachment?: string;
 }
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE || "";
+const normalizeTicketsApiBase = () => {
+  const raw = (import.meta as any).env?.VITE_API_BASE || "";
+  if (!raw) return "";
+  return raw.replace(/\/+$/, "");
+};
+
+const buildTicketsApiUrl = (path: string) => {
+  const base = normalizeTicketsApiBase();
+  const root = base ? (base.endsWith("/api") ? base : `${base}/api`) : "/api";
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${root}${normalizedPath}`;
+};
 
 const MyTickets: React.FC = () => {
   const { token } = useAuth();
@@ -37,7 +48,7 @@ const MyTickets: React.FC = () => {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/tickets/mine`, {
+      const res = await fetch(buildTicketsApiUrl("/tickets/mine"), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch tickets");
