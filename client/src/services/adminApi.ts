@@ -1,19 +1,14 @@
 import axios from 'axios';
 
-// Get API base URL from environment; fall back to same-origin relative paths
-const getApiRoot = () => {
-  let base = (import.meta as any).env?.VITE_API_BASE || '';
-  if (!base && typeof window !== 'undefined') {
-    base = window.location.origin;
-  }
-  if (!base) return '';
-  return base.replace(/\/+$/, '');
+const buildApiPrefix = () => {
+  const raw = (import.meta as any).env?.VITE_API_BASE || '';
+  if (!raw) return '/api';
+
+  const trimmed = raw.replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
 };
 
-const API_ROOT = getApiRoot();
-const API_PREFIX = API_ROOT
-  ? (API_ROOT.endsWith('/api') ? API_ROOT : `${API_ROOT}/api`)
-  : '/api';
+const API_PREFIX = buildApiPrefix();
 
 const ensureLeadingSlash = (path: string) => (path.startsWith('/') ? path : `/${path}`);
 const buildAdminUrl = (path: string) => `${API_PREFIX}${ensureLeadingSlash(path)}`;
