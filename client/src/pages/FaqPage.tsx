@@ -15,6 +15,19 @@ interface TicketFile {
   type: "image" | "pdf" | "doc";
 }
 
+const normalizeTicketsApiBase = () => {
+  const raw = (import.meta as any).env?.VITE_API_BASE || "";
+  if (!raw) return "";
+  return raw.replace(/\/+$/, "");
+};
+
+const buildTicketsApiUrl = (path: string) => {
+  const base = normalizeTicketsApiBase();
+  const root = base ? (base.endsWith("/api") ? base : `${base}/api`) : "/api";
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${root}${normalizedPath}`;
+};
+
 const FaqPage: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -205,11 +218,7 @@ const FaqPage: React.FC = () => {
         }
       });
 
-      // Use BASE_URL from environment or relative path
-      const API_BASE = (import.meta as any).env?.VITE_API_BASE || '';
-      const apiUrl = `${API_BASE}/api/tickets`;
-      
-      const response = await fetch(apiUrl, {
+      const response = await fetch(buildTicketsApiUrl("/tickets"), {
         method: 'POST',
         headers: {
           // Do NOT set Content-Type; browser will set multipart boundary automatically
