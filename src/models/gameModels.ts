@@ -18,6 +18,7 @@ export interface IGame extends Document {
   // Venue details
   venue :{
     venueId: mongoose.Types.ObjectId; // Reference to Venue document
+    venueName: string;
     city: string;
     state?: string;
     coordinates: { type: "Point"; coordinates: number[] }; // [lng, lat]
@@ -69,6 +70,7 @@ const gameSchema = new Schema<IGame>(
     description: { type: String, required: true, trim: true },
     venue: {
       venueId: { type: Schema.Types.ObjectId, ref: "Venue", required: true }, // Reference to Venue document
+      venueName: { type: String, required: true },
       city: { type: String, required: true },
       state: { type: String },
       coordinates: {

@@ -10,7 +10,8 @@ export const getGameById = asyncHandler(async (req: IUserRequest, res) => {
 
   const game = await Game.findById(gameId)
     .populate("host", "username email")
-    .populate("approvedPlayers", "username email");
+    .populate("approvedPlayers", "username email")
+    .populate("joinRequests.user", "username email");
 
   if (!game) throw new AppError("Game not found", 404);
 
@@ -116,7 +117,8 @@ export const getMyBookings = asyncHandler(async (req: IUserRequest, res) => {
 export const getGames = asyncHandler(async (req: IUserRequest, res, next): Promise<void> => {
   const {
     sport,
-    venueId,
+    city,
+    venueName,
     startDate,
     endDate,
     minPrice,
@@ -152,10 +154,13 @@ export const getGames = asyncHandler(async (req: IUserRequest, res, next): Promi
   if (sport && typeof sport === 'string') {
     query.sport = new RegExp(sport, 'i');
   }
-
+  // City filter
+  if (city && typeof city === 'string') {
+    query['venue.city'] = new RegExp(city, 'i');
+  }
   // Venue filter
-  if (venueId && typeof venueId === 'string') {
-    query['venue.venueId'] = venueId;
+  if (venueName && typeof venueName === 'string') {
+    query['venue.venueName'] = new RegExp(venueName, 'i');
   }
 
   // Price range
@@ -165,7 +170,8 @@ export const getGames = asyncHandler(async (req: IUserRequest, res, next): Promi
     if (maxPrice && !isNaN(Number(maxPrice))) query.approxCostPerPlayer.$lte = Number(maxPrice);
   }
 
-  // Geo filter (nearby venues)
+  // will work only if FE sends lat/lng
+  // Geo filter (nearby venues) 
   if (lng && lat) {
     query['venue.coordinates'] = {
       $near: {

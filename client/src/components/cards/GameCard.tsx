@@ -21,6 +21,14 @@ function GameCard({ game, onOpen, onJoin, onOptimisticUpdate }: GameCardProps) {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatPricePerPlayer = (value: number) => {
+    if (!Number.isFinite(value)) return "-";
+    return value.toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
   const statusColors = {
     Open: "bg-green-600/20 text-green-400 border-green-600/30",
     Full: "bg-yellow-600/20 text-yellow-400 border-yellow-600/30",
@@ -53,7 +61,7 @@ function GameCard({ game, onOpen, onJoin, onOptimisticUpdate }: GameCardProps) {
 
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border-2 border-primary/20 hover:border-primary transition-all cursor-pointer hover:shadow-lg shadow-sm bg-card/80 backdrop-blur"
+      className="group relative flex h-full flex-col overflow-hidden rounded-xl border-2 border-primary/20 hover:border-primary transition-all cursor-pointer hover:shadow-lg shadow-sm bg-card/80 backdrop-blur"
       onClick={() => onOpen(game._id)}
     >
       {/* Header Image/Gradient */}
@@ -85,78 +93,81 @@ function GameCard({ game, onOpen, onJoin, onOptimisticUpdate }: GameCardProps) {
         </div>
       </div>
 
-      <div className="p-5 space-y-4">
-        {/* Location */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <MapPin className="w-4 h-4 text-primary" />
-          <span className="truncate">
-            {game.subVenue.name}, {game.venue.city}
-            {game.venue.state && `, ${game.venue.state}`}
-          </span>
-        </div>
-
-        {/* Date & Time */}
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="w-4 h-4 text-primary" />
-            <span>{formatDate(game.slot.date)}</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="w-4 h-4 text-primary" />
-            <span>{formatTime(game.slot.startTime)} - {formatTime(game.slot.endTime)}</span>
-          </div>
-        </div>
-
-        {/* Players Progress */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-primary" />
-              <span className="text-muted-foreground">Players Joined</span>
-            </div>
-            <span className="font-semibold text-foreground">
-              {game.approvedPlayers.length}/{game.playersNeeded.max}
+      <div className="p-5 flex flex-1 flex-col gap-4">
+        <div className="space-y-4">
+          {/* Location */}
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="truncate flex-1 min-w-0">
+              {game.venue.venueName ? `${game.venue.venueName} • ` : ""}
+              {game.subVenue.name}, {game.venue.city}
+              {game.venue.state && `, ${game.venue.state}`}
             </span>
           </div>
-          
-          {/* Progress Bar */}
-          <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-300 ${
-                isFull ? 'bg-yellow-500' : 'bg-primary'
-              }`}
-              style={{ width: `${(game.approvedPlayers.length / game.playersNeeded.max) * 100}%` }}
-            ></div>
+
+          {/* Date & Time */}
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="w-4 h-4 text-primary" />
+              <span>{formatDate(game.slot.date)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock className="w-4 h-4 text-primary" />
+              <span>{formatTime(game.slot.startTime)} - {formatTime(game.slot.endTime)}</span>
+            </div>
           </div>
-          
-          <div className="h-4">
-            {spotsLeft > 0 && spotsLeft <= 3 && (
-              <p className="text-xs text-yellow-500 font-semibold">
-                Only {spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left!
-              </p>
+
+          {/* Players Progress */}
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary" />
+                <span className="text-muted-foreground">Players Joined</span>
+              </div>
+              <span className="font-semibold text-foreground">
+                {game.approvedPlayers.length}/{game.playersNeeded.max}
+              </span>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-300 ${
+                  isFull ? 'bg-yellow-500' : 'bg-primary'
+                }`}
+                style={{ width: `${(game.approvedPlayers.length / game.playersNeeded.max) * 100}%` }}
+              ></div>
+            </div>
+            
+            <div className="min-h-[1rem]">
+              {spotsLeft > 0 && spotsLeft <= 3 && (
+                <p className="text-xs text-yellow-500 font-semibold">
+                  Only {spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left!
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Pricing */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-primary/10">
+            <div className="flex items-center gap-2 text-primary font-bold text-lg">
+              <IndianRupee className="h-5 w-5" />
+              <span>{formatPricePerPlayer(game.approxCostPerPlayer)}</span>
+              <span className="text-sm text-muted-foreground font-normal">
+                /player
+              </span>
+            </div>
+            
+            {game.playersNeeded.min > game.approvedPlayers.length && (
+              <div className="text-xs text-muted-foreground">
+                Min {game.playersNeeded.min} required
+              </div>
             )}
           </div>
         </div>
 
-        {/* Pricing */}
-        <div className="flex items-center justify-between pt-3 border-t border-primary/10">
-          <div className="flex items-center gap-2 text-primary font-bold text-lg">
-            <IndianRupee className="h-5 w-5" />
-            <span>{game.approxCostPerPlayer}</span>
-            <span className="text-sm text-muted-foreground font-normal">
-              /player
-            </span>
-          </div>
-          
-          {game.playersNeeded.min > game.approvedPlayers.length && (
-            <div className="text-xs text-muted-foreground">
-              Min {game.playersNeeded.min} required
-            </div>
-          )}
-        </div>
-
         {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
+        <div className="mt-auto flex gap-2 pt-2">
           {isOpen && onJoin ? (
             <>
               <Button

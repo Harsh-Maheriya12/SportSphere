@@ -120,6 +120,7 @@ export interface Game {
 
   venue: {
     venueId: string;
+    venueName: string;
     city: string;
     state?: string;
     coordinates: {

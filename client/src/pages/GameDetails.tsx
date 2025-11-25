@@ -9,6 +9,7 @@ import {
   apiLeaveGame,
   apiCancelGame,
   apiRateVenue,
+  apiStartGameBooking,
 } from "../services/api";
 
 import { useAuth } from "../context/AuthContext";
@@ -28,6 +29,8 @@ import {
   Star,
   ArrowLeft,
   AlertCircle,
+  CreditCard,
+  Eye,
 } from "lucide-react";
 
 /**
@@ -249,6 +252,35 @@ const GameDetails: React.FC = () => {
     });
   };
 
+  const formatPrice = (value?: number | null) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return "0.00";
+    return numericValue.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+  
+  const handleStartBooking = async () => {
+    if (!gameId) return;
+    try {
+      setActionLoading(true);
+
+      // Call your unified API wrapper
+      const res = await apiStartGameBooking(gameId);
+
+      // Redirect user to Stripe Checkout
+      if (res.url) {
+        window.location.href = res.url;
+      } else {
+        setMessage("Failed to start payment. Try again.");
+      }
+    } catch (err: any) {
+      setMessage(err?.message ?? "Failed to initiate booking");
+    } finally {
+      setActionLoading(false);
+    }
+  }
   // UI derived values
   const approvedPlayers = (game?.approvedPlayers ?? []).map((p: any) =>
     typeof p === "string" ? { _id: p, username: p } : p
@@ -261,6 +293,7 @@ const GameDetails: React.FC = () => {
   const approvedPlayersExcludingHost = approvedPlayers.filter((p: any) => getId(p) !== getId(hostObj));
 
   const spotsLeft = (game?.playersNeeded?.max ?? 0) - (approvedPlayers.length ?? 0);
+  const hasMinPlayers = (approvedPlayers.length ?? 0) >= (game?.playersNeeded?.min ?? 0);
 
   const statusColors: Record<string, string> = {
     Open: "bg-green-600/20 text-green-400 border-green-600/30",
@@ -410,6 +443,7 @@ const GameDetails: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Venue</div>
+                    <div className="font-semibold text-foreground">{game?.venue?.venueName ?? "N/A"}</div>
                     <div className="font-semibold text-foreground">{game?.subVenue?.name ?? "N/A"}</div>
                     <div className="text-xs text-muted-foreground">{game?.venue?.city ?? "N/A"}, {game?.venue?.state ?? ""}</div>
                   </div>
@@ -421,8 +455,8 @@ const GameDetails: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Cost Per Player</div>
-                    <div className="font-semibold text-foreground text-lg">₹{game?.approxCostPerPlayer ?? 0}</div>
-                    <div className="text-xs text-muted-foreground">Total: ₹{game?.slot?.price ?? 0}</div>
+                    <div className="font-semibold text-foreground text-lg">₹{formatPrice(game?.approxCostPerPlayer)}</div>
+                    <div className="text-xs text-muted-foreground">Total: ₹{formatPrice(game?.slot?.price)}</div>
                   </div>
                 </div>
               </div>
@@ -440,9 +474,6 @@ const GameDetails: React.FC = () => {
                 <div>
                   <div className="font-bold text-foreground">{getUsername(hostObj)}</div>
                   <div className="text-xs text-muted-foreground">Host of the game</div>
-                </div>
-                <div className="ml-auto text-xs text-muted-foreground">
-                  Joined as: Host
                 </div>
               </div>
             </div>
@@ -469,7 +500,6 @@ const GameDetails: React.FC = () => {
                       <div className="font-medium text-foreground truncate">{getUsername(hostObj)}</div>
                       <div className="text-xs text-muted-foreground">Host</div>
                     </div>
-                    <div className="text-xs text-primary/80 font-semibold">You</div>
                   </div>
 
                   {/* Other approved players */}
@@ -506,47 +536,58 @@ const GameDetails: React.FC = () => {
             })()}
             
             {isHost && (game?.joinRequests ?? []).filter((r: any) => r?.status === "pending").length > 0 && (
-              <div className="bg-card/60 border border-primary/20 rounded-xl p-6 shadow-lg">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <UserPlus className="w-5 h-5 text-primary" /> Pending Join Requests
-                </h3>
+              <div className="bg-gradient-to-r from-card/80 to-card/60 border-2 border-primary/30 rounded-2xl p-6 shadow-xl backdrop-blur">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                    <UserPlus className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Pending Join Requests</h3>
+                    <p className="text-sm text-muted-foreground">Review players wanting to join your game</p>
+                  </div>
+                </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {(game.joinRequests ?? [])
                     .filter((r: any) => r?.status === "pending")
                     .map((req: any) => {
                       const requester = typeof req.user === "string" ? { _id: req.user, username: req.user } : req.user;
                       return (
-                        <div key={getId(requester) ?? Math.random()} className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-primary/10">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                              <User className="w-4 h-4 text-primary" />
+                        <div key={getId(requester) ?? Math.random()} className="group relative p-4 rounded-xl bg-card/80 border border-primary/20 hover:border-primary/40 transition-all duration-200 hover:shadow-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border-2 border-primary/30">
+                                <User className="w-6 h-6 text-primary" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-foreground text-lg">{getUsername(requester)}</div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <UserPlus className="w-3 h-3" />
+                                  Wants to join your game
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="font-medium text-foreground">{getUsername(requester)}</div>
-                              <div className="text-xs text-muted-foreground">Requested to join</div>
-                            </div>
-                          </div>
 
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => handleApprove(requester)}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                              disabled={actionLoading}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleReject(requester)}
-                              disabled={actionLoading}
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Reject
-                            </Button>
+                            <div className="flex gap-3">
+                              <Button
+                                size="sm"
+                                onClick={() => handleApprove(requester)}
+                                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200 px-4 py-2 rounded-full hover:scale-105 active:scale-95"
+                                disabled={actionLoading}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleReject(requester)}
+                                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200 px-4 py-2 rounded-full hover:scale-105 active:scale-95"
+                                disabled={actionLoading}
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Decline
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -558,14 +599,19 @@ const GameDetails: React.FC = () => {
 
           {/* Right: Actions & rating */}
           <aside className="lg:col-span-1">
-            <div className="space-y-4 lg:sticky lg:top-24">
-              <div className="bg-card/60 border border-primary/20 rounded-xl p-5 shadow-lg">
-                <h4 className="font-semibold text-foreground mb-3">Actions</h4>
+            <div className="space-y-6 lg:sticky lg:top-24">
+              <div className="bg-gradient-to-br from-card/90 to-card/70 border-2 border-primary/30 rounded-2xl p-6 shadow-xl backdrop-blur">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Trophy className="w-4 h-4 text-primary" />
+                  </div>
+                  <h4 className="text-lg font-bold text-foreground">Game Actions</h4>
+                </div>
 
                 {/* Not auth */}
                 {!isAuthenticated && (
                   <Button
-                    className="w-full button-style1 shadow-md mb-3"
+                    className="w-full button-style1 shadow-lg hover:shadow-xl transition-all duration-300 mb-4 py-3 text-lg font-semibold"
                     onClick={() => navigate("/login", { state: { from: `/games/${gameId}` } })}
                   >
                     <UserPlus className="w-4 h-4 mr-2" />
@@ -576,10 +622,21 @@ const GameDetails: React.FC = () => {
                 {/* Authenticated */}
                 {isAuthenticated && (
                   <>
+                    {/* Payment button for host when min players met */}
+                    {isHost && hasMinPlayers && game?.bookingStatus !== "Booked" && (
+                      <Button
+                        className="w-full bg-green-600 hover:bg-green-700 text-white border-0 shadow-md mb-3 py-3 transition-all duration-200 hover:scale-105 active:scale-95"
+                        disabled={actionLoading}
+                        onClick={handleStartBooking}
+                      >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Pay Now & Book Venue
+                      </Button>
+                    )}
                     {/* Host actions */}
                     {isHost && game?.status !== "Cancelled" && (
                       <Button
-                        className="w-full bg-red-600 hover:bg-red-700 text-white mb-3"
+                        className="w-full bg-red-600 hover:bg-red-700 text-white mb-3 transition-all duration-200 hover:scale-105 active:scale-95"
                         onClick={handleCancelGame}
                         disabled={actionLoading}
                       >
@@ -593,7 +650,7 @@ const GameDetails: React.FC = () => {
                       <>
                         {!hasPendingRequest && !isApprovedPlayer && (
                           <Button
-                            className="w-full button-style1 shadow-md mb-3"
+                            className="w-full button-style1 shadow-md mb-3 transition-all duration-200 hover:scale-105 active:scale-95"
                             onClick={handleJoin}
                             disabled={actionLoading}
                           >
@@ -604,7 +661,7 @@ const GameDetails: React.FC = () => {
 
                         {hasPendingRequest && (
                           <Button
-                            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white mb-3"
+                            className="w-full button-style1 shadow-md mb-3 transition-all duration-200 hover:scale-105 active:scale-95"
                             onClick={handleCancelJoinRequest}
                             disabled={actionLoading}
                           >
@@ -615,7 +672,7 @@ const GameDetails: React.FC = () => {
 
                         {isApprovedPlayer && (
                           <Button
-                            className="w-full bg-red-600 hover:bg-red-700 text-white mb-3"
+                            className="w-full bg-red-600 hover:bg-red-700 text-white mb-3 transition-all duration-200 hover:scale-105 active:scale-95"
                             onClick={handleLeaveGame}
                             disabled={actionLoading}
                           >
@@ -626,11 +683,20 @@ const GameDetails: React.FC = () => {
                       </>
                     )}
 
+                    {/* Approved player tag */}
+                    {!isHost && isApprovedPlayer && (
+                      <div className="w-full rounded-xl bg-green-600/20 border border-green-600/30 text-green-400 rounded-lg px-4 py-2 mb-3 text-center font-semibold text-sm flex items-center justify-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        You're In! 🎉
+                      </div>
+                    )}
+
                     <Button
                       variant={game?.status === "Completed" ? "default" : "outline"}
-                      className={`w-full ${game?.status !== "Completed" ? "border-primary/30 hover:bg-primary/20" : "button-style1"}`}
+                      className={`w-full transition-all duration-200 hover:scale-105 active:scale-95 ${game?.status !== "Completed" ? "border-primary/30 hover:bg-primary/20 hover:text-white" : "button-style1 hover:text-white"}`}
                       onClick={() => navigate("/my-bookings")}
                     >
+                      <Eye className="w-4 h-4 mr-2" />
                       View My Games
                     </Button>
                   </>
@@ -639,25 +705,35 @@ const GameDetails: React.FC = () => {
 
               {/* Rating (only for approved players after completion) */}
               {isAuthenticated && game?.status === "Completed" && isApprovedPlayer && (
-                <div className="bg-card/60 border border-primary/20 rounded-xl p-5 shadow-lg">
-                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <Star className="w-4 h-4 text-primary" /> Rate Venue
-                  </h4>
+                <div className="bg-card/80 border border-primary/20 rounded-xl p-6 shadow-lg">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Star className="w-5 h-5 text-primary" />
+                    <h4 className="text-lg font-semibold text-foreground">Rate Venue</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">How was your experience?</p>
 
-                  <select
-                    className="w-full p-3 rounded-lg bg-card/80 border border-primary/20 mb-3"
-                    value={rating}
-                    onChange={(e) => setRating(Number(e.target.value))}
+                  <div className="flex justify-center gap-2 mb-6">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className={`p-2 transition-all duration-200 hover:scale-110 active:scale-95 ${
+                          rating >= star
+                            ? "text-yellow-500"
+                            : "text-muted-foreground hover:text-yellow-400"
+                        }`}
+                      >
+                        <Star className={`w-6 h-6 ${rating >= star ? "fill-current" : ""}`} />
+                      </button>
+                    ))}
+                  </div>
+
+                  <Button 
+                    className="w-full button-style1 transition-all duration-200 hover:scale-105 active:scale-95" 
+                    onClick={handleRating} 
+                    disabled={rating === 0 || actionLoading}
                   >
-                    <option value={0}>Select Rating</option>
-                    <option value={1}>⭐ 1 - Poor</option>
-                    <option value={2}>⭐⭐ 2 - Fair</option>
-                    <option value={3}>⭐⭐⭐ 3 - Good</option>
-                    <option value={4}>⭐⭐⭐⭐ 4 - Very Good</option>
-                    <option value={5}>⭐⭐⭐⭐⭐ 5 - Excellent</option>
-                  </select>
-
-                  <Button className="w-full button-style1" onClick={handleRating} disabled={rating === 0 || actionLoading}>
                     <Star className="w-4 h-4 mr-2" />
                     Submit Rating
                   </Button>
