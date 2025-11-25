@@ -42,6 +42,7 @@ export const hostGame = asyncHandler(async (req: IUserRequest, res)  => {
 
   const venueSnapshot = {
     venueId,
+    venueName: venue.name,
     city: venue.city,
     state: venue.state,
     coordinates: {

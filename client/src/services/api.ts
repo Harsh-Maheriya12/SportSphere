@@ -1,8 +1,8 @@
 import { AuthResponse, RegisterResponse, User, Game, JoinRequest, ApiResponse } from "../types/index";
 
 // Need to change base URL based on environment
-let BASE_URL = "/api";
-// let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
+// let BASE_URL = "/api";
+let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
 
 // if(process.env.NODE_ENV === "production") {
   // let BASE_URL = "https://sportsphere-f6f0.onrender.com";
@@ -746,15 +746,34 @@ export const apiGetGameById = (
 // get all available games with filters
 export const apiGetGames = (filters?: {
   sport?: string;
+  city?: string;
+  venueName?: string;
   venueId?: string;
   startDate?: string;
   endDate?: string;
-  lng?: number;
-  lat?: number;
-  radius?: number;
+  minPrice?: string | number;
+  maxPrice?: string | number;
+  lng?: number | string;
+  lat?: number | string;
+  radius?: number | string;
 }): Promise<{ success: boolean; games: Game[] }> => {
-  const params = new URLSearchParams(filters as any).toString();
-  return request(`/games?${params}`, { method: "GET" });
+  const params = new URLSearchParams();
+
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+
+      const stringValue = String(value).trim();
+      if (stringValue.length === 0) return;
+
+      params.append(key, stringValue);
+    });
+  }
+
+  const query = params.toString();
+  const url = query ? `/games?${query}` : "/games";
+
+  return request(url, { method: "GET" });
 };
 
 // get my bookings 
@@ -771,4 +790,16 @@ export const apiGetMyBookings = (): Promise<{
   };
 }> => {
   return request(`/games/my-bookings`, { method: "GET" });
+};
+
+
+export const apiStartGameBooking = async (gameId: string) => {
+  return request<{
+    success: boolean;
+    url: string;
+    bookingId: string;
+    sessionId: string;
+  }>(`/bookings/game/${gameId}`, {
+    method: "POST",
+  });
 };

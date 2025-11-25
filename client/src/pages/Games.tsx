@@ -20,6 +20,7 @@ const GamesListing: React.FC = () => {
   // Primary filters state
   const [sport, setSport] = useState("");
   const [city, setCity] = useState("");
+  const [venueName, setVenueName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -43,15 +44,18 @@ const GamesListing: React.FC = () => {
 
   // Build filters object matching backend query params
   const filters = useMemo(() => {
-    const f: any = {};
+    const f: Record<string, string> = {};
     if (sport) f.sport = sport;
+    const trimmedCity = city.trim();
+    if (trimmedCity) f.city = trimmedCity;
+    const trimmedVenueName = venueName.trim();
+    if (trimmedVenueName) f.venueName = trimmedVenueName;
     if (startDate) f.startDate = startDate;
     if (endDate) f.endDate = endDate;
     if (minPrice) f.minPrice = minPrice;
     if (maxPrice) f.maxPrice = maxPrice;
-    // City geocoding will be added later
     return f;
-  }, [sport, startDate, endDate, minPrice, maxPrice]);
+  }, [sport, city, venueName, startDate, endDate, minPrice, maxPrice]);
 
   // Load games
   const loadGames = useCallback(async () => {
@@ -118,6 +122,7 @@ const GamesListing: React.FC = () => {
   const handleClearFilters = () => {
     setSport("");
     setCity("");
+    setVenueName("");
     setStartDate("");
     setEndDate("");
     setMinPrice("");
@@ -134,8 +139,9 @@ const GamesListing: React.FC = () => {
     if (minPrice) count++;
     if (maxPrice) count++;
     if (preferredTimeSlot) count++;
+    if (venueName) count++;
     return count;
-  }, [sport, city, startDate, endDate, minPrice, maxPrice, preferredTimeSlot]);
+  }, [sport, city, venueName, startDate, endDate, minPrice, maxPrice, preferredTimeSlot]);
 
   const totalPages = useMemo(() => (total ? Math.max(1, Math.ceil(total / perPage)) : 1), [total, perPage]);
 
@@ -200,7 +206,7 @@ const GamesListing: React.FC = () => {
           </div>
 
           {/* Basic Filters - Always Visible */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 w-full">
             {/* Sport Filter */}
             <div className="w-full min-w-0">
               <label className="block text-xs font-medium text-muted-foreground mb-1">Sport</label>
@@ -226,6 +232,17 @@ const GamesListing: React.FC = () => {
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="Enter city name"
+                className="w-full px-3 py-2 rounded-lg bg-background border border-primary/20 text-foreground text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
+              />
+            </div>
+
+            <div className="w-full min-w-0">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Venue Name</label>
+              <input
+                type="text"
+                value={venueName}
+                onChange={(e) => setVenueName(e.target.value)}
+                placeholder="Search venue"
                 className="w-full px-3 py-2 rounded-lg bg-background border border-primary/20 text-foreground text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
               />
             </div>
