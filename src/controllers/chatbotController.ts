@@ -1,5 +1,8 @@
 import axios from "axios";
 import { Request, Response } from "express";
+import env from "dotenv";
+
+env.config();
 
 export const chatbotController = async (req: Request, res: Response): Promise<void> => {
   if (!req.body || !req.body.message) {
@@ -26,7 +29,7 @@ export const chatbotController = async (req: Request, res: Response): Promise<vo
     
     // n8n webhook URL
     const responseMessage = await axios.post(
-      "https://vivek21.app.n8n.cloud/webhook/2dbdbfb0-6024-4119-976a-8dc923971a23",
+      `${process.env.N8N_WEBHOOK_URL}`,
       {
         message: userMessage,
         userId: userId,
