@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   apiGetVenueById,
@@ -8,8 +8,9 @@ import {
   apiBookVenueSlot,
 } from "../services/api";
 import { Venue, SubVenue, Slot } from "../types";
-import { Clock, IndianRupee, CalendarCheck2 } from "lucide-react";
+import { Clock, IndianRupee, CalendarCheck2, ChevronLeft, MapPin, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/button";
+import Plasma from "../components/background/Plasma";
 
 type SlotsBySubVenue = Record<string, { slots: Slot[]; timeSlotDocId: string }>;
 
@@ -131,20 +132,27 @@ export default function TimeSlotBooking() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8 bg-white/10 text-white flex items-center justify-center">
-        <div className="text-2xl">Loading...</div>
+      <div className="min-h-screen bg-background">
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-2xl font-semibold text-white">Loading venue details...</div>
+        </div>
       </div>
     );
   }
 
   if (error || !venue) {
     return (
-      <div className="min-h-screen p-8 bg-white/10 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl text-red-400 mb-4">{error || "Venue not found"}</div>
-          <button onClick={() => navigate("/venues")} className="bg-primary px-6 py-2 rounded-xl">
-            Back to Venues
-          </button>
+      <div className="min-h-screen bg-background">
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="text-2xl font-semibold text-red-400 mb-6">{error || "Venue not found"}</div>
+            <button 
+              onClick={() => navigate("/venues")} 
+              className="bg-card/80 backdrop-blur-sm border border-primary/30 text-foreground px-8 py-3 rounded-xl font-semibold hover:bg-card transition-all"
+            >
+              Back to Venues
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -156,162 +164,202 @@ export default function TimeSlotBooking() {
     : [];
 
   return (
-    <div className="min-h-screen p-8 bg-white/10 text-white">
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold mb-2">Book Your Slot</h1>
-        <h2 className="text-2xl text-white/80">{venue.name}</h2>
-        <p className="text-white/60">
-          {venue.city}, {venue.address}
-        </p>
-      </div>
+    <div className="min-h-screen bg-background">
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-6">
+        
+        {/* Back Button */}
+        <Link
+          to={`/venue/${id}`}
+          className="mb-4 inline-flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-primary/30 text-foreground px-3 py-2 rounded-lg text-sm hover:bg-card transition-all"
+        >
+          <ChevronLeft size={18} />
+          Back to Venue
+        </Link>
 
-      {/* Step 1: Select Sport */}
-      <h2 className="text-2xl mb-3">Select Sport</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
-        {venueSports.map((sport) => (
-          <Button
-            key={sport}
-            variant={selectedSport === sport ? "default" : "outline"}
-            size="lg"
-            className={`w-full ${selectedSport === sport ? "bg-blue-600 text-white" : ""}`}
-            onClick={() => {
-              setSelectedSport(sport);
-              setSelectedGroundId("");
-            }}
-          >
-            {formatSportName(sport)}
-          </Button>
-        ))}
-      </div>
-
-      {/* Step 2: Select Date */}
-      <div className="mb-8">
-        <label className="block text-xl font-semibold mb-3">Select Date</label>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          min={new Date().toISOString().split("T")[0]}
-          className="p-3 rounded-xl bg-white/20 backdrop-blur border border-white/30 text-white"
-        />
-      </div>
-
-      {/* Step 3: Optional Ground filter when a sport is selected */}
-      {selectedSport && filteredSubVenues.length > 0 && (
-        <div className="mb-6">
-          <label className="block text-lg font-semibold mb-2">Filter by Court/Field (optional)</label>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={selectedGroundId === "" ? "default" : "outline"}
-              size="sm"
-              className={`mr-2 ${selectedGroundId === "" ? "bg-green-600 text-white" : ""}`}
-              onClick={() => setSelectedGroundId("")}
-            >
-              All
-            </Button>
-            {filteredSubVenues.map((sv) => (
-              <Button
-                key={sv._id}
-                variant={selectedGroundId === sv._id ? "default" : "outline"}
-                size="sm"
-                className={`mr-2 ${selectedGroundId === sv._id ? "bg-green-600 text-white" : ""}`}
-                onClick={() => setSelectedGroundId(sv._id)}
-              >
-                {sv.name}
-              </Button>
-            ))}
+        {/* Header Card */}
+        <div className="bg-card/80 backdrop-blur-sm border border-primary/20 rounded-xl p-6 mb-6 shadow-xl">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-2 flex items-center gap-2">
+                <Sparkles className="text-primary" size={32} />
+                Book Your Slot
+              </h1>
+              <h2 className="text-xl font-semibold text-foreground mb-1">{venue.name}</h2>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <MapPin size={16} />
+                <p className="text-sm">{venue.city}, {venue.address}</p>
+              </div>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Step 4: Show available slots grouped by ground */}
-      {selectedSport && (
-        <>
-          <h2 className="text-2xl mb-3">Available Slots for {formatSportName(selectedSport)}</h2>
-          {loadingSlots && <div className="text-white/70 py-4">Loading slots...</div>}
-          {!loadingSlots && filteredSubVenues.length === 0 && (
-            <div className="text-white/70 py-4">No courts/fields for this sport at this venue.</div>
-          )}
+        {/* Main Booking Card */}
+        <div className="bg-card/80 backdrop-blur-sm border border-primary/20 rounded-xl p-6 shadow-xl">
+          
+          {/* Step 1: Select Sport */}
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-foreground mb-3">Step 1: Select Sport</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {venueSports.map((sport) => (
+                <button
+                  key={sport}
+                  className={`px-4 py-3 rounded-lg font-semibold transition-all ${
+                    selectedSport === sport
+                      ? "button-style1 shadow-lg scale-105"
+                      : "bg-card/60 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card"
+                  }`}
+                  onClick={() => {
+                    setSelectedSport(sport);
+                    setSelectedGroundId("");
+                  }}
+                >
+                  {formatSportName(sport)}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {!loadingSlots && filteredSubVenues.length > 0 && (
-            <div className="space-y-6">
-              {filteredSubVenues
-                .filter((sv) => (selectedGroundId ? sv._id === selectedGroundId : true))
-                .map((sv) => {
-                  const allSlots = slotsBySubVenue[sv._id]?.slots || [];
-                  const myBooked = allSlots.filter((slot: Slot) => {
-                    if (slot.status !== "booked") return false;
-                    const b: any = slot.bookedBy;
-                    const bookedId = typeof b === "string" ? b : (b?._id || b?.id);
-                    return user && bookedId && bookedId.toString() === user.id;
-                  });
-                  const slots = allSlots.filter(
-                    (slot: Slot) => slot.status === "available" && slot.prices[selectedSport]
-                  );
-                  return (
-                    <div key={sv._id}>
-                      <h3 className="text-xl font-semibold mb-2">{sv.name}</h3>
+          {/* Step 2: Select Date */}
+          <div className="mb-6">
+            <label className="block text-xl font-bold text-foreground mb-3">Step 2: Select Date</label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              className="p-3 rounded-lg bg-card/50 backdrop-blur-sm border border-primary/40 text-foreground font-semibold focus:ring-2 focus:ring-primary focus:outline-none w-full sm:w-auto"
+            />
+          </div>
 
-                      {myBooked.length > 0 && (
-                        <div className="mb-3 text-white/90">
-                          <div className="font-semibold mb-1">Your booked slots:</div>
-                          <div className="flex flex-wrap gap-2">
-                            {myBooked.map((slot: Slot) => (
-                              <span key={slot._id} className="px-3 py-1 rounded-lg bg-green-700/60">
-                                {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {slots.length === 0 ? (
-                        <div className="text-white/60">No available slots for this date.</div>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                          {slots.map((slot: Slot) => (
-                            <div
-                              key={slot._id}
-                              className="group relative overflow-hidden rounded-xl border-2 border-primary/20 hover:border-primary transition-all shadow-sm bg-card/80 backdrop-blur flex flex-col justify-between"
-                            >
-                              <div className="p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Clock className="w-5 h-5 text-primary" />
-                                  <span className="font-semibold text-lg">
-                                    {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <IndianRupee className="w-4 h-4 text-green-500" />
-                                  <span className="text-green-500 font-bold text-lg">
-                                    ₹{slot.prices[selectedSport]}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">/hr</span>
-                                </div>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <CalendarCheck2 className="w-4 h-4 text-blue-500" />
-                                  <span className="text-sm text-muted-foreground">{selectedDate}</span>
-                                </div>
-                              </div>
-                              <div className="p-4 pt-0">
-                                <Button
-                                  className="w-full shadow-sm hover:shadow-md transition-all"
-                                  onClick={() => handleBook(slot, sv._id, sv.name)}
-                                >
-                                  Book Slot
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+          {/* Step 3: Optional Ground filter */}
+          {selectedSport && filteredSubVenues.length > 0 && (
+            <div className="mb-6">
+              <label className="block text-lg font-bold text-foreground mb-3">Step 3: Filter by Court/Field (optional)</label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    selectedGroundId === ""
+                      ? "bg-green-600 text-white shadow-md"
+                      : "bg-card/60 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card"
+                  }`}
+                  onClick={() => setSelectedGroundId("")}
+                >
+                  All Courts
+                </button>
+                {filteredSubVenues.map((sv) => (
+                  <button
+                    key={sv._id}
+                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                      selectedGroundId === sv._id
+                        ? "bg-green-600 text-white shadow-md"
+                        : "bg-card/60 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card"
+                    }`}
+                    onClick={() => setSelectedGroundId(sv._id)}
+                  >
+                    {sv.name}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
-        </>
-      )}
+
+          {/* Step 4: Show available slots */}
+          {selectedSport && (
+            <>
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <CalendarCheck2 size={24} className="text-primary" />
+                Available Slots for {formatSportName(selectedSport)}
+              </h2>
+              
+              {loadingSlots && (
+                <div className="text-muted-foreground py-8 text-center">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary/30 border-t-primary"></div>
+                  <p className="mt-3">Loading slots...</p>
+                </div>
+              )}
+              
+              {!loadingSlots && filteredSubVenues.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">No courts/fields for this sport at this venue.</div>
+              )}
+
+              {!loadingSlots && filteredSubVenues.length > 0 && (
+                <div className="space-y-6">
+                  {filteredSubVenues
+                    .filter((sv) => (selectedGroundId ? sv._id === selectedGroundId : true))
+                    .map((sv) => {
+                      const allSlots = slotsBySubVenue[sv._id]?.slots || [];
+                      const myBooked = allSlots.filter((slot: Slot) => {
+                        if (slot.status !== "booked") return false;
+                        const b: any = slot.bookedBy;
+                        const bookedId = typeof b === "string" ? b : (b?._id || b?.id);
+                        return user && bookedId && bookedId.toString() === user.id;
+                      });
+                      const slots = allSlots.filter(
+                        (slot: Slot) => slot.status === "available" && slot.prices[selectedSport]
+                      );
+                      return (
+                        <div key={sv._id} className="bg-card/50 backdrop-blur-sm rounded-xl p-5 border border-primary/20">
+                          <h3 className="text-lg font-bold text-foreground mb-3">{sv.name}</h3>
+
+                          {myBooked.length > 0 && (
+                            <div className="mb-4 p-3 bg-green-500/10 backdrop-blur-sm border border-green-400/30 rounded-lg">
+                              <div className="font-semibold text-foreground mb-2 text-sm">✓ Your booked slots:</div>
+                              <div className="flex flex-wrap gap-2">
+                                {myBooked.map((slot: Slot) => (
+                                  <span key={slot._id} className="px-3 py-1 rounded-lg bg-green-600/60 text-white text-sm font-medium">
+                                    {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {slots.length === 0 ? (
+                            <div className="text-muted-foreground text-center py-4">No available slots for this date.</div>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                              {slots.map((slot: Slot) => (
+                                <div
+                                  key={slot._id}
+                                  className="group relative overflow-hidden rounded-lg border-2 border-primary/20 hover:border-primary/60 transition-all shadow-md bg-card/60 backdrop-blur-sm hover:bg-card/80 flex flex-col justify-between"
+                                >
+                                  <div className="p-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Clock className="w-4 h-4 text-primary" />
+                                      <span className="font-semibold text-foreground text-sm">
+                                        {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1 mb-2">
+                                      <IndianRupee className="w-4 h-4 text-green-400" />
+                                      <span className="text-green-400 font-bold text-lg">
+                                        {slot.prices[selectedSport]}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">/hr</span>
+                                    </div>
+                                  </div>
+                                  <div className="p-3 pt-0">
+                                    <button
+                                      className="w-full button-style1 py-2 rounded-lg font-semibold text-sm shadow-md hover:shadow-lg hover:scale-105 transition-all"
+                                      onClick={() => handleBook(slot, sv._id, sv.name)}
+                                    >
+                                      Book Now
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
