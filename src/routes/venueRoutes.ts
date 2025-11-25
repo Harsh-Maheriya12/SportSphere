@@ -11,12 +11,12 @@ import {
 } from "../controllers/venueController";
 import type { Router as ExpressRouter } from "express";
 import { aiVenueSearch } from "../controllers/aiVenueSearchController";
+import { upload } from "../middleware/multer"; 
 import {getVenueOwnerDashboard} from "../controllers/venueDashboardController";
-
 
 const router: ExpressRouter = Router();
 // Create venue
-router.post("/", protect, createVenue);
+router.post("/", protect, upload, createVenue);
 
 // Get all venues
 router.get("/", getVenues);

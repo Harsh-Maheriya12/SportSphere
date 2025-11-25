@@ -3,12 +3,28 @@ import SubVenue from "../models/SubVenue";
 import Venue from "../models/Venue";
 import { IUserRequest } from "../middleware/authMiddleware";
 import Booking from "../models/Booking";
+import cloudinary from "../config/cloudinary";
+import fs from "fs";
 
 //Create Venue
 export const createVenue = async (req: IUserRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    let imageUrls: string[] = [];
+
+    const files = req.files as Express.Multer.File[];
+
+    if (files && files.length > 0) {
+      const uploads = await Promise.all(
+        files.map((file) => cloudinary.uploader.upload(file.path))
+      );
+
+      imageUrls = uploads.map((img) => img.secure_url);
+
+      // delete temp files
+      files.forEach((file) => fs.unlinkSync(file.path));
     }
     const venue = await Venue.create({ ...req.body, owner: req.user._id });
     return res.status(201).json({ success: true, venue });
@@ -116,6 +132,20 @@ export const createSubVenue = async (req: Request, res: Response) => {
     const { venue } = req.body;
 
     const subVenue = await SubVenue.create(req.body);
+     let imageUrls: string[] = [];
+
+    const files = req.files as Express.Multer.File[];
+
+    if (files && files.length > 0) {
+      const uploads = await Promise.all(
+        files.map((file) => cloudinary.uploader.upload(file.path))
+      );
+
+      imageUrls = uploads.map((img) => img.secure_url);
+
+      // delete temp files
+      files.forEach((file) => fs.unlinkSync(file.path));
+    }
 
     // Auto-update venue.sports
     await updateVenueSports(venue);
