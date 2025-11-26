@@ -6,7 +6,7 @@ import Booking from "../../models/Booking";
 
 export const getGameById = asyncHandler(async (req: IUserRequest, res) => {
   const { gameId } = req.params;
-  const userId = req.user?._id?.toString();
+  const userId = req.user._id.toString();
 
   const game = await Game.findById(gameId)
     .populate("host", "username email")
@@ -170,7 +170,8 @@ export const getGames = asyncHandler(async (req: IUserRequest, res, next): Promi
     if (maxPrice && !isNaN(Number(maxPrice))) query.approxCostPerPlayer.$lte = Number(maxPrice);
   }
 
-  // will work only if FE sends lat/lng
+  const radiusNum = Number(radius);
+  const finalRadius = isNaN(radiusNum) || radiusNum <= 0 ? 5000 : radiusNum;
   // Geo filter (nearby venues) 
   if (lng && lat) {
     query['venue.coordinates'] = {
@@ -179,7 +180,7 @@ export const getGames = asyncHandler(async (req: IUserRequest, res, next): Promi
           type: 'Point',
           coordinates: [Number(lng), Number(lat)],
         },
-        $maxDistance: Number(radius),
+        $maxDistance: finalRadius,
       },
     };
   }
