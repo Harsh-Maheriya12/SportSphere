@@ -830,6 +830,7 @@ export const apiGetMyBookings = (): Promise<{
 
 
 export const apiStartGameBooking = async (gameId: string) => {
+  // console.log("Starting game booking for gameId:", gameId);
   return request<{
     success: boolean;
     url: string;
@@ -839,3 +840,16 @@ export const apiStartGameBooking = async (gameId: string) => {
     method: "POST",
   });
 };
+
+// APIs for Booking Payment
+export const apiVerifyPayment = (sessionId: string) => {
+  return request<{
+    success: boolean;
+    message: string;
+    booking?: { id: string; status: string };
+  }>(`/bookings/verify-payment?session_id=${sessionId}`, {
+    method: "GET",
+  });
+};
+
+
