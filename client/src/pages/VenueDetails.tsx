@@ -85,7 +85,7 @@ export default function VenueDetails() {
         {/* Back Button */}
         <button
           onClick={() => navigate("/venues")}
-          className="mb-4 flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-primary/20 hover:border-primary/60 text-foreground px-3 py-2 rounded-lg text-sm hover:bg-card transition-all"
+          className="mb-4 flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-primary/20 hover:border-primary/60 text-foreground px-3 py-2 rounded-lg text-sm hover:bg-card transition-all"
         >
           <ChevronLeft size={18} />
           Back to Venues
@@ -101,7 +101,7 @@ export default function VenueDetails() {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-card/80 backdrop-blur-sm border border-primary/20 rounded-xl p-6 shadow-xl">
+        <div className="bg-white/10 backdrop-blur-sm border border-primary/20 rounded-xl p-6 shadow-xl">
           
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-6 gap-4">
@@ -145,7 +145,7 @@ export default function VenueDetails() {
 
               <button
                 onClick={() => navigate(`/host-game`)}
-                className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 hover:border-primary/60 text-foreground px-6 py-3 rounded-xl font-semibold hover:bg-card transition-all flex items-center justify-center gap-2"
+                className="bg-white/10 backdrop-blur-sm border-2 border-primary/20 hover:border-primary/60 text-foreground px-6 py-3 rounded-xl font-semibold hover:bg-card transition-all flex items-center justify-center gap-2"
               >
                 <Users size={18} />
                 Host Game
@@ -156,7 +156,7 @@ export default function VenueDetails() {
 
           {/* Description */}
           {venue.description && (
-            <div className="mb-6 p-4 bg-card/50 backdrop-blur-sm rounded-lg border border-primary/20">
+            <div className="mb-6 p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-primary/20">
               <h2 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
                 <Sparkles size={18} className="text-primary" />
                 About This Venue
@@ -192,7 +192,7 @@ export default function VenueDetails() {
                 {venue.amenities.map((amenity, idx) => (
                   <div
                     key={idx}
-                    className="bg-card/50 backdrop-blur-sm border border-primary/20 hover:border-primary/60 text-foreground px-3 py-2 rounded-lg text-center text-sm font-medium hover:bg-card/70 transition-all cursor-pointer"
+                    className="bg-white/10 backdrop-blur-sm border border-primary/20 hover:border-primary/60 text-foreground px-3 py-2 rounded-lg text-center text-sm font-medium hover:bg-card/70 transition-all cursor-pointer"
                   >
                     {amenity}
                   </div>
@@ -209,7 +209,7 @@ export default function VenueDetails() {
                 {subVenues.map((subVenue) => (
                   <div
                     key={subVenue._id}
-                    className="bg-card/50 backdrop-blur-sm border border-primary/20 hover:border-primary/60 rounded-lg p-4 hover:bg-card/70 hover:shadow-lg transition-all cursor-pointer"
+                    className="bg-white/10 backdrop-blur-sm border border-primary/20 hover:border-primary/60 rounded-lg p-4 hover:bg-card/70 hover:shadow-lg transition-all cursor-pointer"
                   >
                     <h3 className="text-base font-bold text-foreground mb-1.5">{subVenue.name}</h3>
                     {subVenue.description && (

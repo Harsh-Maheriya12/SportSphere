@@ -468,27 +468,34 @@ export const apiCreateVenue = (
   state: string,
   coordinates: [number, number],
   amenities: string[],
-  images?: string[]
+  images?: File[]
 ): Promise<{
   success: boolean;
   venue: any;
 }> => {
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("description", description);
+  formData.append("phone", phone);
+  formData.append("address", address);
+  formData.append("city", city);
+  formData.append("state", state);
+  formData.append("location", JSON.stringify({
+    type: "Point",
+    coordinates,
+  }));
+  formData.append("amenities", JSON.stringify(amenities));
+  
+  // Append images if provided
+  if (images && images.length > 0) {
+    images.forEach((image) => {
+      formData.append("images", image);
+    });
+  }
+
   return request("/venues", {
     method: "POST",
-    body: JSON.stringify({
-      name,
-      description,
-      phone,
-      address,
-      city,
-      state,
-      location: {
-        type: "Point",
-        coordinates,
-      },
-      amenities,
-      images: images || [],
-    }),
+    body: formData,
   });
 };
 
@@ -522,21 +529,35 @@ export const apiCreateSubVenue = (
   name: string,
   description: string,
   sports: { name: string; minPlayers: number; maxPlayers: number }[],
-  images?: string[]
+  images?: File[]
 ): Promise<{
   success: boolean;
   subVenue: any;
 }> => {
-  return request("/subvenues", {
+  const formData = new FormData();
+  formData.append("venue", venueId);
+  formData.append("name", name);
+  formData.append("description", description);
+  
+  // Send each sport as individual form fields to avoid JSON parsing issues
+  sports.forEach((sport, index) => {
+    formData.append(`sports[${index}][name]`, sport.name);
+    formData.append(`sports[${index}][minPlayers]`, sport.minPlayers.toString());
+    formData.append(`sports[${index}][maxPlayers]`, sport.maxPlayers.toString());
+  });
+  
+  formData.append("status", "active");
+  
+  // Append images if provided
+  if (images && images.length > 0) {
+    images.forEach((image) => {
+      formData.append("images", image);
+    });
+  }
+
+  return request(`/subvenues/venue/${venueId}`, {
     method: "POST",
-    body: JSON.stringify({
-      venue: venueId,
-      name,
-      description,
-      sports,
-      images: images || [],
-      status: "active",
-    }),
+    body: formData,
   });
 };
 
@@ -561,6 +582,20 @@ export const apiDeleteSubVenue = (id: string): Promise<{
 }> => {
   return request(`/subvenues/${id}`, {
     method: "DELETE",
+  });
+};
+
+// AI Venue Search
+export const apiAiVenueSearch = (
+  question: string
+): Promise<{
+  success: boolean;
+  count: number;
+  data: any[];
+}> => {
+  return request("/venues/search", {
+    method: "POST",
+    body: JSON.stringify({ question }),
   });
 };
 
