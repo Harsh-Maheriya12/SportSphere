@@ -146,9 +146,9 @@ const GamesListing: React.FC = () => {
   const totalPages = useMemo(() => (total ? Math.max(1, Math.ceil(total / perPage)) : 1), [total, perPage]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-white/10 text-foreground overflow-x-hidden">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-background border-b border-primary/20">
+      <div className="bg-black bg-gradient-to-r from-primary/20 via-primary/10 to-background border-b border-primary/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>

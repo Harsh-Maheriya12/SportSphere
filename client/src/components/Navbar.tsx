@@ -14,7 +14,7 @@ import {
   UserCog,
   CalendarSearchIcon,
 } from "lucide-react";
-import Logo from "../assets/SportSphereLogo.jpg";
+import Logo from "../assets/SportSphere_Logo1.png";
 
 function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -39,7 +39,7 @@ function Navbar() {
               <img
                 src={Logo}
                 alt="SportSphere Logo"
-                className="h-10 w-25 mr-2 rounded-xl"
+                className="h-12 w-auto mr-2 rounded-xl"
               />
             </Link>
           </div>
