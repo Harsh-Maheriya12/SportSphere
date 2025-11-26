@@ -26,7 +26,22 @@ export const createVenue = async (req: IUserRequest, res: Response) => {
       // delete temp files
       files.forEach((file) => fs.unlinkSync(file.path));
     }
-    const venue = await Venue.create({ ...req.body, owner: req.user._id });
+    
+    // Ensure location is set with default coordinates if not provided
+    const venueData: any = { ...req.body, owner: req.user._id };
+    if (!venueData.location) {
+      venueData.location = {
+        type: "Point",
+        coordinates: [0, 0]
+      };
+    }
+    
+    // Add uploaded images
+    if (imageUrls.length > 0) {
+      venueData.images = imageUrls;
+    }
+    
+    const venue = await Venue.create(venueData);
     return res.status(201).json({ success: true, venue });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
@@ -274,4 +289,3 @@ export const getVenueRatings = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
