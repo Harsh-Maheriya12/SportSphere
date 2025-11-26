@@ -120,7 +120,6 @@ export const apiResendOtp = (
 };
 
 // Username Availability Check
-
 export const apiCheckUsername = (
   username: string
 ): Promise<{ success: boolean; available: boolean }> => {
@@ -131,7 +130,6 @@ export const apiCheckUsername = (
 };
 
 // User Profile view and update
-
 export const apiGetProfile = (): Promise<{
   success: boolean;
   user: User & {
@@ -165,7 +163,6 @@ export const apiUpdateProfile = (
 };
 
 // Reset Password
-
 export const apiSendPasswordResetOtp = (
   email: string
 ): Promise<{ success: boolean; message: string }> => {
@@ -466,7 +463,6 @@ export const apiCreateVenue = (
   address: string,
   city: string,
   state: string,
-  coordinates: [number, number],
   amenities: string[],
   images?: File[]
 ): Promise<{
@@ -480,11 +476,16 @@ export const apiCreateVenue = (
   formData.append("address", address);
   formData.append("city", city);
   formData.append("state", state);
-  formData.append("location", JSON.stringify({
-    type: "Point",
-    coordinates,
-  }));
-  formData.append("amenities", JSON.stringify(amenities));
+  if (amenities && amenities.length > 0) {
+    amenities.forEach((a, index) => {
+      const clean = a.trim();
+      if (clean.length > 0) {
+        formData.append(`amenities[${index}]`, clean);
+      }
+    });
+  } else {
+    formData.append("amenities", "");
+  }
   
   // Append images if provided
   if (images && images.length > 0) {

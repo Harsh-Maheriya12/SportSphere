@@ -24,6 +24,9 @@ router.get("/", getVenues);
 // Get my venues (must be before /:id route)
 router.get("/my-venues", protect, getMyVenues);
 
+// Search Venues (must be before /:id to avoid route conflicts)
+router.post("/search", aiVenueSearch);
+
 // Get venue by ID
 router.get("/:id", getVenueById);
 
@@ -38,9 +41,6 @@ router.post("/:id/rate", protect, rateVenue);
 
 // Get ratings for a venue
 router.get("/:id/ratings", getVenueRatings);
-
-// Search Venues
-router.post("/search", aiVenueSearch);
 
 router.get("/:venueId/owner-dashboard-llm", protect, getVenueOwnerDashboard)
 

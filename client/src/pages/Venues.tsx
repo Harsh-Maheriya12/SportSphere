@@ -214,14 +214,20 @@ function Venues() {
       
       const errorMsg = err.message || "AI search failed";
       
+      // Handle service unavailable (API key not configured)
+      if (errorMsg.includes("not configured") || errorMsg.includes("temporarily unavailable")) {
+        setError(
+          `Smart Search is temporarily unavailable.\n• Try using the filters panel instead\n• Contact support if this persists`
+        );
+      }
       // Don't show technical backend errors to users
-      if (errorMsg.includes("pattern") || errorMsg.includes("validation")) {
+      else if (errorMsg.includes("pattern") || errorMsg.includes("validation")) {
         setError(
           `Unable to process search query.\n• Try rephrasing your search (e.g., "cricket venues in Mumbai")\n• Use simpler terms\n• Or use the filters panel for specific criteria`
         );
       } else if (errorMsg.includes("API") || errorMsg.includes("occurred")) {
         setError(
-          `Search service temporarily unavailable.\n• Try using the filters panel instead\n• Refresh the page and try again`
+          `Search service error.\n• Try using the filters panel instead\n• Refresh the page and try again`
         );
       } else {
         setError(
