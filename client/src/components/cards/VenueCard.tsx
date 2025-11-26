@@ -70,6 +70,9 @@ function VenueCard({
 
         {/* Sports */}
         <p className="text-sm text-muted-foreground mb-4">
+          {
+            sports.length ? "Sports: " : "Not available"
+          }
           {Array.isArray(sports) ? sports.join(", ") : sports}
         </p>
 

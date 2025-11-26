@@ -344,7 +344,7 @@ const GameDetails: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white/10 text-foreground">
       {/* Header Banner */}
       <div className={`relative h-48 sm:h-56 md:h-64 bg-gradient-to-br ${gradientClass} overflow-hidden`}>
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
