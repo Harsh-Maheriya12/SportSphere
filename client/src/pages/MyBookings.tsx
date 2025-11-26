@@ -67,7 +67,10 @@ function MyBookings() {
   // Fetch bookings
   useEffect(() => {
     const fetchBookings = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
@@ -87,6 +90,7 @@ function MyBookings() {
           setCoachBookings(response.bookings);
         }
       } catch (err: any) {
+        console.error("[MyBookings] Error fetching bookings:", err);
         setError(err.message || "Failed to load bookings");
       } finally {
         setLoading(false);
