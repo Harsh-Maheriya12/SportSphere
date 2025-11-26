@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+
 import {
   Send,
   BotMessageSquare,
@@ -133,7 +135,8 @@ function Chatbot() {
             </button>
           </div>
 
-          {/* Messages Container */}
+          {/* Messages Container */} 
+         
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50 scrollbar-hide">
             {messages.map((message) => (
               <div
@@ -149,7 +152,8 @@ function Chatbot() {
                       : "bg-card border border-primary/20 text-foreground"
                   }`}
                 >
-                  <p className="text-sm break-words">{message.text}</p>
+                  
+                  <ReactMarkdown>{message.text}</ReactMarkdown>
                   <span
                     className={`text-xs mt-1 block ${
                       message.sender === "user"
