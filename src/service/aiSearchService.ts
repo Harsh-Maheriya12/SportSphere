@@ -1,11 +1,23 @@
 import Groq from "groq-sdk";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Lazy initialization to prevent crashes if API key is missing
+let groq: Groq | null = null;
+
+function getGroqClient(): Groq {
+  if (!groq) {
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY environment variable is not set. Please configure it in your deployment environment.");
+    }
+    groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  }
+  return groq;
+}
 
 export async function normalizeQuery(input: string) {
   const model = process.env.GROQ_MODEL ?? "llama-3.1-70b-versatile";
+  const client = getGroqClient();
 
-  const chat = await groq.chat.completions.create({
+  const chat = await client.chat.completions.create({
     model,
     temperature: 0,
     max_tokens: 100,
@@ -175,8 +187,9 @@ Generate pipeline for:
 
 
   const model = process.env.GROQ_MODEL ?? "llama-3.1-70b-versatile";
+  const client = getGroqClient();
 
-  const chat = await groq.chat.completions.create({
+  const chat = await client.chat.completions.create({
     model,
     messages: [
       { role: "system", content: "You output STRICT JSON arrays only." },

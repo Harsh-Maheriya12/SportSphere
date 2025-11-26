@@ -46,7 +46,7 @@ const VenueSchema = new Schema<IVenue>(
     // GEOJSON
     location: {
       type: { type: String, enum: ["Point"], default: "Point" },
-      coordinates: { type: [Number], required: true },
+      coordinates: { type: [Number], required: false, default: [0, 0] },
     },
 
     images: { type: [String], default: [] },
