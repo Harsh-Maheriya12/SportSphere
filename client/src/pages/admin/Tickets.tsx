@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Toast from "../../components/Toast";
+import { fetchTickets, replyToTicket, closeTicket } from "../../services/adminApi";
 
 interface TicketFile {
   name: string;
@@ -59,21 +60,12 @@ const Tickets: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchTickets = async () => {
+    const loadTickets = async () => {
       try {
         const adminToken = getAdminToken();
-        const res = await fetch('/api/admin/tickets', {
-          method: 'GET',
-          headers: {
-            ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
-          },
-        });
-        if (!res.ok) {
-          throw new Error('Failed to fetch tickets');
-        }
-        const data = await res.json();
+        const data = await fetchTickets(adminToken);
         // Map backend ticket shape to frontend Ticket interface
-        const mapped: Ticket[] = data.tickets.map((t: any) => ({
+        const mapped: Ticket[] = (data.tickets || []).map((t: any) => ({
           id: t._id,
           subject: t.subject,
           category: t.category,
@@ -100,11 +92,12 @@ const Tickets: React.FC = () => {
           }
         }
       } catch (err: any) {
-        console.error('fetchTickets error', err);
-        setToast({ isVisible: true, message: err.message || 'Failed to load tickets', type: 'error' });
+        console.error('loadTickets error', err);
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to load tickets';
+        setToast({ isVisible: true, message: errorMessage, type: 'error' });
       }
     };
-    fetchTickets();
+    loadTickets();
   }, []);
 
   const getStatusColor = (status: string) => {
@@ -135,19 +128,7 @@ const Tickets: React.FC = () => {
     (async () => {
       try {
         const adminToken = getAdminToken();
-        const res = await fetch(`/api/admin/tickets/${selectedTicket.id}/reply`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
-          },
-          body: JSON.stringify({ message: replyMessage }),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message || 'Failed to send reply');
-        }
-        const data = await res.json();
+        const data = await replyToTicket(adminToken, selectedTicket.id, replyMessage);
         const t = data.ticket;
         const mapped: Ticket = {
           id: t._id,
@@ -168,7 +149,8 @@ const Tickets: React.FC = () => {
         setToast({ isVisible: true, message: 'Reply sent successfully!', type: 'success' });
       } catch (err: any) {
         console.error('sendReply error', err);
-        setToast({ isVisible: true, message: err.message || 'Reply failed', type: 'error' });
+        const errorMessage = err.response?.data?.message || err.message || 'Reply failed';
+        setToast({ isVisible: true, message: errorMessage, type: 'error' });
       }
     })();
   };
@@ -178,17 +160,7 @@ const Tickets: React.FC = () => {
     (async () => {
       try {
         const adminToken = getAdminToken();
-        const res = await fetch(`/api/admin/tickets/${selectedTicket.id}/close`, {
-          method: 'PATCH',
-          headers: {
-            ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
-          },
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message || 'Failed to close ticket');
-        }
-        const data = await res.json();
+        const data = await closeTicket(adminToken, selectedTicket.id);
         const t = data.ticket;
         const mapped: Ticket = {
           id: t._id,
@@ -208,7 +180,8 @@ const Tickets: React.FC = () => {
         setToast({ isVisible: true, message: 'Ticket closed successfully!', type: 'success' });
       } catch (err: any) {
         console.error('closeTicket error', err);
-        setToast({ isVisible: true, message: err.message || 'Close failed', type: 'error' });
+        const errorMessage = err.response?.data?.message || err.message || 'Close failed';
+        setToast({ isVisible: true, message: errorMessage, type: 'error' });
       }
     })();
   };
@@ -853,4 +826,3 @@ const Tickets: React.FC = () => {
 };
 
 export default Tickets;
-
