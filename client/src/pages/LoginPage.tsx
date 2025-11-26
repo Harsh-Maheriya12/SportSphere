@@ -173,7 +173,8 @@ function LoginPage() {
                 type="button"
                 onClick={() => {
                   setIsLoading(true);
-                  window.location.href = "/api/auth/google";
+                  
+                  window.location.href = "https://sportsphere-f6f0.onrender.com/api/auth/google";
                 }}
                 disabled={isLoading}
                 className={`group relative w-full flex items-center justify-center py-3 px-4 border-transparent text-sm font-medium rounded-xl bg-black text-primary
