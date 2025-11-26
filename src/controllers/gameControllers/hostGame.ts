@@ -183,6 +183,11 @@ export const leaveGame = asyncHandler(async (req: IUserRequest, res) => {
     game.approvedPlayers = game.approvedPlayers.filter(
       (p: any) => p.toString() !== playerId.toString()
     );
+        
+    // Also remove from joinRequests 
+    game.joinRequests = game.joinRequests.filter(
+      (jr: any) => jr.user.toString() !== playerId.toString()
+    );
 
     // Reopen game if it was full
     if (game.status === "Full" && game.approvedPlayers.length < game.playersNeeded.max) {
