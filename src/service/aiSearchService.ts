@@ -2,6 +2,36 @@ import Groq from "groq-sdk";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+export async function normalizeQuery(input: string) {
+  const model = process.env.GROQ_MODEL ?? "llama-3.1-70b-versatile";
+
+  const chat = await groq.chat.completions.create({
+    model,
+    temperature: 0,
+    max_tokens: 100,
+    messages: [
+      {
+        role: "system",
+        content: `
+You are a spelling-correction assistant.
+
+Your job:
+- Correct spelling mistakes
+- Fix grammar mistakes
+- Understand intended sports, cities, amenities even if spelled wrong
+- DO NOT change meaning
+- DO NOT remove any keywords
+- Return ONLY the corrected query text.
+- No explanations. No formatting.`
+      },
+      { role: "user", content: input }
+    ]
+  });
+
+  return chat.choices?.[0]?.message?.content ?? input;
+}
+
+
 function extractJson(text: string) {
   const first = text.indexOf("[");
   const last = text.lastIndexOf("]");
@@ -55,6 +85,7 @@ function fixGeoCoordinates(pipeline: any[]): any[] {
 
 // Main function for natural-language to pipeline
 export async function getPipelineFromNL(question: string) {
+  const corrected = await normalizeQuery(question);
 const prompt = `
 You are an expert MongoDB aggregation pipeline generator.
 Return ONLY a JSON array. No comments. No markdown. No explanation.
@@ -139,7 +170,7 @@ Output:
 ]
 
 Generate pipeline for:
-"${question}"
+"${corrected}"
 `;
 
 
