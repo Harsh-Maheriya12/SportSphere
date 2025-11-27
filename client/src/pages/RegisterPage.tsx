@@ -19,6 +19,7 @@ import {
   apiRegister,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import defaultPhoto from "../assets/user_default.jpeg";
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -184,12 +185,6 @@ function RegisterPage() {
       return;
     }
 
-    // For Google OAuth, profile photo is optional (can use Google picture)
-    if (!isGoogleOAuth && !profilePhoto) {
-      setError("Profile photo is required");
-      return;
-    }
-
     if ((role === "coach" || role === "venue-owner") && !proof) {
       setError("Proof document is required for coaches and venue owners");
       return;
@@ -198,6 +193,14 @@ function RegisterPage() {
     setIsLoading(true);
 
     try {
+      // Default photo
+      let photoToUpload = profilePhoto;
+      if (!photoToUpload && !isGoogleOAuth) {
+        const response = await fetch(defaultPhoto);
+        const blob = await response.blob();
+        photoToUpload = new File([blob], "default-avatar.png", { type: "image/png" });
+      }
+
       const data = await apiRegister(
         username,
         email,
@@ -205,7 +208,7 @@ function RegisterPage() {
         role,
         parseInt(age),
         gender,
-        profilePhoto!,
+        photoToUpload || profilePhoto!,
         proof,
         isGoogleOAuth ? "google" : "local" // Pass auth provider
       );
@@ -607,7 +610,7 @@ function RegisterPage() {
             {/* Profile Photo */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Profile Photo {!isGoogleOAuth && <span className="text-destructive">*</span>}
+                Profile Photo {!isGoogleOAuth && <span className="text-muted-foreground text-xs">(optional - default will be used)</span>}
               </label>
 
               {isGoogleOAuth && googlePictureUrl && (
@@ -632,7 +635,6 @@ function RegisterPage() {
                   className="hidden"
                   id="profilePhoto"
                   disabled={isLoading}
-                  required={!isGoogleOAuth}
                 />
                 <label
                   htmlFor="profilePhoto"

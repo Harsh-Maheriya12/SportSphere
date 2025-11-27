@@ -1,12 +1,10 @@
 import { AuthResponse, RegisterResponse, User, Game, JoinRequest, ApiResponse } from "../types/index";
 
-// Need to change base URL based on environment
-// let BASE_URL = "/api";
-let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
+// API URL
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}`
+  : "/api";
 
-// if(process.env.NODE_ENV === "production") {
-  // let BASE_URL = "https://sportsphere-f6f0.onrender.com";
-// }
 
 // Centralized request handler with auto JWT token and error handling
 const request = async <T>(

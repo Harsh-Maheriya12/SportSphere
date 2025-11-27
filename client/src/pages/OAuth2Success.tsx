@@ -7,6 +7,11 @@ const OAuthSuccess = () => {
   const { refreshAuth } = useAuth();
   const hasProcessed = useRef(false);
 
+  // API URL
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL
+    ? `${import.meta.env.VITE_API_BASE_URL}/api`
+    : "/api";
+
   useEffect(() => {
     // Prevent double execution in React.StrictMode
     if (hasProcessed.current) return;
@@ -19,21 +24,27 @@ const OAuthSuccess = () => {
     const picture = params.get("picture");
     const provider = params.get("provider");
 
-    console.log("OAuth Success - Params:", { token: !!token, email, name, picture, provider });
+    console.log("OAuth Success - Params:", {
+      token: !!token,
+      email,
+      name,
+      picture,
+      provider,
+    });
 
     // Case 1: Existing user login (has token)
     if (token) {
       console.log("Existing user - logging in with token");
       localStorage.setItem("token", token);
-      
+
       // Fetch user data
-      fetch('https://sportsphere-f6f0.onrender.com/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
+      fetch(`${BASE_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
       })
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           if (data.success && data.user) {
-            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem("user", JSON.stringify(data.user));
           }
           refreshAuth(); // Update auth context immediately
           navigate("/", { replace: true });
@@ -42,7 +53,7 @@ const OAuthSuccess = () => {
           refreshAuth(); // Update auth context even on error
           navigate("/", { replace: true });
         });
-      
+
       return;
     }
 
@@ -55,12 +66,12 @@ const OAuthSuccess = () => {
         name: name ? decodeURIComponent(name) : "",
         picture: picture ? decodeURIComponent(picture) : "",
         provider: provider || "google",
-        verified: true
+        verified: true,
       };
-      
+
       console.log("Storing Google data:", googleData);
       sessionStorage.setItem("googleOAuthData", JSON.stringify(googleData));
-      
+
       // Redirect to registration page (will skip email/OTP steps)
       navigate("/register?oauth=google", { replace: true });
       return;

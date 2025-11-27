@@ -14,6 +14,11 @@ function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // API URL
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL
+    ? `${import.meta.env.VITE_API_BASE_URL}/api`
+    : "/api";
+
   // Check for error in URL params
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -116,7 +121,6 @@ function LoginPage() {
                 >
                   Forgot password?
                 </Link>
-
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -173,8 +177,9 @@ function LoginPage() {
                 type="button"
                 onClick={() => {
                   setIsLoading(true);
-                  
-                  window.location.href = "https://sportsphere-f6f0.onrender.com/api/auth/google";
+
+                  window.location.href =
+                    `${BASE_URL}/auth/google`;
                 }}
                 disabled={isLoading}
                 className={`group relative w-full flex items-center justify-center py-3 px-4 border-transparent text-sm font-medium rounded-xl bg-black text-primary
