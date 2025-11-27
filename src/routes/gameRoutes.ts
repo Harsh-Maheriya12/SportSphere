@@ -108,7 +108,7 @@ router.post(
 
 // Public Routes
 // Get single game details
-router.get("/:gameId", getGameById);
+router.get("/:gameId", protect, getGameById);
 
 // Get all games with optional filters (sport, venue, date, price, location)
 router.get("/", getGames);

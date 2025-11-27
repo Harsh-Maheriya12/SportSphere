@@ -28,8 +28,7 @@ function ManageVenues() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
+  // Latitude/Longitude removed from creation per request
   const [amenitiesInput, setAmenitiesInput] = useState("");
 
   useEffect(() => {
@@ -67,14 +66,6 @@ function ManageVenues() {
         .map((a) => a.trim())
         .filter(Boolean);
 
-      const lat = parseFloat(latitude);
-      const lng = parseFloat(longitude);
-
-      if (isNaN(lat) || isNaN(lng)) {
-        setError("Please enter valid coordinates");
-        return;
-      }
-
       if (editingVenue) {
         // Update existing venue
         await apiUpdateVenue(editingVenue._id, {
@@ -84,10 +75,6 @@ function ManageVenues() {
           address,
           city,
           state,
-          location: {
-            type: "Point",
-            coordinates: [lng, lat],
-          },
           amenities,
         });
         setSuccess("Venue updated successfully!");
@@ -100,7 +87,6 @@ function ManageVenues() {
           address,
           city,
           state,
-          [lng, lat],
           amenities
         );
         setSuccess("Venue created successfully!");
@@ -121,9 +107,31 @@ function ManageVenues() {
     setAddress(venue.address);
     setCity(venue.city);
     setState(venue.state || "");
-    setLatitude(venue.location.coordinates[1].toString());
-    setLongitude(venue.location.coordinates[0].toString());
-    setAmenitiesInput(venue.amenities?.join(", ") || "");
+    // Coordinates are no longer edited in this form
+    // Normalize amenities for input in case stored as JSON string
+    let amenitiesForInput = "";
+    if (Array.isArray(venue.amenities)) {
+      if (
+        venue.amenities.length === 1 &&
+        typeof venue.amenities[0] === "string" &&
+        venue.amenities[0].trim().startsWith("[")
+      ) {
+        try {
+          const parsed = JSON.parse(venue.amenities[0]);
+          if (Array.isArray(parsed)) {
+            amenitiesForInput = parsed.map((s: string) => s.trim()).join(", ");
+          }
+        } catch (_) {
+          amenitiesForInput = venue.amenities.join(", ");
+        }
+      } else {
+        amenitiesForInput = venue.amenities
+          .map((a) => a.replace(/^[\[\]"']+|[\[\]"']+$/g, "").trim())
+          .filter(Boolean)
+          .join(", ");
+      }
+    }
+    setAmenitiesInput(amenitiesForInput);
     setShowForm(true);
   };
 
@@ -146,8 +154,7 @@ function ManageVenues() {
     setAddress("");
     setCity("");
     setState("");
-    setLatitude("");
-    setLongitude("");
+    // Coordinates cleared are not needed anymore
     setAmenitiesInput("");
     setEditingVenue(null);
     setShowForm(false);
@@ -299,35 +306,7 @@ function ManageVenues() {
                   />
                 </div>
 
-                <div className="group">
-                  <label className="block text-foreground mb-2 font-semibold flex items-center gap-2">
-                    <span className="w-2 h-2 bg-primary rounded-full group-hover:animate-pulse"></span>
-                    Latitude *
-                  </label>
-                  <input
-                    type="text"
-                    value={latitude}
-                    onChange={(e) => setLatitude(e.target.value)}
-                    required
-                    className="w-full p-3 rounded-xl bg-card/80 backdrop-blur border-2 border-primary/20 hover:border-primary/40 text-foreground transition-all shadow-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                    placeholder="e.g., 19.0760"
-                  />
-                </div>
-
-                <div className="group">
-                  <label className="block text-foreground mb-2 font-semibold flex items-center gap-2">
-                    <span className="w-2 h-2 bg-primary rounded-full group-hover:animate-pulse"></span>
-                    Longitude *
-                  </label>
-                  <input
-                    type="text"
-                    value={longitude}
-                    onChange={(e) => setLongitude(e.target.value)}
-                    required
-                    className="w-full p-3 rounded-xl bg-card/80 backdrop-blur border-2 border-primary/20 hover:border-primary/40 text-foreground transition-all shadow-sm focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                    placeholder="e.g., 72.8777"
-                  />
-                </div>
+                {/* Latitude/Longitude inputs removed by request */}
 
                 <div className="md:col-span-2 group">
                   <label className="block text-foreground mb-2 font-semibold flex items-center gap-2">
@@ -456,14 +435,39 @@ function ManageVenues() {
                     <div className="mb-4">
                       <p className="text-xs font-semibold text-muted-foreground mb-2">AMENITIES</p>
                       <div className="flex flex-wrap gap-2">
-                        {venue.amenities.map((amenity, idx) => (
+                        {(() => {
+                          let list: string[] = [];
+                          if (
+                            venue.amenities.length === 1 &&
+                            typeof venue.amenities[0] === "string" &&
+                            venue.amenities[0].trim().startsWith("[")
+                          ) {
+                            try {
+                              const parsed = JSON.parse(venue.amenities[0]);
+                              if (Array.isArray(parsed)) list = parsed;
+                            } catch (_) {
+                              list = venue.amenities as unknown as string[];
+                            }
+                          } else {
+                            list = (venue.amenities as unknown as string[]);
+                          }
+
+                          return list
+                            .map((a) =>
+                              String(a)
+                                .replace(/^[\[\]"']+|[\[\]"']+$/g, "")
+                                .trim()
+                            )
+                            .filter(Boolean)
+                            .map((amenity, idx) => (
                           <span
                             key={idx}
                             className="bg-primary/10 border border-primary/30 px-3 py-1 rounded-lg text-sm text-foreground font-medium"
                           >
                             {amenity}
                           </span>
-                        ))}
+                            ));
+                        })()}
                       </div>
                     </div>
                   )}

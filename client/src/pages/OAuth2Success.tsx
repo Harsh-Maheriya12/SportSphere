@@ -27,7 +27,7 @@ const OAuthSuccess = () => {
       localStorage.setItem("token", token);
       
       // Fetch user data
-      fetch('/api/auth/me', {
+      fetch('https://sportsphere-f6f0.onrender.com/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.json())

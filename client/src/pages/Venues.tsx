@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { apiGetAllVenues, apiGetSubVenuesByVenue, apiGetSlotsForSubVenue } from "../services/api";
+import { apiGetAllVenues, apiGetSubVenuesByVenue, apiGetSlotsForSubVenue, apiAiVenueSearch } from "../services/api";
 import { Venue } from "../types";
 import VenueCard from "../components/cards/VenueCard";
-import { Search, Filter, X, MapPin, DollarSign } from "lucide-react";
+import { Search, Filter, X, MapPin, DollarSign, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 
 // Extended venue type to include price info
@@ -19,6 +19,8 @@ function Venues() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [aiSearching, setAiSearching] = useState(false);
+  const [isAiSearch, setIsAiSearch] = useState(false);
 
   // Filter states
   const [selectedSport, setSelectedSport] = useState("");
@@ -114,12 +116,132 @@ function Venues() {
     setSelectedCity("");
     setMaxPrice("");
     setSearchQuery("");
+    setIsAiSearch(false);
     fetchAllVenues();
   };
 
-  // Client-side filtering
-  const filteredVenues = venues.filter((v) => {
-    const matchesSearch = !searchQuery || v.name.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleAiSearch = async () => {
+    if (!searchQuery.trim()) {
+      fetchAllVenues();
+      setIsAiSearch(false);
+      setError(""); // Clear any existing errors
+      return;
+    }
+
+    try {
+      setAiSearching(true);
+      setError("");
+      setIsAiSearch(true);
+
+      // Build enriched natural language query combining user input with active filters
+      let enrichedQuery = searchQuery.trim();
+      
+      // Intelligently add filter context if not already in query
+      const queryLower = enrichedQuery.toLowerCase();
+      
+      // Add city context
+      if (selectedCity && !queryLower.includes(selectedCity.toLowerCase())) {
+        enrichedQuery += ` in ${selectedCity}`;
+      }
+      
+      // Add sport context
+      if (selectedSport) {
+        const sportLower = selectedSport.toLowerCase();
+        if (!queryLower.includes(sportLower)) {
+          enrichedQuery += ` for ${selectedSport}`;
+        }
+      }
+      
+      // Add price context
+      if (maxPrice) {
+        const hasPriceInQuery = /under|below|less than|cheaper|budget|price|₹|\d+/.test(queryLower);
+        if (!hasPriceInQuery) {
+          enrichedQuery += ` under ₹${maxPrice}`;
+        }
+      }
+
+      console.log("[Frontend] Original query:", searchQuery);
+      console.log("[Frontend] Enriched query:", enrichedQuery);
+
+      // Call API with enriched natural language query only
+      const response = await apiAiVenueSearch(enrichedQuery);
+
+      // Handle empty results with helpful message
+      if (!response || !response.data || response.count === 0) {
+        setError(
+          `No venues found for "${searchQuery}". Try:\n` +
+          `• Different sports (cricket, football, badminton)\n` +
+          `• Nearby cities or areas\n` +
+          `• Removing filters or increasing price limit`
+        );
+        setVenues([]);
+        return;
+      }
+
+      // Process AI results and extract pricing from subvenues
+      const venuesWithPrices = response.data.map((venue: any) => {
+        let minPrice: number | undefined;
+        let maxPrice: number | undefined;
+        let hasAvailableSlots = false;
+
+        // Extract price info from subvenues array if present
+        if (venue.subvenues && Array.isArray(venue.subvenues)) {
+          const activePrices = venue.subvenues
+            .filter((sv: any) => sv.price && sv.status === 'active')
+            .map((sv: any) => Number(sv.price));
+          
+          if (activePrices.length > 0) {
+            minPrice = Math.min(...activePrices);
+            maxPrice = Math.max(...activePrices);
+            hasAvailableSlots = true;
+          }
+        }
+
+        return {
+          ...venue,
+          minPrice,
+          maxPrice,
+          hasAvailableSlots,
+        };
+      });
+
+      setVenues(venuesWithPrices);
+      
+      // Clear error on successful search
+      setError("");
+    } catch (err: any) {
+      console.error("[AI Search Frontend Error]:", err);
+      
+      const errorMsg = err.message || "AI search failed";
+      
+      // Handle service unavailable (API key not configured)
+      if (errorMsg.includes("not configured") || errorMsg.includes("temporarily unavailable")) {
+        setError(
+          `Smart Search is temporarily unavailable.\n• Try using the filters panel instead\n• Contact support if this persists`
+        );
+      }
+      // Don't show technical backend errors to users
+      else if (errorMsg.includes("pattern") || errorMsg.includes("validation")) {
+        setError(
+          `Unable to process search query.\n• Try rephrasing your search (e.g., "cricket venues in Mumbai")\n• Use simpler terms\n• Or use the filters panel for specific criteria`
+        );
+      } else if (errorMsg.includes("API") || errorMsg.includes("occurred")) {
+        setError(
+          `Search service error.\n• Try using the filters panel instead\n• Refresh the page and try again`
+        );
+      } else {
+        setError(
+          `Search error.\n• Try simpler queries (e.g., "cricket venues")\n• Use the filters panel for specific criteria`
+        );
+      }
+      setVenues([]);
+    } finally {
+      setAiSearching(false);
+    }
+  };
+
+  // Client-side filtering (only when not using AI search)
+  const filteredVenues = isAiSearch ? venues : venues.filter((v) => {
     const matchesSport = !selectedSport || v.sports?.includes(selectedSport.toLowerCase());
     const matchesCity = !selectedCity || v.city?.toLowerCase().includes(selectedCity.toLowerCase());
     
@@ -131,7 +253,7 @@ function Venues() {
       v.minPrice <= parseFloat(maxPrice)
     );
     
-    return matchesSearch && matchesSport && matchesCity && matchesPrice;
+    return matchesSport && matchesCity && matchesPrice;
   });
 
   const activeFiltersCount = [selectedSport, selectedCity, maxPrice].filter(Boolean).length;
@@ -163,31 +285,71 @@ function Venues() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Search Bar */}
-        <div className="mb-6 relative">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
-            <input
-              type="text"
-              placeholder="Search venues by name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-12 py-4 rounded-xl bg-card/80 backdrop-blur-sm border border-primary/20 hover:border-primary/40 text-foreground text-lg shadow-md focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={clearFilters}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-muted-foreground hover:text-primary transition-colors"
-              >
-                <X size={20} />
-              </button>
-            )}
+        {/* AI Smart Search Bar */}
+        <div className="mb-6">
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-orange-500/20 to-primary/30 rounded-2xl blur opacity-50 group-hover:opacity-75 transition duration-300"></div>
+            <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl border border-primary/30 hover:border-primary/50 shadow-2xl transition-all">
+              <div className="flex items-center gap-3 px-5 py-3">
+                <Sparkles className="text-primary w-5 h-5 flex-shrink-0" />
+                <input
+                  type="text"
+                  placeholder="E.g., 'Best cricket venues in Mumbai under ₹1000' or 'Football fields with parking'"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAiSearch();
+                    }
+                  }}
+                  className="flex-1 py-1 bg-transparent text-foreground text-base placeholder:text-muted-foreground/70 focus:outline-none min-w-0"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setIsAiSearch(false);
+                      fetchAllVenues();
+                    }}
+                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors rounded-lg flex-shrink-0"
+                    title="Clear search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  onClick={handleAiSearch}
+                  disabled={aiSearching || !searchQuery.trim()}
+                  className="px-4 py-1.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-foreground rounded-lg font-medium transition-all flex items-center gap-1.5 flex-shrink-0 text-sm disabled:cursor-not-allowed"
+                >
+                  {aiSearching ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Searching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-4 h-4" />
+                      <span>Search</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
+          
+          {isAiSearch && searchQuery && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground px-4">
+              <Sparkles size={16} className="text-primary" />
+              <span>AI search results for: <span className="text-foreground font-semibold">"{searchQuery}"</span></span>
+            </div>
+          )}
         </div>
 
         {/* Advanced Filters Panel */}
         {showFilters && (
-          <div className="mb-6 p-6 bg-card/80 backdrop-blur-sm rounded-xl border border-primary/20 hover:border-primary/40 shadow-lg transition-all">
+          <div className="mb-6 p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-primary/20 hover:border-primary/40 shadow-lg transition-all">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               {/* Sport Filter */}
               <div>
@@ -259,15 +421,43 @@ function Venues() {
 
         {/* Error State */}
         {error && (
-          <div className="text-center text-red-400 text-xl py-10 bg-red-500/10 rounded-xl border border-red-500/30">
-            {error}
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
+                <X className="w-4 h-4 text-red-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-red-400 font-semibold mb-2">Search Error</h3>
+                <p className="text-red-300 text-sm whitespace-pre-line">{error}</p>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Results Count */}
         {!loading && !error && (
-          <div className="mb-4 text-muted-foreground">
-            Found <span className="font-bold text-foreground">{filteredVenues.length}</span> venues
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-muted-foreground">
+              Found <span className="font-bold text-foreground">{filteredVenues.length}</span> venues
+              {isAiSearch && (
+                <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
+                  AI Results
+                </span>
+              )}
+            </div>
+            {isAiSearch && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setIsAiSearch(false);
+                  fetchAllVenues();
+                }}
+                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+              >
+                <X className="w-4 h-4" />
+                Exit Smart Search
+              </button>
+            )}
           </div>
         )}
 
@@ -292,7 +482,7 @@ function Venues() {
 
         {!loading && !error && filteredVenues.length === 0 && (
           <div className="text-center py-16">
-            <div className="bg-card/50 border border-primary/20 rounded-xl p-8 max-w-md mx-auto">
+            <div className="bg-white/10 border border-primary/20 rounded-xl p-8 max-w-md mx-auto">
               <p className="text-muted-foreground text-xl mb-4">
                 No venues found matching your criteria.
               </p>

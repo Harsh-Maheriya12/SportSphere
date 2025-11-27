@@ -141,7 +141,7 @@ function ManageSubVenues() {
         });
         setSuccess("Court/Field updated successfully!");
       } else {
-        await apiCreateSubVenue(selectedVenue._id, name, description, sports);
+        await apiCreateSubVenue(selectedVenue._id, name, description, sports, []);
         setSuccess("Court/Field created successfully!");
       }
 
