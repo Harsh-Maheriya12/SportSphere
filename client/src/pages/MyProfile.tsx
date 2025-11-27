@@ -21,6 +21,7 @@ import {
   apiUpdateProfile,
   apiCheckUsername,
 } from "../services/api";
+import defaultPhoto from "../assets/user_default.jpeg";
 
 function MyProfile() {
   const [username, setUsername] = useState("");
@@ -42,6 +43,7 @@ function MyProfile() {
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [removePhoto, setRemovePhoto] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<
     "idle" | "checking" | "available" | "taken"
   >("idle");
@@ -124,12 +126,26 @@ function MyProfile() {
     const file = e.target.files?.[0];
     if (file) {
       setNewProfilePhoto(file);
+      setRemovePhoto(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewPhoto(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Handle profile photo removal
+  const handleRemovePhoto = async () => {
+    setRemovePhoto(true);
+    setPreviewPhoto(defaultPhoto);
+    setNewProfilePhoto(null);
+    
+    // Fetch default photo and convert to File for upload
+    const response = await fetch(defaultPhoto);
+    const blob = await response.blob();
+    const defaultFile = new File([blob], "default-avatar.png", { type: "image/png" });
+    setNewProfilePhoto(defaultFile);
   };
 
   // Handle profile update
@@ -163,6 +179,7 @@ function MyProfile() {
       setIsEditing(false);
       setNewProfilePhoto(null);
       setPreviewPhoto("");
+      setRemovePhoto(false);
 
       if (data.user.profilePhoto) {
         setProfilePhoto(data.user.profilePhoto);
@@ -218,20 +235,32 @@ function MyProfile() {
                 <div className="absolute -bottom-16 left-8">
                   <div className="relative">
                     <img
-                      src={previewPhoto || profilePhoto}
+                      src={previewPhoto || profilePhoto || defaultPhoto}
                       alt={username}
                       className="w-32 h-32 rounded-full object-cover border-4 border-white/70 shadow-lg"
                     />
                     {isEditing && (
-                      <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full cursor-pointer hover:bg-primary/90 shadow-lg transition">
-                        <Camera className="w-5 h-5" />
-                        <input
-                          type="file"
-                          accept="image/png, image/jpeg, image/jpg"
-                          onChange={handlePhotoChange}
-                          className="hidden"
-                        />
-                      </label>
+                      <>
+                        <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full cursor-pointer hover:bg-primary/90 shadow-lg transition">
+                          <Camera className="w-5 h-5" />
+                          <input
+                            type="file"
+                            accept="image/png, image/jpeg, image/jpg"
+                            onChange={handlePhotoChange}
+                            className="hidden"
+                          />
+                        </label>
+                        {(profilePhoto !== defaultPhoto || previewPhoto) && !removePhoto && (
+                          <button
+                            type="button"
+                            onClick={handleRemovePhoto}
+                            className="absolute top-0 right-0 bg-destructive text-white p-2 rounded-full cursor-pointer hover:bg-destructive/90 shadow-lg transition"
+                            title="Remove profile photo"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
