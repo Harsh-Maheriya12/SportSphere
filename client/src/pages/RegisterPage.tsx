@@ -19,7 +19,7 @@ import {
   apiRegister,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import defaultPhoto from "../../public/user_default.jpeg";
+import defaultPhoto from "../assets/user_default.jpeg";
 
 function RegisterPage() {
   const navigate = useNavigate();
