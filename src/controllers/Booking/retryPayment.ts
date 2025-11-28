@@ -4,6 +4,7 @@ import { IUserRequest } from "../../middleware/authMiddleware";
 import AppError from "../../utils/AppError";
 import Booking from "../../models/Booking";
 import TimeSlot from "../../models/TimeSlot";
+import Game from "../../models/gameModels";
 import Stripe from "stripe";
 import mongoose from "mongoose";
 import logger from "../../config/logger";
@@ -36,6 +37,11 @@ export const retryPayment: RequestHandler = asyncHandler(async (req: IUserReques
 
     if (booking.status === "Paid") {
         throw new AppError("Booking is already paid", 400);
+    }
+
+    // Check if booking time has passed
+    if (new Date(booking.startTime) < new Date()) {
+        throw new AppError("Cannot retry payment for a past booking", 400);
     }
 
     // If booking is Failed, we need to check if the slot is still available and re-lock it
@@ -148,6 +154,16 @@ export const retryPayment: RequestHandler = asyncHandler(async (req: IUserReques
             // If it was Failed, set back to Pending
             booking.status = "Pending";
             await booking.save();
+
+            // If this is a Game booking, mark Game as Full again
+            if (booking.gameId) {
+                const game = await Game.findById(booking.gameId);
+                if (game) {
+                    game.status = 'Full';
+                    await game.save();
+                    logger.info(`Game ${game._id} marked as Full (retry payment)`);
+                }
+            }
 
             logger.info(`Booking retry initiated: ${booking._id} [User: ${userId}, New Session: ${session.id}]`);
 

@@ -46,6 +46,11 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
     throw new AppError("Slot is no longer available", 400);
   }
 
+  // Check if slot is in the past
+  if (new Date(slot.startTime) < new Date()) {
+    throw new AppError("Cannot book a slot in the past", 400);
+  }
+
   // Handle Mongoose Map type for prices
   let price: number | undefined;
   if (slot.prices instanceof Map) {
@@ -57,7 +62,7 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
   if (!price) throw new AppError("Sport price not available for this slot", 400);
 
   // Convert price to paise (Stripe requires smallest currency unit)
-  const priceInPaise = price *100;
+  const priceInPaise = price * 100;
 
   // Fetch subvenue → venue
   const subVenue = await SubVenue.findById(subVenueId);

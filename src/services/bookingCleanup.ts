@@ -1,6 +1,8 @@
 import cron from 'node-cron';
 import Stripe from 'stripe';
 import Booking from '../models/Booking';
+import TimeSlot from '../models/TimeSlot';
+import Game from '../models/gameModels';
 import logger from '../config/logger';
 
 // Lazy-load Stripe
@@ -55,16 +57,62 @@ export const cleanupExpiredBookings = async () => {
                     await stripeClient.checkout.sessions.expire(booking.stripeSessionId);
                     logger.info(`Expired session ${booking.stripeSessionId} for booking ${booking._id}`);
                 } else if (session.status === 'expired') {
-                    // If already expired but booking is still Pending, we might have missed the webhook
-                    // Let's manually trigger the logic or just log it. 
-                    // Ideally, we should rely on the webhook logic to keep things DRY.
-                    // But if the webhook failed, we might want a fallback here.
-                    // For now, let's just log. The webhook retry policy should handle transient failures.
-                    logger.warn(`Session ${booking.stripeSessionId} is already expired but booking ${booking._id} is still Pending.`);
+                    // If already expired but booking is still Pending, the webhook likely failed.
+                    // Perform manual cleanup as a fallback.
+                    logger.warn(`Session ${booking.stripeSessionId} is already expired but booking ${booking._id} is still Pending. Running manual cleanup.`);
 
-                    // Optional: Force fail if needed, but better to investigate why webhook didn't fire
-                    // booking.status = 'Failed';
-                    // await booking.save();
+                    booking.status = 'Failed';
+                    await booking.save();
+
+                    // Robust Unlocking: Use metadata if available
+                    const metadata = session.metadata;
+                    if (metadata && metadata.timeSlotDocId && metadata.slotId) {
+                        await TimeSlot.findOneAndUpdate(
+                            {
+                                _id: metadata.timeSlotDocId,
+                                "slots._id": metadata.slotId
+                            },
+                            {
+                                $set: {
+                                    "slots.$.status": "available",
+                                    "slots.$.bookedForSport": null
+                                }
+                            }
+                        );
+                        logger.info(`Slot released via metadata for booking ${booking._id} (cleanup job)`);
+                    } else if (booking.subVenueId) {
+                        // Fallback: Use booking details
+                        const dateStr = booking.startTime.toISOString().split('T')[0]; // YYYY-MM-DD
+
+                        const timeSlot = await TimeSlot.findOne({
+                            subVenue: booking.subVenueId,
+                            date: dateStr
+                        });
+
+                        if (timeSlot) {
+                            const slotIndex = timeSlot.slots.findIndex((s: any) =>
+                                new Date(s.startTime).getTime() === new Date(booking.startTime).getTime() &&
+                                new Date(s.endTime).getTime() === new Date(booking.endTime).getTime()
+                            );
+
+                            if (slotIndex !== -1) {
+                                timeSlot.slots[slotIndex].status = "available";
+                                timeSlot.slots[slotIndex].bookedForSport = null;
+                                await timeSlot.save();
+                                logger.info(`Slot released via booking lookup for booking ${booking._id} (cleanup job)`);
+                            }
+                        }
+                    }
+
+                    // Reset Game Status if applicable
+                    if (metadata && metadata.gameId) {
+                        const game = await Game.findById(metadata.gameId);
+                        if (game) {
+                            game.status = 'Open';
+                            await game.save();
+                            logger.info(`Game ${game._id} status reset to Open (cleanup job)`);
+                        }
+                    }
                 }
             } catch (err: any) {
                 logger.error(`Failed to expire session for booking ${booking._id}: ${err.message}`);
