@@ -9,7 +9,7 @@ const OAuthSuccess = () => {
 
   // API URL
   const BASE_URL = import.meta.env.VITE_API_BASE_URL
-    ? `${import.meta.env.VITE_API_BASE_URL}/api`
+    ? `${import.meta.env.VITE_API_BASE_URL}`
     : "/api";
 
   useEffect(() => {
@@ -24,17 +24,17 @@ const OAuthSuccess = () => {
     const picture = params.get("picture");
     const provider = params.get("provider");
 
-    console.log("OAuth Success - Params:", {
-      token: !!token,
-      email,
-      name,
-      picture,
-      provider,
-    });
+    // console.log("OAuth Success - Params:", {
+    //   token: !!token,
+    //   email,
+    //   name,
+    //   picture,
+    //   provider,
+    // });
 
     // Case 1: Existing user login (has token)
     if (token) {
-      console.log("Existing user - logging in with token");
+      // console.log("Existing user - logging in with token");
       localStorage.setItem("token", token);
 
       // Fetch user data
@@ -59,7 +59,7 @@ const OAuthSuccess = () => {
 
     // Case 2: New user from Google OAuth (has email, no token)
     if (email) {
-      console.log("New user - redirecting to registration with email:", email);
+      // console.log("New user - redirecting to registration with email:", email);
       // Store Google OAuth data temporarily for registration
       const googleData = {
         email: decodeURIComponent(email),
@@ -69,7 +69,7 @@ const OAuthSuccess = () => {
         verified: true,
       };
 
-      console.log("Storing Google data:", googleData);
+      // console.log("Storing Google data:", googleData);
       sessionStorage.setItem("googleOAuthData", JSON.stringify(googleData));
 
       // Redirect to registration page (will skip email/OTP steps)
@@ -78,7 +78,7 @@ const OAuthSuccess = () => {
     }
 
     // Case 3: Error - no valid params
-    console.error("OAuth Error - no valid params found");
+    // console.error("OAuth Error - no valid params found");
     navigate("/login", { replace: true });
   }, [navigate]);
 
