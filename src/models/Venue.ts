@@ -8,7 +8,7 @@ export interface IVenue extends Document {
   city: string;
   state?: string;
 
-  location?: {
+  location: {
     type: "Point";
     coordinates: [number, number]; // [lng, lat]
   };
@@ -47,9 +47,11 @@ const VenueSchema = new Schema<IVenue>(
       type: {
         type: String,
         enum: ["Point"],
+        default: "Point",
       },
       coordinates: {
         type: [Number], // [lng, lat]
+        default: [0, 0],
       },
     },
 

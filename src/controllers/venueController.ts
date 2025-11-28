@@ -33,8 +33,10 @@ export const createVenue = async (req: IUserRequest, res: Response) => {
       city: req.body.city,
       phone: req.body.phone,
       owner: req.user._id,
-      amenities: req.body.amenities
-        ? req.body.amenities.split(",").map((a: string) => a.trim())
+      amenities: Array.isArray(req.body.amenities)
+        ? req.body.amenities.map((a: string) => a.trim()).filter(Boolean)
+        : typeof req.body.amenities === 'string'
+        ? req.body.amenities.split(",").map((a: string) => a.trim()).filter(Boolean)
         : [],
       images: imageUrls,
     };
@@ -59,8 +61,6 @@ export const createVenue = async (req: IUserRequest, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
-
 
 
 //Get All Venues
@@ -201,10 +201,9 @@ const updateVenueSports = async (venueId: string) => {
   });
 };
 
-// Create SubVenue 
 export const createSubVenue = async (req: Request, res: Response) => {
   try {
-    const venueId = req.params.venueId; // coming from URL 
+    const venueId = req.params.venueId;
 
     let imageUrls: string[] = [];
     const files = req.files as Express.Multer.File[];
@@ -218,28 +217,44 @@ export const createSubVenue = async (req: Request, res: Response) => {
       files.forEach((file) => fs.unlinkSync(file.path));
     }
 
+    let parsedSports: any[] = [];
+
+    if (req.body.sports) {
+      try {
+        parsedSports =
+          typeof req.body.sports === "string"
+            ? JSON.parse(req.body.sports)
+            : req.body.sports;
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid sports format. Must be valid JSON array.",
+        });
+      }
+    }
+
     const subVenueData = {
       name: req.body.name,
-      venue: venueId, //  THIS IS THE CRITICAL LINE
+      venue: venueId,
       amenities: req.body.amenities
         ? req.body.amenities.split(",").map((a: string) => a.trim())
         : [],
-      sports: req.body.sports ? JSON.parse(req.body.sports) : [],
+      sports: parsedSports,
       images: imageUrls,
     };
 
     const subVenue = await SubVenue.create(subVenueData);
-
     await updateVenueSports(venueId);
 
     return res.status(201).json({ success: true, subVenue });
 
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
-
-
 
 
 //Get SubVenues By Venue
