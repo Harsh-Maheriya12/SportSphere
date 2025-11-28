@@ -5,7 +5,6 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL}`
   : "/api";
 
-
 // Centralized request handler with auto JWT token and error handling
 const request = async <T>(
   url: string,

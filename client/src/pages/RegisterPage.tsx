@@ -19,7 +19,7 @@ import {
   apiRegister,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import defaultPhoto from "../assets/user_default.jpeg";
+import defaultPhoto from "../../public/user_default.jpeg";
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -53,16 +53,16 @@ function RegisterPage() {
   // Check for Google OAuth flow on mount
   useEffect(() => {
     const oauth = searchParams.get("oauth");
-    console.log("RegisterPage - Checking OAuth param:", oauth);
+    // console.log("RegisterPage - Checking OAuth param:", oauth);
 
     if (oauth === "google") {
       const googleDataStr = sessionStorage.getItem("googleOAuthData");
-      console.log("RegisterPage - Google OAuth data from session:", googleDataStr);
+      // console.log("RegisterPage - Google OAuth data from session:", googleDataStr);
 
       if (googleDataStr) {
         try {
           const googleData = JSON.parse(googleDataStr);
-          console.log("RegisterPage - Parsed Google data:", googleData);
+          // console.log("RegisterPage - Parsed Google data:", googleData);
 
           // Pre-fill email and skip to details step
           setEmail(googleData.email);
@@ -71,7 +71,7 @@ function RegisterPage() {
           setGooglePictureUrl(googleData.picture || "");
           setStep("details");
 
-          console.log("RegisterPage - Set isGoogleOAuth to true, skipping to details");
+          // console.log("RegisterPage - Set isGoogleOAuth to true, skipping to details");
 
           // Don't clear session storage immediately - keep it for verification
           // sessionStorage.removeItem("googleOAuthData");
