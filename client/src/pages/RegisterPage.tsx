@@ -505,6 +505,7 @@ function RegisterPage() {
                     className="w-full pl-10 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-background text-foreground transition"
                     required={!isGoogleOAuth}
                     minLength={6}
+                    maxLength={12}
                     disabled={isLoading}
                   />
                 </div>

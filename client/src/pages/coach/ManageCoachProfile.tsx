@@ -358,6 +358,7 @@ function ManageCoachProfile() {
                     onChange={(e) => setCity(e.target.value)}
                     disabled={!isEditing}
                     placeholder="City"
+                    maxLength={50}
                     className="px-4 py-2.5 rounded-lg border border-primary/20 bg-background focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   />
                   <input
@@ -366,6 +367,7 @@ function ManageCoachProfile() {
                     onChange={(e) => setState(e.target.value)}
                     disabled={!isEditing}
                     placeholder="State"
+                    maxLength={50}
                     className="px-4 py-2.5 rounded-lg border border-primary/20 bg-background focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   />
                   <input
@@ -374,6 +376,7 @@ function ManageCoachProfile() {
                     onChange={(e) => setCountry(e.target.value)}
                     disabled={!isEditing}
                     placeholder="Country"
+                    maxLength={50}
                     className="px-4 py-2.5 rounded-lg border border-primary/20 bg-background focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   />
                 </div>
@@ -382,6 +385,7 @@ function ManageCoachProfile() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   disabled={!isEditing}
+                  maxLength={500}
                   placeholder="Address (Street, Building, Landmark)"
                   className="w-full px-4 py-2.5 rounded-lg border border-primary/20 bg-background focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 />
