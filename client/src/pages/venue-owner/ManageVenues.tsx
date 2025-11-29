@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Building2, Plus, Edit2, Trash2, MapPin, Phone } from "lucide-react";
+import { Building2, Plus, Edit2, Trash2, MapPin, Phone, Image as ImageIcon, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
   apiGetMyVenues,
@@ -30,6 +30,8 @@ function ManageVenues() {
   const [state, setState] = useState("");
   // Latitude/Longitude removed from creation per request
   const [amenitiesInput, setAmenitiesInput] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
     loadVenues();
@@ -87,7 +89,8 @@ function ManageVenues() {
           address,
           city,
           state,
-          amenities
+          amenities,
+          images
         );
         setSuccess("Venue created successfully!");
       }
@@ -147,6 +150,43 @@ function ManageVenues() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    
+    const files = Array.from(e.target.files).filter((file) => {
+      // Validate file type
+      if (!file.type.match(/^image\/(png|jpe?g)$/i)) {
+        setError(`${file.name} is not a valid image format. Only PNG, JPG, JPEG allowed.`);
+        return false;
+      }
+      // Validate file size (8MB limit)
+      if (file.size > 8 * 1024 * 1024) {
+        setError(`${file.name} is too large. Maximum size is 8MB.`);
+        return false;
+      }
+      return true;
+    });
+
+    if (files.length > 0) {
+      setImages([...images, ...files]);
+      
+      // Create previews
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+      setImagePreviews([...imagePreviews, ...newPreviews]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = images.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    
+    // Revoke the old preview URL to free memory
+    URL.revokeObjectURL(imagePreviews[index]);
+    
+    setImages(newImages);
+    setImagePreviews(newPreviews);
+  };
+
   const resetForm = () => {
     setName("");
     setDescription("");
@@ -156,6 +196,12 @@ function ManageVenues() {
     setState("");
     // Coordinates cleared are not needed anymore
     setAmenitiesInput("");
+    
+    // Clean up image previews
+    imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    setImages([]);
+    setImagePreviews([]);
+    
     setEditingVenue(null);
     setShowForm(false);
   };
@@ -321,6 +367,52 @@ function ManageVenues() {
                     placeholder="e.g., Parking, Changing Rooms, Cafeteria"
                   />
                 </div>
+
+                {!editingVenue && (
+                  <div className="md:col-span-2 group">
+                    <label className="block text-foreground mb-2 font-semibold flex items-center gap-2">
+                      <span className="w-2 h-2 bg-primary rounded-full group-hover:animate-pulse"></span>
+                      Venue Images (Optional)
+                    </label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Accepted formats: PNG, JPG, JPEG • Maximum size: 8MB per image
+                    </p>
+                    <div className="space-y-3">
+                      <label className="cursor-pointer flex items-center justify-center gap-2 w-full p-4 rounded-xl bg-card/80 backdrop-blur border-2 border-dashed border-primary/40 hover:border-primary/60 text-foreground transition-all shadow-sm hover:bg-primary/5">
+                        <ImageIcon size={20} className="text-primary" />
+                        <span>Choose Images</span>
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg"
+                          multiple
+                          onChange={handleImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                      
+                      {imagePreviews.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {imagePreviews.map((preview, idx) => (
+                            <div key={idx} className="relative group/img">
+                              <img
+                                src={preview}
+                                alt={`Preview ${idx + 1}`}
+                                className="w-full h-32 object-cover rounded-lg border-2 border-primary/20"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(idx)}
+                                className="absolute top-1 right-1 p-1 bg-red-500 rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity"
+                              >
+                                <X size={16} className="text-white" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3">
@@ -381,6 +473,41 @@ function ManageVenues() {
                 key={venue._id}
                 className="group relative overflow-hidden rounded-2xl border-2 border-primary/20 hover:border-primary/60 transition-all shadow-lg hover:shadow-xl bg-gradient-to-br from-card/80 to-primary/5 backdrop-blur"
               >
+                {/* Venue Image */}
+                {venue.images && venue.images.length > 0 && (
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={venue.images[0]}
+                      alt={venue.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    {venue.images.length > 1 && (
+                      <div className="absolute bottom-2 right-2 flex gap-1">
+                        {venue.images.slice(1, 4).map((img, idx) => (
+                          <div
+                            key={idx}
+                            className="w-12 h-12 rounded-lg overflow-hidden border border-white/30"
+                          >
+                            <img
+                              src={img}
+                              alt={`${venue.name} ${idx + 2}`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ))}
+                        {venue.images.length > 4 && (
+                          <div className="w-12 h-12 rounded-lg bg-black/60 border border-white/30 flex items-center justify-center text-white text-xs font-bold">
+                            +{venue.images.length - 4}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
