@@ -97,7 +97,7 @@ export const startGameBooking: RequestHandler = asyncHandler(async (req: IUserRe
     });
 
     // Create booking
-      booking = await Booking.create({
+    booking = await Booking.create({
       _id: bookingId,
       user: userId,
       gameId: game._id as mongoose.Types.ObjectId,

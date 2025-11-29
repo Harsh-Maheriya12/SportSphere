@@ -53,7 +53,7 @@ describe('retryPayment Controller', () => {
     it('should successfully retry payment if slot is available', async () => {
         req.body = { bookingId: 'booking123' };
 
-        const fixedDate = new Date();
+        const fixedDate = new Date(Date.now() + 86400000);
         const mockBooking = {
             _id: 'booking123',
             subVenueId: 'subVenue123',
@@ -140,8 +140,8 @@ describe('retryPayment Controller', () => {
         const mockBooking = {
             _id: 'booking123',
             subVenueId: 'subVenue123',
-            startTime: new Date(),
-            endTime: new Date(),
+            startTime: new Date(Date.now() + 86400000),
+            endTime: new Date(Date.now() + 90000000),
             sport: 'Cricket',
             status: 'Failed'
         };
@@ -189,7 +189,7 @@ describe('retryPayment Controller', () => {
     it('should successfully retry a Pending booking when slot is already booked', async () => {
         req.body = { bookingId: 'booking123' };
 
-        const fixedDate = new Date();
+        const fixedDate = new Date(Date.now() + 86400000);
         const mockBooking = {
             _id: 'booking123',
             subVenueId: 'subVenue123',
@@ -243,7 +243,7 @@ describe('retryPayment Controller', () => {
     it('should rollback slot lock if Stripe session creation fails', async () => {
         req.body = { bookingId: 'booking123' };
 
-        const fixedDate = new Date();
+        const fixedDate = new Date(Date.now() + 86400000);
         const mockBooking = {
             _id: 'booking123',
             subVenueId: 'subVenue123',

@@ -42,6 +42,8 @@ export const googleCallback = asyncHandler(
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     const base = frontendUrl.replace(/\/+$/, '');
 
+    logger.info({ base }, 'Google Auth Callback initiated');
+
     if (!code) {
       return res.redirect(`${base}/login?error=Login+Failed!+Please+Retry!`);
     }

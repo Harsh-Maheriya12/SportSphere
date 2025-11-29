@@ -32,6 +32,11 @@ describe("Google OAuth Flow", () => {
         await User.deleteMany({});
         await UserEmailOtpVerification.deleteMany({});
         jest.clearAllMocks();
+        process.env.FRONTEND_URL = "http://test-frontend.com";
+    });
+
+    afterEach(() => {
+        delete process.env.FRONTEND_URL;
     });
 
     describe("GET /api/auth/google", () => {
@@ -48,7 +53,7 @@ describe("Google OAuth Flow", () => {
             const res = await request(app).get("/api/auth/google/callback");
 
             expect(res.status).toBe(302);
-            expect(res.headers.location).toContain("error=Login+Failed");
+            expect(res.headers.location).toContain("http://test-frontend.com/login?error=Login+Failed");
         });
 
         test("with invalid code should fail gracefully", async () => {
@@ -59,7 +64,7 @@ describe("Google OAuth Flow", () => {
                 .query({ code: "INVALID_CODE" });
 
             expect(res.status).toBe(302);
-            expect(res.headers.location).toContain("error=Google+Auth+Failed");
+            expect(res.headers.location).toContain("http://test-frontend.com/login?error=Google+Auth+Failed");
         });
 
         test("with valid code for existing user should login and redirect with token", async () => {
@@ -97,7 +102,7 @@ describe("Google OAuth Flow", () => {
                 .query({ code: "VALID_CODE" });
 
             expect(res.status).toBe(302);
-            expect(res.headers.location).toContain("oauth-success?token=");
+            expect(res.headers.location).toContain("http://test-frontend.com/oauth-success?token=");
             expect(res.headers.location).not.toContain("email=");
         });
 
@@ -124,7 +129,7 @@ describe("Google OAuth Flow", () => {
                 .query({ code: "VALID_CODE" });
 
             expect(res.status).toBe(302);
-            expect(res.headers.location).toContain("oauth-success?email=");
+            expect(res.headers.location).toContain("http://test-frontend.com/oauth-success?email=");
             expect(res.headers.location).toContain("name=New%20User");
             expect(res.headers.location).toContain("provider=google");
 
@@ -156,7 +161,7 @@ describe("Google OAuth Flow", () => {
                 .query({ code: "VALID_CODE" });
 
             expect(res.status).toBe(302);
-            expect(res.headers.location).toContain("error=Google+account+has+no+email");
+            expect(res.headers.location).toContain("http://test-frontend.com/login?error=Google+account+has+no+email");
         });
 
         test("new user without name should use email prefix", async () => {

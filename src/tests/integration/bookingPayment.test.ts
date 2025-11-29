@@ -98,6 +98,7 @@ describe('Booking and Payment Integration Tests', () => {
         });
 
         const startTime = new Date();
+        startTime.setDate(startTime.getDate() + 1); // Set to tomorrow
         startTime.setHours(10, 0, 0, 0);
         const endTime = new Date(startTime);
         endTime.setHours(11, 0, 0, 0);

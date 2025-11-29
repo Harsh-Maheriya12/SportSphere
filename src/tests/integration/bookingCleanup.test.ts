@@ -9,6 +9,7 @@ import Venue from '../../models/Venue';
 import SubVenue from '../../models/SubVenue';
 import TimeSlot from '../../models/TimeSlot';
 import Booking from '../../models/Booking';
+import Game, { IGame } from '../../models/gameModels';
 
 // Mock Stripe
 const mockStripeSessionExpire = jest.fn();
@@ -76,7 +77,9 @@ describe('Booking Cleanup Integration Tests', () => {
         await Venue.deleteMany({});
         await SubVenue.deleteMany({});
         await TimeSlot.deleteMany({});
+        await TimeSlot.deleteMany({});
         await Booking.deleteMany({});
+        await Game.deleteMany({});
 
         // Setup basic data
         user = await User.create({
@@ -192,10 +195,10 @@ describe('Booking Cleanup Integration Tests', () => {
             expect(mockStripeSessionExpire).not.toHaveBeenCalled();
         });
 
-        it('should log warning when session is already expired but booking is still Pending', async () => {
+        it('should manually fail booking and unlock slot if session is already expired (Webhook Missed)', async () => {
             const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
-            await Booking.create({
+            const booking = await Booking.create({
                 user: user._id,
                 venueId: venue._id,
                 subVenueId: subVenue._id,
@@ -210,15 +213,104 @@ describe('Booking Cleanup Integration Tests', () => {
                 createdAt: fifteenMinutesAgo
             });
 
-            // Mock Stripe to return already expired session
+            // Mock Stripe to return already expired session with metadata
             mockStripeSessionRetrieve.mockResolvedValue({
-                status: 'expired'
+                status: 'expired',
+                metadata: {
+                    timeSlotDocId: timeSlot._id.toString(),
+                    slotId: slotId
+                }
             });
+
+            // Mock Atomic Lock (Unlock)
+            const mockFindOneAndUpdate = jest.spyOn(TimeSlot, 'findOneAndUpdate');
+            mockFindOneAndUpdate.mockResolvedValue(true);
 
             await cleanupExpiredBookings();
 
             expect(mockStripeSessionRetrieve).toHaveBeenCalledWith('sess_already_expired');
-            expect(mockStripeSessionExpire).not.toHaveBeenCalled(); // Should not try to expire again
+
+            // Verify Booking Failed
+            const updatedBooking = await Booking.findById(booking._id);
+            expect(updatedBooking?.status).toBe('Failed');
+
+            // Verify Slot Unlocked via Metadata
+            expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
+                {
+                    _id: timeSlot._id.toString(),
+                    "slots._id": slotId
+                },
+                {
+                    $set: {
+                        "slots.$.status": "available",
+                        "slots.$.bookedForSport": null
+                    }
+                }
+            );
+
+            mockFindOneAndUpdate.mockRestore();
+        });
+
+        it('should reset Game status to Open if cleanup handles expired game session', async () => {
+            const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+            // Create a Game
+            const game: IGame = await Game.create({
+                host: user._id,
+                sport: 'cricket',
+                description: 'Test Game',
+                venue: {
+                    venueId: venue._id,
+                    venueName: 'Test Venue',
+                    city: 'Test City',
+                    coordinates: { type: 'Point', coordinates: [0, 0] }
+                },
+                subVenue: {
+                    subVenueId: subVenue._id,
+                    name: 'Pitch 1'
+                },
+                slot: {
+                    timeSlotDocId: timeSlot._id,
+                    slotId: slotId,
+                    date: '2024-01-01',
+                    startTime: new Date(),
+                    endTime: new Date(),
+                    price: 500
+                },
+                playersNeeded: { min: 2, max: 10 },
+                approxCostPerPlayer: 100,
+                status: 'Full' // Initially Full
+            });
+
+            await Booking.create({
+                user: user._id,
+                venueId: venue._id,
+                subVenueId: subVenue._id,
+                sport: 'Cricket',
+                coordinates: { type: 'Point', coordinates: [0, 0] },
+                startTime: timeSlot.slots[0].startTime,
+                endTime: timeSlot.slots[0].endTime,
+                amount: 1000,
+                currency: 'inr',
+                stripeSessionId: 'sess_game_cleanup',
+                status: 'Pending',
+                createdAt: fifteenMinutesAgo
+            });
+
+            // Mock Stripe to return already expired session with GAME metadata
+            mockStripeSessionRetrieve.mockResolvedValue({
+                status: 'expired',
+                metadata: {
+                    gameId: (game._id as mongoose.Types.ObjectId).toString(),
+                    slotId: slotId
+                }
+            });
+
+            await cleanupExpiredBookings();
+
+            // Verify Game Status Reset
+            const updatedGame = await Game.findById(game._id);
+            expect(updatedGame?.status).toBe('Open');
         });
 
         it('should handle Stripe API errors gracefully', async () => {
