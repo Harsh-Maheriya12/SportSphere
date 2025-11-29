@@ -61,40 +61,60 @@ export const startGameBooking: RequestHandler = asyncHandler(async (req: IUserRe
   }
 
   const totalPrice = game.slot.price * 100;
-  let booking: any = null;
+  let booking: any;
   try {
+    // Pre-generate Booking ID
     const bookingId = new mongoose.Types.ObjectId();
 
-    // Create Stripe session
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
+    // Check if we should bypass Stripe (for demo/showcase)
+    const bypassStripe = process.env.BYPASS_STRIPE_PAYMENT === 'true';
 
-      line_items: [
-        {
-          price_data: {
-            currency: "inr",
-            unit_amount: totalPrice,
-            product_data: {
-              name: `Game Booking (${game.sport})`,
+    let session: any = null;
+    let stripeSessionId: string;
+    let stripePaymentIntentId: string | undefined;
+    let bookingStatus: string;
+
+    if (bypassStripe) {
+      // DEMO MODE: Skip Stripe, create booking directly as paid
+      logger.info(`[DEMO MODE] Bypassing Stripe payment for game booking ${bookingId}`);
+      stripeSessionId = `demo_session_${bookingId}`;
+      stripePaymentIntentId = `demo_payment_${bookingId}`;
+      bookingStatus = "Paid";
+    } else {
+      // NORMAL MODE: Create Stripe session
+      session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        payment_method_types: ["card"],
+
+        line_items: [
+          {
+            price_data: {
+              currency: "inr",
+              unit_amount: totalPrice,
+              product_data: {
+                name: `Game Booking (${game.sport})`,
+              },
             },
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+
+        metadata: {
+          type: "game",
+          bookingId: bookingId.toString(),
+          userId: userId.toString(),
+          gameId: (game._id as mongoose.Types.ObjectId).toString(),
+          timeSlotDocId: timeSlotDocId.toString(),
+          slotId: slotId.toString(),
         },
-      ],
 
-      metadata: {
-        type: "game",
-        bookingId: bookingId.toString(),
-        userId: userId.toString(),
-        gameId: (game._id as mongoose.Types.ObjectId).toString(),
-        timeSlotDocId: timeSlotDocId.toString(),
-        slotId: slotId.toString(),
-      },
+        success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+      });
 
-      success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
-    });
+      stripeSessionId = session.id;
+      bookingStatus = "Pending";
+    }
 
     // Create booking
     booking = await Booking.create({
@@ -117,19 +137,54 @@ export const startGameBooking: RequestHandler = asyncHandler(async (req: IUserRe
       amount: totalPrice,
       currency: "inr",
 
-      stripeSessionId: session.id,
-      status: "Pending",
+      stripeSessionId: stripeSessionId,
+      stripePaymentIntentId: stripePaymentIntentId,
+      status: bookingStatus,
     });
 
-    logger.info(`Game booking created: ${booking._id}`);
+    logger.info(`Game booking created: ${booking._id} [Status: ${bookingStatus}]`);
 
+    // Update game status if in demo mode
+    if (bypassStripe) {
+      // Update booking status to match webhook behavior
+      game.bookingStatus = "Booked";
 
+      // Check if game is now full
+      const currentPlayers = game.approvedPlayers.length;
+      if (currentPlayers >= game.playersNeeded.max) {
+        game.status = "Full";
+      }
 
-    res.json({
-      success: true,
-      url: session.url,
-      bookingId: booking._id,
-    });
+      await game.save();
+      logger.info(`[DEMO MODE] Game ${game._id} status updated: ${game.status}, bookingStatus: ${game.bookingStatus}`);
+    }
+
+    if (bypassStripe) {
+      // DEMO MODE: Return success without Stripe URL
+      res.json({
+        success: true,
+        message: "Game booking confirmed (Demo mode - payment bypassed)",
+        bookingId: booking._id,
+        demoMode: true,
+        redirectUrl: "/my-bookings", // Frontend should redirect here
+        booking: {
+          id: booking._id,
+          status: booking.status,
+          gameId: game._id,
+          sport: game.sport,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          amount: booking.amount / 100,
+        }
+      });
+    } else {
+      // NORMAL MODE: Return Stripe checkout URL
+      res.json({
+        success: true,
+        url: session.url,
+        bookingId: booking._id,
+      });
+    }
   } catch (error) {
     logger.error(`Error in starting game booking: ${error}`);
     // Roolback slot

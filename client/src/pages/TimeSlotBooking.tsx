@@ -146,8 +146,8 @@ export default function TimeSlotBooking() {
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="text-2xl font-semibold text-red-400 mb-6">{error || "Venue not found"}</div>
-            <button 
-              onClick={() => navigate("/venues")} 
+            <button
+              onClick={() => navigate("/venues")}
               className="bg-card/80 backdrop-blur-sm border border-primary/30 text-foreground px-8 py-3 rounded-xl font-semibold hover:bg-card transition-all"
             >
               Back to Venues
@@ -167,7 +167,7 @@ export default function TimeSlotBooking() {
     <div className="min-h-screen bg-background">
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-6">
-        
+
         {/* Back Button */}
         <Link
           to={`/venue/${id}`}
@@ -196,7 +196,7 @@ export default function TimeSlotBooking() {
 
         {/* Main Booking Card */}
         <div className="bg-card/80 backdrop-blur-sm border border-primary/20 rounded-xl p-6 shadow-xl">
-          
+
           {/* Step 1: Select Sport */}
           <div className="mb-6">
             <h2 className="text-xl font-bold text-foreground mb-3">Step 1: Select Sport</h2>
@@ -204,11 +204,10 @@ export default function TimeSlotBooking() {
               {venueSports.map((sport) => (
                 <button
                   key={sport}
-                  className={`px-4 py-3 rounded-lg font-semibold transition-all ${
-                    selectedSport === sport
-                      ? "button-style1 shadow-lg scale-105"
-                      : "bg-card/60 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card"
-                  }`}
+                  className={`px-4 py-3 rounded-lg font-semibold transition-all ${selectedSport === sport
+                    ? "button-style1 shadow-lg scale-105"
+                    : "bg-card/60 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card"
+                    }`}
                   onClick={() => {
                     setSelectedSport(sport);
                     setSelectedGroundId("");
@@ -238,11 +237,10 @@ export default function TimeSlotBooking() {
               <label className="block text-lg font-bold text-foreground mb-3">Step 3: Filter by Court/Field (optional)</label>
               <div className="flex flex-wrap gap-2">
                 <button
-                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                    selectedGroundId === ""
-                      ? "bg-green-600 text-white shadow-md"
-                      : "bg-card/60 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card"
-                  }`}
+                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${selectedGroundId === ""
+                    ? "bg-green-600 text-white shadow-md"
+                    : "bg-card/60 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card"
+                    }`}
                   onClick={() => setSelectedGroundId("")}
                 >
                   All Courts
@@ -250,11 +248,10 @@ export default function TimeSlotBooking() {
                 {filteredSubVenues.map((sv) => (
                   <button
                     key={sv._id}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      selectedGroundId === sv._id
-                        ? "bg-green-600 text-white shadow-md"
-                        : "bg-card/60 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card"
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${selectedGroundId === sv._id
+                      ? "bg-green-600 text-white shadow-md"
+                      : "bg-card/60 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card"
+                      }`}
                     onClick={() => setSelectedGroundId(sv._id)}
                   >
                     {sv.name}
@@ -271,14 +268,14 @@ export default function TimeSlotBooking() {
                 <CalendarCheck2 size={24} className="text-primary" />
                 Available Slots for {formatSportName(selectedSport)}
               </h2>
-              
+
               {loadingSlots && (
                 <div className="text-muted-foreground py-8 text-center">
                   <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary/30 border-t-primary"></div>
                   <p className="mt-3">Loading slots...</p>
                 </div>
               )}
-              
+
               {!loadingSlots && filteredSubVenues.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">No courts/fields for this sport at this venue.</div>
               )}

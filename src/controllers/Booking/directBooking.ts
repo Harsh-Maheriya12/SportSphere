@@ -95,35 +95,54 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
     // Pre-generate Booking ID
     const bookingId = new mongoose.Types.ObjectId();
 
-    // Create Stripe session
-    const stripeClient = getStripe();
-    const session = await stripeClient.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes from now
+    // Check if we should bypass Stripe (for demo/showcase)
+    const bypassStripe = process.env.BYPASS_STRIPE_PAYMENT === 'true';
 
-      line_items: [
-        {
-          price_data: {
-            currency: "inr",
-            unit_amount: priceInPaise,
-            product_data: { name: `Direct Venue Booking - ${sport}` },
+    let session: any = null;
+    let stripeSessionId: string;
+    let stripePaymentIntentId: string | undefined;
+    let bookingStatus: string;
+
+    if (bypassStripe) {
+      // DEMO MODE: Skip Stripe, create booking directly as paid
+      logger.info(`[DEMO MODE] Bypassing Stripe payment for booking ${bookingId}`);
+      stripeSessionId = `demo_session_${bookingId}`;
+      stripePaymentIntentId = `demo_payment_${bookingId}`;
+      bookingStatus = "Paid";
+    } else {
+      // NORMAL MODE: Create Stripe session
+      const stripeClient = getStripe();
+      session = await stripeClient.checkout.sessions.create({
+        mode: "payment",
+        payment_method_types: ["card"],
+        expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes from now
+
+        line_items: [
+          {
+            price_data: {
+              currency: "inr",
+              unit_amount: priceInPaise,
+              product_data: { name: `Direct Venue Booking - ${sport}` },
+            },
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+
+        metadata: {
+          type: "direct",
+          userId: userId.toString(),
+          bookingId: bookingId.toString(),
+          timeSlotDocId: timeSlotDocId.toString(),
+          slotId: slotId.toString()
         },
-      ],
 
-      metadata: {
-        type: "direct",
-        userId: userId.toString(),
-        bookingId: bookingId.toString(),
-        timeSlotDocId: timeSlotDocId.toString(),
-        slotId: slotId.toString()
-      },
+        success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+      });
 
-      success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
-    });
+      stripeSessionId = session.id;
+      bookingStatus = "Pending";
+    }
 
     // Create Booking record
     const booking = await Booking.create({
@@ -138,21 +157,43 @@ export const createDirectBooking: RequestHandler = asyncHandler(async (req: IUse
       },
       startTime: slot.startTime,
       endTime: slot.endTime,
-
+      timeSlotDocId,
+      slotId,
       amount: priceInPaise,
       currency: "inr",
 
-      stripeSessionId: session.id,
-      status: "Pending",
+      stripeSessionId: stripeSessionId,
+      stripePaymentIntentId: stripePaymentIntentId,
+      status: bookingStatus,
     });
 
-    logger.info(`Booking created: ${booking._id} [User: ${userId}, Session: ${session.id}]`);
+    logger.info(`Booking created: ${booking._id} [User: ${userId}, Status: ${bookingStatus}]`);
 
-    res.status(201).json({
-      success: true,
-      url: session.url,
-      bookingId: booking._id,
-    });
+    if (bypassStripe) {
+      // DEMO MODE: Return success without Stripe URL
+      res.status(201).json({
+        success: true,
+        message: "Booking confirmed (Demo mode - payment bypassed)",
+        bookingId: booking._id,
+        demoMode: true,
+        redirectUrl: "/my-bookings", // Frontend should redirect here
+        booking: {
+          id: booking._id,
+          status: booking.status,
+          sport: booking.sport,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          amount: booking.amount / 100,
+        }
+      });
+    } else {
+      // NORMAL MODE: Return Stripe checkout URL
+      res.status(201).json({
+        success: true,
+        url: session.url,
+        bookingId: booking._id,
+      });
+    }
   } catch (error) {
     // Rollback: Unlock the slot if anything fails after locking
     await TimeSlot.findOneAndUpdate(
