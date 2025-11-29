@@ -2,18 +2,23 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import TimeSlot from "../models/TimeSlot";
 import SubVenue from "../models/SubVenue";
+import { toZonedTime, fromZonedTime, formatInTimeZone } from "date-fns-tz";
 
 //validate date format YYYY-MM-DD
 const isValidDate = (dateStr: string) => /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
 
-const buildSlotTimes = (dateStr: string, hour: number) => {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const startTime = new Date(year, month - 1, day, hour, 0, 0);
-  const endTime =
-    hour === 23
-      ? new Date(year, month - 1, day, 23, 59, 59)
-      : new Date(year, month - 1, day, hour + 1, 0, 0);
+const TZ = process.env.SERVER_TZ || "Asia/Kolkata";
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+const buildSlotTimes = (dateStr: string, hour: number, tz: string) => {
+  const startLocal = `${dateStr}T${pad2(hour)}:00:00`;
+  const endLocal = hour === 23
+    ? `${dateStr}T23:59:59`
+    : `${dateStr}T${pad2(hour + 1)}:00:00`;
+
+  const startTime = fromZonedTime(startLocal, tz);
+  const endTime = fromZonedTime(endLocal, tz);
   return { startTime, endTime };
 };
 
@@ -35,6 +40,15 @@ export const generateTimeSlots = async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         message: "Date must be in YYYY-MM-DD format",
+      });
+    }
+
+    /* Prevent generating slots for past dates (based on configured TZ) */
+    const todayStr = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
+    if (date < todayStr) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot generate slots for past dates",
       });
     }
 
@@ -71,10 +85,22 @@ export const generateTimeSlots = async (req: Request, res: Response) => {
       });
     }
 
-    /* Generate 24 local-time slots */
-    const slots = [];
-    for (let hour = 0; hour < 24; hour++) {
-      const { startTime, endTime } = buildSlotTimes(date, hour);
+    /* Generate 24 slots aligned to TZ, stored as UTC instants */
+    const slots = [] as Array<any>;
+    const [selYear, selMonth, selDay] = date.split("-").map(Number);
+    const nowTz2 = toZonedTime(new Date(), TZ);
+    const isToday = (
+      selYear === nowTz2.getFullYear() &&
+      selMonth === nowTz2.getMonth() + 1 &&
+      selDay === nowTz2.getDate()
+    );
+
+    const currentHourTz = nowTz2.getHours();
+    const startHour = isToday ? currentHourTz + 1 : 0; // Start from next hour if today in TZ
+    const endHour = 24;
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      const { startTime, endTime } = buildSlotTimes(date, hour, TZ);
 
       slots.push({
         startTime,

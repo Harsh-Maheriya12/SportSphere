@@ -38,7 +38,7 @@ function VenueCard({
       </div>
 
       {/* Content */}
-      <div className="p-6 bg-card/80 backdrop-blur">
+      <div className="p-6 bg-white/10 backdrop-blur">
         <h3 className="text-xl font-bold mb-2">{name}</h3>
 
         {/* Location */}
@@ -70,6 +70,9 @@ function VenueCard({
 
         {/* Sports */}
         <p className="text-sm text-muted-foreground mb-4">
+          {
+            sports.length ? "Sports: " : "Not available"
+          }
           {Array.isArray(sports) ? sports.join(", ") : sports}
         </p>
 

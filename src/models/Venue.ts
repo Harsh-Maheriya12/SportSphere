@@ -1,4 +1,3 @@
-// src/models/Venue.ts
 import mongoose, { Schema, Document } from "mongoose";
 export interface IVenue extends Document {
   name: string;
@@ -45,8 +44,15 @@ const VenueSchema = new Schema<IVenue>(
 
     // GEOJSON
     location: {
-      type: { type: String, enum: ["Point"], default: "Point" },
-      coordinates: { type: [Number], required: true },
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [lng, lat]
+        default: [0, 0],
+      },
     },
 
     images: { type: [String], default: [] },

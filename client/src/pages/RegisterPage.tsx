@@ -19,6 +19,7 @@ import {
   apiRegister,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import defaultPhoto from "../assets/user_default.jpeg";
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -52,16 +53,16 @@ function RegisterPage() {
   // Check for Google OAuth flow on mount
   useEffect(() => {
     const oauth = searchParams.get("oauth");
-    console.log("RegisterPage - Checking OAuth param:", oauth);
+    // console.log("RegisterPage - Checking OAuth param:", oauth);
 
     if (oauth === "google") {
       const googleDataStr = sessionStorage.getItem("googleOAuthData");
-      console.log("RegisterPage - Google OAuth data from session:", googleDataStr);
+      // console.log("RegisterPage - Google OAuth data from session:", googleDataStr);
 
       if (googleDataStr) {
         try {
           const googleData = JSON.parse(googleDataStr);
-          console.log("RegisterPage - Parsed Google data:", googleData);
+          // console.log("RegisterPage - Parsed Google data:", googleData);
 
           // Pre-fill email and skip to details step
           setEmail(googleData.email);
@@ -70,7 +71,7 @@ function RegisterPage() {
           setGooglePictureUrl(googleData.picture || "");
           setStep("details");
 
-          console.log("RegisterPage - Set isGoogleOAuth to true, skipping to details");
+          // console.log("RegisterPage - Set isGoogleOAuth to true, skipping to details");
 
           // Don't clear session storage immediately - keep it for verification
           // sessionStorage.removeItem("googleOAuthData");
@@ -184,12 +185,6 @@ function RegisterPage() {
       return;
     }
 
-    // For Google OAuth, profile photo is optional (can use Google picture)
-    if (!isGoogleOAuth && !profilePhoto) {
-      setError("Profile photo is required");
-      return;
-    }
-
     if ((role === "coach" || role === "venue-owner") && !proof) {
       setError("Proof document is required for coaches and venue owners");
       return;
@@ -198,6 +193,14 @@ function RegisterPage() {
     setIsLoading(true);
 
     try {
+      // Default photo
+      let photoToUpload = profilePhoto;
+      if (!photoToUpload && !isGoogleOAuth) {
+        const response = await fetch(defaultPhoto);
+        const blob = await response.blob();
+        photoToUpload = new File([blob], "default-avatar.png", { type: "image/png" });
+      }
+
       const data = await apiRegister(
         username,
         email,
@@ -205,7 +208,7 @@ function RegisterPage() {
         role,
         parseInt(age),
         gender,
-        profilePhoto!,
+        photoToUpload || profilePhoto!,
         proof,
         isGoogleOAuth ? "google" : "local" // Pass auth provider
       );
@@ -502,6 +505,7 @@ function RegisterPage() {
                     className="w-full pl-10 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-background text-foreground transition"
                     required={!isGoogleOAuth}
                     minLength={6}
+                    maxLength={12}
                     disabled={isLoading}
                   />
                 </div>
@@ -607,7 +611,7 @@ function RegisterPage() {
             {/* Profile Photo */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Profile Photo {!isGoogleOAuth && <span className="text-destructive">*</span>}
+                Profile Photo {!isGoogleOAuth && <span className="text-muted-foreground text-xs">(optional - default will be used)</span>}
               </label>
 
               {isGoogleOAuth && googlePictureUrl && (
@@ -632,7 +636,6 @@ function RegisterPage() {
                   className="hidden"
                   id="profilePhoto"
                   disabled={isLoading}
-                  required={!isGoogleOAuth}
                 />
                 <label
                   htmlFor="profilePhoto"

@@ -1,13 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import {
   apiGetMyCoachBookings,
   apiGetCoachsAllBooking,
   apiGetMyVenueBookings,
+  apiGetMyBookings,
+  apiApproveJoinRequest,
+  apiRejectJoinRequest,
+  apiCancelJoinRequest,
+  apiStartGameBooking,
+  apiLeaveGame,
+  apiCompleteGame,
+  apiRateVenue,
 } from "../services/api";
-import { User, Info, Calendar, MapPin, Clock, DollarSign, X } from "lucide-react";
+import { User, Info, Calendar, MapPin, Clock, X, IndianRupee, Users, Trophy } from "lucide-react";
 import BookingCard from "../components/cards/BookingCard";
-
+import { Game } from "../types";
+import GameBookingCard from "../components/cards/GameBookingCard";
+import GameBookingModal from "../components/cards/GameBookingModal";
 interface Booking {
   _id: string;
   coachId?: {
@@ -52,9 +62,71 @@ interface VenueBooking {
   createdAt: string;
 }
 
+// Helper functions
+const formatTime = (dateStr: string) =>
+  new Date(dateStr).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+const getHostedGamesTabCount = (hostedGames: Game[], key: string): number => {
+  switch (key) {
+    case "all":
+      return hostedGames.length;
+    case "pending-requests":
+      return hostedGames.filter(g => g.joinRequests.some(r => r.status === "pending")).length;
+    case "accepted-players":
+      return hostedGames.filter(g => g.approvedPlayers.length > 0).length;
+    case "completed":
+      return hostedGames.filter(g => g.status === "Completed").length;
+    case "cancelled":
+      return hostedGames.filter(g => g.status === "Cancelled").length;
+    case "payment-completed":
+      return hostedGames.filter(g => g.bookingStatus === "Booked").length;
+    default:
+      return 0;
+  }
+};
+
+const getPlayedGamesTabCount = (gameBookings: {
+  hosted: Game[];
+  joined: Game[];
+  pending: Game[];
+  rejected: Game[];
+  cancelled: Game[];
+  booked: Game[];
+  completed: Game[];
+}, status: string): number => {
+  const hostedIds = new Set(gameBookings.hosted.map(g => g._id));
+  const playedGames = Object.values(gameBookings)
+    .flat()
+    .filter(g => !hostedIds.has(g._id));
+  
+  switch (status) {
+    case "all":
+      return playedGames.length;
+    case "pending-requests":
+      return gameBookings.pending.length;
+    case "cancelled-requests":
+      return gameBookings.cancelled.length;
+    case "completed":
+      return gameBookings.completed.length;
+    case "expired":
+      return playedGames.filter(g => new Date(g.slot.endTime) < new Date() && g.status !== "Completed" && g.status !== "Cancelled").length;
+    default:
+      return 0;
+  }
+};
+
+const getCoachTabCount = (bookings: Booking[], status: string): number => {
+  if (status === "all") return bookings.length;
+  return bookings.filter((b) => b.status === status).length;
+};
+
 function MyBookings() {
   const { user } = useAuth();
-  const [bookingType, setBookingType] = useState<"coach" | "venue">("coach");
+  const [bookingType, setBookingType] = useState<"coach" | "venue" | "game">("coach");
   const [coachBookings, setCoachBookings] = useState<Booking[]>([]);
   const [venueBookings, setVenueBookings] = useState<VenueBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,30 +135,50 @@ function MyBookings() {
     "all" | "pending" | "accepted" | "rejected"
   >("all");
   const [selectedVenueBooking, setSelectedVenueBooking] = useState<VenueBooking | null>(null);
-
+  const [gameSubTab, setGameSubTab] = useState<"hosted" | "played">("hosted");
+  const [hostedGamesTab, setHostedGamesTab] = useState<"all"| "pending-requests"| "accepted-players"| "completed"| "cancelled"| "expired" | "payment-completed">("all");
+  const [playedGamesTab, setPlayedGamesTab] = useState<"all"| "pending-requests"| "cancelled-requests"| "completed"| "cancelled" |"expired">("all");
+  const [gameBookings, setGameBookings] = useState<{
+    hosted: Game[];
+    joined: Game[];
+    pending: Game[];
+    rejected: Game[];
+    cancelled: Game[];
+    booked: Game[];
+    completed: Game[];
+  }>({ hosted: [], joined: [], pending: [], rejected: [], cancelled: [], booked: [], completed: [] });
+  
+  const [activeGame, setActiveGame] = useState<Game | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   // Fetch bookings
   useEffect(() => {
     const fetchBookings = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
         setError(null);
 
         if (user.role === "player") {
-          // Get both coach and venue bookings for players
-          const [coachRes, venueRes] = await Promise.all([
+          // Get coach, venue, and game bookings for players
+          const [coachRes, venueRes, gameRes] = await Promise.all([
             apiGetMyCoachBookings(),
             apiGetMyVenueBookings(),
+            apiGetMyBookings(),
           ]);
           setCoachBookings(coachRes.bookings);
           setVenueBookings(venueRes.bookings);
+          setGameBookings(gameRes.bookings);
         } else if (user.role === "coach") {
           // Get coach's booking requests from players
           const response = await apiGetCoachsAllBooking();
           setCoachBookings(response.bookings);
         }
       } catch (err: any) {
+        console.error("[MyBookings] Error fetching bookings:", err);
         setError(err.message || "Failed to load bookings");
       } finally {
         setLoading(false);
@@ -100,15 +192,137 @@ function MyBookings() {
     activeTab === "all"
       ? coachBookings
       : coachBookings.filter((b) => b.status === activeTab);
+  const filteredHostedGames = useMemo(() => {
+    const hosted = gameBookings.hosted || [];
+    switch (hostedGamesTab) {
+      case "all": return hosted;
+      case "pending-requests": return hosted.filter(g => (g.joinRequests || []).some((jr:any) => jr.status === "pending"));
+      case "accepted-players": return hosted.filter(g => (g.approvedPlayers || []).length > 0);
+      case "completed": return hosted.filter(g => g.status === "Completed");
+      case "cancelled": return hosted.filter(g => g.status === "Cancelled");
+      case "payment-completed": return hosted.filter(g => g.bookingStatus === "Booked");
+      default: return hosted;
+    }
+  }, [gameBookings.hosted, hostedGamesTab]);
+  
+  const filteredPlayedGames = useMemo(() => {
+    const hostedIds = new Set((gameBookings.hosted || []).map(h => h._id));
+    const joined = (gameBookings.joined || []).filter(g => !hostedIds.has(g._id));
+    const pending = (gameBookings.pending || []).filter(g => !hostedIds.has(g._id));
+    const rejected = (gameBookings.rejected || []).filter(g => !hostedIds.has(g._id));
+    const cancelled = (gameBookings.cancelled || []).filter(g => !hostedIds.has(g._id));
+    const completed = (gameBookings.completed || []).filter(g => !hostedIds.has(g._id));
+    const booked = (gameBookings.booked || []).filter(g => !hostedIds.has(g._id));
 
-  const getTabCount = (status: string) => {
-    if (bookingType === "coach") {
-      if (status === "all") return coachBookings.length;
-      return coachBookings.filter((b) => b.status === status).length;
-    } else {
-      return venueBookings.length;
+    switch (playedGamesTab) {
+      case "all": return [...joined, ...pending, ...booked, ...completed];
+      case "pending-requests": return pending;
+      case "cancelled-requests": return [...rejected, ...cancelled];
+      case "completed": return completed;
+      case "expired": return [...joined, ...pending].filter(g => new Date(g.slot.startTime) < new Date() && g.status !== "Completed");
+      default: return [...joined, ...pending, ...booked, ...completed];
+    }
+  }, [gameBookings, playedGamesTab]);
+  
+  const openGameModal = (game:Game) => {  
+      setActiveGame(game);
+      setIsModalOpen(true);
+    };
+
+    const closeGameModal = () => {
+      setActiveGame(null);
+      setIsModalOpen(false);
+    };
+
+    const refetchGameBookings = async () => {
+      try {
+        const gameRes = await apiGetMyBookings();
+        setGameBookings(gameRes.bookings);
+      } catch (err) {
+        console.error("Failed to refetch game bookings", err);
+      }
+    };
+
+    const handleApprovePlayer = async (gameId: string, playerId: string) => {
+      try {
+        await apiApproveJoinRequest(gameId, playerId);
+        await refetchGameBookings();
+      } catch (err: any) {
+        console.error("approve error", err);
+        alert("Could not approve player");
+      }
+    };
+
+    const handleRejectPlayer = async (gameId: string, playerId: string) => {
+    try {
+      await apiRejectJoinRequest(gameId, playerId);
+      await refetchGameBookings();
+    } catch (err: any) {
+      console.error("reject error", err);
+      alert("Could not reject player");
     }
   };
+
+  const handleCancelJoinRequest = async (gameId: string) => {
+    try {
+      await apiCancelJoinRequest(gameId);
+      await refetchGameBookings();
+      closeGameModal();
+    } catch (err: any) {
+      console.error("cancel join request error", err);
+      alert("Could not cancel request");
+    }
+  };
+
+  const handleLeaveGame = async (gameId: string) => {
+    try {
+      await apiLeaveGame(gameId);
+      await refetchGameBookings();
+      closeGameModal();
+    } catch (err: any) {
+      console.error("leave game error", err);
+      alert("Could not leave game");
+    }
+  };
+
+  const handleStartGameBooking = async (gameId: string) => {
+    try {
+      setLoading(true);
+      const res = await apiStartGameBooking(gameId);
+      if (res.url) {
+        window.location.href = res.url;
+      } else {
+        alert("No payment URL returned");
+      }
+    } catch (err: any) {
+      console.error("start game booking error", err.message);
+      alert("Could not start booking");
+    }finally{
+      setLoading(false);
+    }
+  };
+  // calendar link removed — feature deprecated
+  
+  const handleCompleteGame = async (gameId: string) => {
+    try {
+      await apiCompleteGame(gameId);
+      await refetchGameBookings();
+    } catch (err: any) {
+      console.error("complete game error", err);
+      alert("Could not complete game");
+    }
+  };
+
+  const handleRateVenue = async (gameId: string, rating: number) => {
+    try {
+      await apiRateVenue(gameId, rating);
+      await refetchGameBookings();
+      closeGameModal();
+    } catch (err: any) {
+      console.error("rate venue error", err);
+      alert("Could not submit rating");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white/10 py-8 px-4">
@@ -141,6 +355,94 @@ function MyBookings() {
             >
               Venue Bookings
             </button>
+            <button
+              onClick={() => setBookingType("game")}
+              className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${bookingType === "game"
+                ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
+                : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
+                }`}
+            >
+              Game Bookings
+            </button>
+          </div>
+        )}
+
+        {/* Game Bookings Sub-Tabs: Hosted Games vs Games Played */}
+        {bookingType === "game" && user?.role === "player" && (
+          <div className="flex gap-3 mb-4">
+            <button
+              onClick={() => setGameSubTab("hosted")}
+              className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${gameSubTab === "hosted"
+                ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
+                : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
+                }`}
+            >
+              Hosted Games
+            </button>
+            <button
+              onClick={() => setGameSubTab("played")}
+              className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${gameSubTab === "played"
+                ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
+                : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
+                }`}
+            >
+              Games Played
+            </button>
+          </div>
+        )}
+
+        {/* Hosted Games Secondary Tabs */}
+        {bookingType === "game" && gameSubTab === "hosted" && user?.role === "player" && (
+          <div className="flex flex-wrap gap-3 mb-6">
+            {[
+              { key: "all", label: "All Game Bookings" },
+              { key: "pending-requests", label: "Pending Requests" },
+              { key: "accepted-players", label: "Accepted Players" },
+              { key: "completed", label: "Completed Games" },
+              { key: "cancelled", label: "Cancelled Games" },
+              { key: "payment-completed", label: "Payment Completed" }
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setHostedGamesTab(tab.key as any)}
+                className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${hostedGamesTab === tab.key
+                  ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
+                  : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
+                  }`}
+              >
+                <span>{tab.label}</span>
+                <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-xs">
+                  {getHostedGamesTabCount(gameBookings.hosted, tab.key)}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Games Played Secondary Tabs */}
+        {bookingType === "game" && gameSubTab === "played" && user?.role === "player" && (
+          <div className="flex flex-wrap gap-3 mb-6">
+            {[
+              { key: "all", label: "All Joined Games" },
+              { key: "pending-requests", label: "Pending Join Requests" },
+              { key: "cancelled-requests", label: "Cancelled Join Requests" },
+              { key: "completed", label: "Completed Games" },
+              { key: "expired", label: "Expired Games" }
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setPlayedGamesTab(tab.key as any)}
+                className={`px-5 py-2.5 rounded-xl font-medium transition-all border-2 ${playedGamesTab === tab.key
+                  ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
+                  : "bg-card/80 backdrop-blur border-primary/20 hover:border-primary/40 hover:bg-card"
+                  }`}
+              >
+                <span>{tab.label}</span>
+                <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-xs">
+                  {getPlayedGamesTabCount(gameBookings, tab.key)}
+                </span>
+              </button>
+            ))}
           </div>
         )}
 
@@ -158,7 +460,7 @@ function MyBookings() {
               >
                 <span className="capitalize">{tab}</span>
                 <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-xs">
-                  {getTabCount(tab)}
+                  {getCoachTabCount(coachBookings, tab)}
                 </span>
               </button>
             ))}
@@ -245,7 +547,7 @@ function MyBookings() {
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span>{new Date(booking.date).toLocaleDateString('en-IN', { timeZone: 'UTC' })}</span>
-                      <span>{new Date(booking.startTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: 'UTC' })} - {new Date(booking.endTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: 'UTC' })}</span>
+                      <span>{formatTime(booking.startTime)} - {formatTime(booking.endTime)}</span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -337,9 +639,9 @@ function MyBookings() {
                     <div className="flex items-center gap-2">
                       <Clock className="w-5 h-5 text-orange-400" />
                       <p className="text-lg font-semibold text-foreground">
-                        {new Date(selectedVenueBooking.startTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: 'UTC' })}
+                        {formatTime(selectedVenueBooking.startTime)}
                         {" - "}
-                        {new Date(selectedVenueBooking.endTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: 'UTC' })}
+                        {formatTime(selectedVenueBooking.endTime)}
                       </p>
                     </div>
                   </div>
@@ -347,7 +649,7 @@ function MyBookings() {
                   <div className="bg-green-600/10 rounded-xl p-4">
                     <p className="text-sm text-muted-foreground mb-1">Amount Paid</p>
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-green-400" />
+                      <IndianRupee className="w-5 h-5 text-green-400" />
                       <p className="text-lg font-semibold text-foreground">{selectedVenueBooking.price.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</p>
                     </div>
                   </div>
@@ -403,6 +705,65 @@ function MyBookings() {
             </div>
           </div>
         )}
+
+        {/* Game Bookings - Hosted */}
+        {!loading && !error && bookingType === "game" && gameSubTab === "hosted" && filteredHostedGames.length === 0 && (
+          <div className="bg-card/80 backdrop-blur rounded-2xl border border-primary/20 p-16 text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users className="w-10 h-10 text-primary/60" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-2">No Hosted Games Found</h3>
+          </div>
+        )}
+        {!loading && !error && bookingType === "game" && gameSubTab === "hosted" && filteredHostedGames.length > 0 && (
+          <div className="grid gap-4">
+            {filteredHostedGames.map(game => (
+              <div key={game._id} onClick={() => openGameModal(game)}>
+                <GameBookingCard game={game} onClick={() => openGameModal(game)} isHost />
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Game Bookings — Played */}
+        {!loading && !error && bookingType === "game" && gameSubTab === "played" && filteredPlayedGames.length === 0 && (
+          <div className="bg-card/80 backdrop-blur rounded-2xl border border-primary/20 p-16 text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+              <Calendar className="w-10 h-10 text-primary/60" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-2">No Games Played Yet</h3>
+          </div>
+        )}
+
+        {!loading && !error && bookingType === "game" && gameSubTab === "played" && filteredPlayedGames.length > 0 && (
+          <div className="grid gap-4">
+            {filteredPlayedGames.map(game => (
+              <div key={game._id} onClick={() => openGameModal(game)}>
+                <GameBookingCard game={game} onClick={() => openGameModal(game)} isHost={false} />
+              </div>
+            ))}
+          </div>
+        )}
+        {/* Game Booking Details Modal */}
+        
+        {activeGame && (
+          <GameBookingModal
+            open={isModalOpen}
+            onOpenChange={(val) => { if (!val) closeGameModal(); }}
+            game={activeGame}
+            currentUser={user}
+            // action handlers
+            onApprovePlayer={handleApprovePlayer}
+            onRejectPlayer={handleRejectPlayer}
+            // onCreateJoinRequest={handleCreateJoinRequest}
+            onCancelJoinRequest={handleCancelJoinRequest}
+            onLeaveGame={handleLeaveGame}
+            onStartGameBooking={handleStartGameBooking}
+            onCompleteGame={handleCompleteGame}
+            onRateVenue={handleRateVenue}
+          />
+        )}
+        
       </div>
     </div>
   );

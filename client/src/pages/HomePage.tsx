@@ -8,8 +8,12 @@ import { useAuth } from "../context/AuthContext";
 import VenueCard from "../components/cards/VenueCard";
 import CoachCard from "../components/cards/CoachCard";
 import GameCard from "../components/cards/GameCard";
-import { apiGetAllCoaches, apiGetGames } from "../services/api";
-import { Game } from "../types";
+import {
+  apiGetAllCoaches,
+  apiGetGames,
+  apiGetAllVenues,
+} from "../services/api";
+import { Game, Venue } from "../types";
 
 interface Coach {
   id: string;
@@ -33,6 +37,7 @@ function HomePage() {
   const navigate = useNavigate();
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [games, setGames] = useState<Game[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
 
   // Fetch coaches
   useEffect(() => {
@@ -60,6 +65,21 @@ function HomePage() {
     };
 
     fetchGames();
+  }, []);
+
+  // Fetch venues
+
+  useEffect(() => {
+    const fetchVenues = async () => {
+      try {
+        const response = await apiGetAllVenues();
+        setVenues(response.venues.slice(0, 3));
+      } catch (error) {
+        console.error("Failed to load venues:", error);
+      }
+    };
+
+    fetchVenues();
   }, []);
 
   return (
@@ -337,20 +357,23 @@ function HomePage() {
 
           {/* Change this */}
 
-          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {venues.map((venue) => (
               <VenueCard
-                key={venue.id}
-                id={venue.id.toString()}
+                id={venue._id}
+                key={venue._id}
                 name={venue.name}
-                location={venue.location}
-                rating={venue.rating}
-                reviews={venue.reviews}
+                address={venue.address}
+                city={venue.city}
+                rating={venue.averageRating}
+                reviews={venue.totalRatings}
                 sports={venue.sports}
-                image={venue.image}
+                image={
+                  venue.images && venue.images.length > 0 ? venue.images[0] : ""
+                }
               />
             ))}
-          </div> */}
+          </div>
         </div>
       </section>
 
@@ -388,7 +411,11 @@ function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {games.map((game) => (
-              <GameCard key={game._id} game={game} onOpen={(id) => navigate(`/games/${id}`)} />
+              <GameCard
+                key={game._id}
+                game={game}
+                onOpen={(id) => navigate(`/games/${id}`)}
+              />
             ))}
           </div>
         </div>

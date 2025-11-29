@@ -3,9 +3,12 @@ import { getGameById, getMyBookings, getGames } from '../../controllers/gameCont
 import Game from '../../models/gameModels';
 import AppError from '../../utils/AppError';
 import { IUserRequest } from '../../middleware/authMiddleware';
+import Booking from "../../models/Booking";
+import { stat } from 'fs';
 
 // Mock the models
 jest.mock('../../models/gameModels');
+jest.mock("../../models/Booking");
 
 describe('Game Controllers - getGames.ts', () => {
   let mockRequest: Partial<IUserRequest>;
@@ -16,16 +19,16 @@ describe('Game Controllers - getGames.ts', () => {
 
   beforeEach(() => {
     jsonMock = jest.fn();
-    
+
     mockResponse = {
       json: jsonMock,
-      status: jest.fn(function(this: any) {
+      status: jest.fn(function (this: any) {
         return this;
       }),
     };
-    
+
     statusMock = mockResponse.status as jest.Mock;
-    
+
     mockRequest = {
       params: {},
       query: {},
@@ -43,21 +46,33 @@ describe('Game Controllers - getGames.ts', () => {
   });
 
   describe('getGameById', () => {
-    // Test successful retrieval of a game by ID with populated host and player fields
-    it('should return game by ID with populated fields', async () => {
+    // Test successful retrieval of a game by ID with populated host, player fields and calendar link
+    it('should return game by ID with populated fields and calendarLink as host is requesting', async () => {
       const mockGame = {
         _id: 'game123',
         sport: 'football',
-        host: { _id: 'host123', username: 'hostuser', email: 'host@example.com' },
-        approvedPlayers: [{ _id: 'player1', username: 'player1', email: 'p1@example.com' }],
+        host: { _id: 'user123', toString: () => 'user123', username: 'testuser', email: 'test@example.com' },
+        approvedPlayers: [{ _id: 'user123', toString: () => 'user123', username: 'testuser', email: 'test@example.com' }, { _id: 'player1', toString: () => 'player1', username: 'player1', email: 'p1@example.com' }],
+        joinRequests: [],
       };
 
-      const populateMock = jest.fn().mockReturnThis();
-      (Game.findById as jest.Mock) = jest.fn().mockReturnValue({
-        populate: populateMock.mockReturnValue({
-          populate: jest.fn().mockResolvedValue(mockGame),
-        }),
+      const populate3 = jest.fn().mockResolvedValue(mockGame);
+      const populate2 = jest.fn().mockImplementation(() => ({
+        populate: populate3
+      }));
+      const populate1 = jest.fn().mockImplementation(() => ({
+        populate: populate2
+      }));
+      (Game.findById as jest.Mock).mockReturnValue({
+        populate: populate1
       });
+
+      const mockBooking = {
+        status: "Paid",
+        calendarLink: "https://cal.com/test123",
+      };
+
+      (Booking.findOne as jest.Mock) = jest.fn().mockResolvedValue(mockBooking);
 
       mockRequest.params = { gameId: 'game123' };
 
@@ -71,16 +86,22 @@ describe('Game Controllers - getGames.ts', () => {
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
         game: mockGame,
+        calendarLink: "https://cal.com/test123",
       });
     });
 
     // Test that a 404 error is returned when game is not found
     it('should call next with AppError when game not found', async () => {
-      const populateMock = jest.fn().mockReturnThis();
-      (Game.findById as jest.Mock) = jest.fn().mockReturnValue({
-        populate: populateMock.mockReturnValue({
-          populate: jest.fn().mockResolvedValue(null),
-        }),
+
+      const populate3 = jest.fn().mockResolvedValue(null);
+      const populate2 = jest.fn().mockImplementation(() => ({
+        populate: populate3
+      }));
+      const populate1 = jest.fn().mockImplementation(() => ({
+        populate: populate2
+      }));
+      (Game.findById as jest.Mock).mockReturnValue({
+        populate: populate1
       });
 
       mockRequest.params = { gameId: 'nonexistent' };
@@ -97,6 +118,157 @@ describe('Game Controllers - getGames.ts', () => {
       expect(errorArg.message).toBe('Game not found');
       expect(errorArg.statusCode).toBe(404);
     });
+
+    // Test that game does have booking but status not "Paid" does not expose calendar link
+    it('should NOT expose calendar link if booking not paid', async () => {
+      const mockGame = {
+        _id: 'game123',
+        sport: 'basketball',
+        host: { _id: 'user123', toString: () => 'user123', username: 'testuser', email: 'test@example.com' },
+        approvedPlayers: [
+          { _id: 'user123', toString: () => 'user123', username: 'testuser', email: 'test@example.com' }, 
+          { _id: 'player2', toString: () => 'player2', username: 'player2', email: 'player2@example.com' }
+        ],
+        joinRequests: [],
+      };
+      const populate3 = jest.fn().mockResolvedValue(mockGame);
+      const populate2 = jest.fn().mockImplementation(() => ({
+        populate: populate3
+      }));
+      const populate1 = jest.fn().mockImplementation(() => ({
+        populate: populate2
+      }));
+      (Game.findById as jest.Mock).mockReturnValue({
+        populate: populate1
+      });
+
+      (Booking.findOne as jest.Mock) = jest.fn().mockResolvedValue(null);
+      mockRequest.params = { gameId: 'game123' };
+      await getGameById(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+      expect(Game.findById).toHaveBeenCalledWith('game123');
+      expect(jsonMock).toHaveBeenCalledWith({
+        success: true,
+        game: mockGame,
+        calendarLink: null,
+      });
+    });
+
+    // Test that calendar link is exposed if requester is an approved player
+    it("should expose calendar link if requester is approved player", async () => {
+      const mockGame = {
+        _id: "game123",
+        sport: "cricket",
+        host: { _id: 'host999', toString: () => 'host999', username: 'hostuser', email: 'host@example.com' },
+        approvedPlayers: [
+          { _id: "user123", toString: () => 'user123', username: "test1user", email: "test1@example.com" },
+          { _id: 'host999', toString: () => 'host999', username: 'hostuser', email: 'host@example.com' }
+        ],
+        joinRequests: [],
+      };
+
+      const populate3 = jest.fn().mockResolvedValue(mockGame);
+      const populate2 = jest.fn().mockImplementation(() => ({
+        populate: populate3
+      }));
+      const populate1 = jest.fn().mockImplementation(() => ({
+        populate: populate2
+      }));
+      (Game.findById as jest.Mock).mockReturnValue({
+        populate: populate1
+      });
+
+      const mockBooking = {
+        calendarLink: "https://cal.com/ppp333",
+      };
+
+      (Booking.findOne as jest.Mock) = jest.fn().mockResolvedValue(mockBooking);
+
+      mockRequest.params = { gameId: "game123" };
+
+      await getGameById(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(Game.findById).toHaveBeenCalledWith('game123');
+      expect(jsonMock).toHaveBeenCalledWith({
+        success: true,
+        game: mockGame,
+        calendarLink: "https://cal.com/ppp333",
+      });
+    });
+
+    // Test that calendar link is not exposed if requester is neither host nor approved player
+    it("should NOT expose calendar link if user is not host or approved", async () => {
+      const mockGame = {
+        _id: "game123",
+        sport: "tennis",
+        host: { _id: "host999", toString: () => "host999", username: 'hostuser', email: 'host@example.com' },
+        approvedPlayers: [
+          { _id: 'host999', toString: () => "host999", username: 'hostuser', email: 'host@example.com' }
+        ],
+        joinRequests: [],
+      };
+
+      const populate3 = jest.fn().mockResolvedValue(mockGame);
+      const populate2 = jest.fn().mockImplementation(() => ({
+        populate: populate3
+      }));
+      const populate1 = jest.fn().mockImplementation(() => ({
+        populate: populate2
+      }));
+      (Game.findById as jest.Mock).mockReturnValue({
+        populate: populate1
+      });
+
+      (Booking.findOne as jest.Mock) = jest.fn().mockResolvedValue(null);
+
+      mockRequest.params = { gameId: "game123" };
+
+      await getGameById(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(Game.findById).toHaveBeenCalledWith('game123');
+      expect(jsonMock).toHaveBeenCalledWith({
+        success: true,
+        game: mockGame,
+        calendarLink: null,
+      });
+    });
+    // Test that all populated fields are called with correct parameters
+    it("should call all populate chains with correct parameters", async () => {
+      const mockGame = { _id: "gameX" };
+
+      const populate3 = jest.fn().mockResolvedValue(mockGame);
+      const populate2 = jest.fn().mockImplementation(() => ({
+        populate: populate3
+      }));
+      const populate1 = jest.fn().mockImplementation(() => ({
+        populate: populate2
+      }));
+      (Game.findById as jest.Mock).mockReturnValue({
+        populate: populate1
+      });
+
+      (Booking.findOne as jest.Mock).mockResolvedValue(null);
+
+      mockRequest.params = { gameId: "gameX" };
+
+      await getGameById(mockRequest as IUserRequest, mockResponse as Response, mockNext);
+
+      expect(populate1).toHaveBeenCalledWith("host", "username email");
+      expect(populate2).toHaveBeenCalledWith("approvedPlayers", "username email");
+      expect(populate3).toHaveBeenCalledWith("joinRequests.user", "username email");
+});
+
   });
 
   describe('getMyBookings', () => {
@@ -125,6 +297,10 @@ describe('Game Controllers - getGames.ts', () => {
         mockResponse as Response,
         mockNext
       );
+      const sortCalls = sortMock.mock.calls;
+      expect(sortCalls[0][0]).toEqual({ "slot.startTime": 1 });   // hosted
+      expect(sortCalls[1][0]).toEqual({ "slot.startTime": 1 });   // joined
+      expect(sortCalls[2][0]).toEqual({ "slot.startTime": -1 });  // completed
 
       expect(Game.find).toHaveBeenCalledTimes(7);
       expect(jsonMock).toHaveBeenCalledWith({
@@ -172,6 +348,31 @@ describe('Game Controllers - getGames.ts', () => {
         },
       });
     });
+    // Test that a cancelled game where user is ONLY an approvedPlayer is included  
+    it("should include a cancelled game where user is ONLY an approvedPlayer", async () => {
+      const mockCancelled = [
+        { _id: "g1", status: "Cancelled", approvedPlayers: ["user123"] }
+      ];
+      (Game.find as jest.Mock)
+        .mockReturnValueOnce({ sort: jest.fn().mockResolvedValue([]) }) // hosted
+        .mockReturnValueOnce({ sort: jest.fn().mockResolvedValue([]) }) // joined
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce(mockCancelled) // <-- this is the new important one
+        .mockResolvedValueOnce([])
+        .mockReturnValueOnce({ sort: jest.fn().mockResolvedValue([]) });
+
+      await getMyBookings(mockRequest as IUserRequest, mockResponse as Response, mockNext);
+
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bookings: expect.objectContaining({
+            cancelled: mockCancelled
+          })
+        })
+      );
+    });
+
   });
 
   describe('getGames', () => {
@@ -246,9 +447,71 @@ describe('Game Controllers - getGames.ts', () => {
       });
     });
 
+    // Test that only games with approvedPlayers count less than max are returned
+    it("should include game when approvedPlayers < max", async () => {
+      mockGames = [{
+        approvedPlayers: ["p1"],
+        playersNeeded: { max: 5 },
+        slot: { startTime: new Date("2030-01-01") },
+        status: "Open"
+      }];
+      (Game.find as jest.Mock).mockReturnValue({
+        populate: populateMock,
+      });
+      await getGames(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(Game.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          $expr: { $lt: [{ $size: "$approvedPlayers" }, "$playersNeeded.max"] }
+        })
+      );
+    });
+
+    // Test that games with approvedPlayers count equal to max are excluded
+    it("should exclude game when approvedPlayers = max", async () => {
+      mockGames = [{
+        approvedPlayers: ["p1", "p2", "p3"],
+        playersNeeded: { max: 3 },
+        slot: { startTime: new Date("2030-01-01") },
+        status: "Open"
+      }];
+      (Game.find as jest.Mock).mockReturnValue({
+        populate: populateMock,
+      });
+      await getGames(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+      expect(Game.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          $expr: { $lt: [{ $size: "$approvedPlayers" }, "$playersNeeded.max"] }
+        })
+      );
+    });
+    // Test that games with missing playersNeeded.max do not crash the query
+    it("should not crash when playersNeeded.max is missing", async () => {
+      mockGames = [{
+        approvedPlayers: ["p1"],
+        playersNeeded: {}, // no max
+        slot: { startTime: new Date("2030-01-01") },
+        status: "Open"
+      }];
+      sortMock.mockResolvedValue(mockGames);
+
+      await getGames(mockRequest as IUserRequest, mockResponse as Response, mockNext);
+
+      expect(Game.find).toHaveBeenCalled();
+    });
+
+
     // Test that sport filter uses case-insensitive regex matching
     it('should filter by sport (case-insensitive)', async () => {
-      mockRequest.query = { sport: 'football' };
+      mockRequest.query = { sport: 'fooTball' };
 
       await getGames(
         mockRequest as IUserRequest,
@@ -263,13 +526,14 @@ describe('Game Controllers - getGames.ts', () => {
       );
 
       const callArg = (Game.find as jest.Mock).mock.calls[0][0];
-      expect(callArg.sport.source).toBe('football');
+      expect(callArg.sport.source).toBe('fooTball');
       expect(callArg.sport.flags).toContain('i');
+      expect(callArg.sport.test('football')).toBe(true);
     });
 
-    // Test that venueId filter correctly queries by venue.venueId field
-    it('should filter by venueId', async () => {
-      mockRequest.query = { venueId: 'venue123' };
+    // Test that city filter uses case-insensitive regex matching
+    it('should filter by city (case-insensitive)', async () => {
+      mockRequest.query = { city: 'mumBAI' };
 
       await getGames(
         mockRequest as IUserRequest,
@@ -279,9 +543,34 @@ describe('Game Controllers - getGames.ts', () => {
 
       expect(Game.find).toHaveBeenCalledWith(
         expect.objectContaining({
-          'venue.venueId': 'venue123',
+          'venue.city': expect.any(RegExp),
         })
       );
+      const callArg = (Game.find as jest.Mock).mock.calls[0][0];
+      expect(callArg['venue.city'].source).toBe('mumBAI');
+      expect(callArg['venue.city'].flags).toContain('i');
+      expect(callArg["venue.city"].test("MUMBAI")).toBe(true);
+    });
+
+    // Test that venueName filter uses case-insensitive regex matching
+    it('should filter by venueName (case-insensitive)', async () => {
+      mockRequest.query = { venueName: 'StadIum' };
+
+      await getGames(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(Game.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'venue.venueName': expect.any(RegExp),
+        })
+      );
+      const callArg = (Game.find as jest.Mock).mock.calls[0][0];
+      expect(callArg['venue.venueName'].source).toBe('StadIum');
+      expect(callArg['venue.venueName'].flags).toContain('i');
+      expect(callArg['venue.venueName'].test('stadium')).toBe(true);
     });
 
     // Test that date range filter applies both $gte and $lte to slot.startTime
@@ -297,14 +586,12 @@ describe('Game Controllers - getGames.ts', () => {
         mockNext
       );
 
-      expect(Game.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          'slot.startTime': expect.objectContaining({
-            $gte: expect.any(Date),
-            $lte: expect.any(Date),
-          }),
-        })
-      );
+      const queryArg = (Game.find as jest.Mock).mock.calls[0][0];
+      expect(queryArg["slot.startTime"].$gte.getTime())
+        .toBe(new Date("2025-12-01").getTime());
+
+      expect(queryArg["slot.startTime"].$lte.getTime())
+        .toBe(new Date("2025-12-31").getTime());
     });
 
     // Test that startDate filter sets minimum date while ensuring games are upcoming
@@ -325,6 +612,28 @@ describe('Game Controllers - getGames.ts', () => {
     // Test that endDate filter sets maximum date while ensuring games aren't in the past
     it('should filter by endDate only and ensure not past games', async () => {
       mockRequest.query = { endDate: '2025-12-31' };
+      const before = Date.now();
+      await getGames(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+      const after = Date.now();
+      const callArg = (Game.find as jest.Mock).mock.calls[0][0];
+
+      // expect(callArg["slot.startTime"].$lte.getTime()).toBe(new Date("2025-12-31").getTime());
+      const lteDate = callArg["slot.startTime"].$lte.toISOString().slice(0, 10);
+      expect(lteDate).toBe("2025-12-31");
+
+      expect(callArg["slot.startTime"].$gte.getTime()).toBeGreaterThanOrEqual(before - 50);
+      expect(callArg["slot.startTime"].$gte.getTime()).toBeLessThanOrEqual(after + 50);
+    });
+
+    // Test that no past games are returned when no date filters are applied
+    it('should ensure only upcoming games when no date filters', async () => {
+      mockRequest.query = {};
+
+      const before = Date.now();
 
       await getGames(
         mockRequest as IUserRequest,
@@ -332,10 +641,19 @@ describe('Game Controllers - getGames.ts', () => {
         mockNext
       );
 
+      const after = Date.now();
+
       const callArg = (Game.find as jest.Mock).mock.calls[0][0];
-      expect(callArg['slot.startTime']).toHaveProperty('$gte');
-      expect(callArg['slot.startTime']).toHaveProperty('$lte');
+      const gte = callArg['slot.startTime'].$gte.getTime();
+
+      expect(callArg['slot.startTime'].hasOwnProperty('$gte')).toBe(true);
+      expect(callArg['slot.startTime'].hasOwnProperty('$lte')).toBe(false);
+
+      // Ensure `$gte` is near NOW (mutation-safe)
+      expect(gte).toBeGreaterThanOrEqual(before - 50);
+      expect(gte).toBeLessThanOrEqual(after + 50);
     });
+
 
     // Test that minPrice filter applies $gte to approxCostPerPlayer
     it('should filter by minPrice only', async () => {
@@ -393,7 +711,7 @@ describe('Game Controllers - getGames.ts', () => {
 
     // Test that invalid/NaN price values result in empty price filter object
     it('should handle invalid price values gracefully', async () => {
-      mockRequest.query = { minPrice: 'invalid', maxPrice: 'invalid' };
+      mockRequest.query = { minPrice: '', maxPrice: '' };
 
       await getGames(
         mockRequest as IUserRequest,
@@ -403,7 +721,35 @@ describe('Game Controllers - getGames.ts', () => {
 
       const callArg = (Game.find as jest.Mock).mock.calls[0][0];
       // When both values are NaN, an empty object is created but nothing is added to it
-      expect(callArg.approxCostPerPlayer).toEqual({});
+      expect(callArg.approxCostPerPlayer).toBeUndefined();
+    });
+
+    //Test that minprice valid and maxprice invalid results in only $gte being set
+    it('should handle valid minPrice and invalid maxPrice', async () => {
+      mockRequest.query = { minPrice: '150', maxPrice: 'invalid' };
+      await getGames(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+      const callArg = (Game.find as jest.Mock).mock.calls[0][0];
+      expect(callArg.approxCostPerPlayer).toHaveProperty('$gte', 150);
+      expect(callArg.approxCostPerPlayer).not.toHaveProperty('$lte');
+    });
+
+    // Test that minPrice > maxPrice results in no games being returned
+    it('should handle minPrice greater than maxPrice', async () => {
+      mockRequest.query = { minPrice: '600', maxPrice: '500' };
+      await getGames(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+      expect(Game.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          approxCostPerPlayer: { $gte: 600, $lte: 500 },
+        })
+      );
     });
 
     // Test that geolocation filter uses $near with default 5000m radius
@@ -456,6 +802,7 @@ describe('Game Controllers - getGames.ts', () => {
       );
     });
 
+
     // Test that multiple filters (sport, price, date) can be combined in one query
     it('should handle combined filters (sport, price, date)', async () => {
       mockRequest.query = {
@@ -492,18 +839,28 @@ describe('Game Controllers - getGames.ts', () => {
       expect(callArg.sport).toBeUndefined();
     });
 
-    // Test that non-string venueId values are ignored and not added to query
-    it('should ignore venueId filter if not a string', async () => {
-      mockRequest.query = { venueId: 456 as any };
-
+    // Test that non-string city values are ignored and not added to query
+    it('should ignore city filter if not a string', async () => {
+      mockRequest.query = { city: 456 as any };
       await getGames(
         mockRequest as IUserRequest,
         mockResponse as Response,
         mockNext
       );
-
       const callArg = (Game.find as jest.Mock).mock.calls[0][0];
-      expect(callArg['venue.venueId']).toBeUndefined();
+      expect(callArg['venue.city']).toBeUndefined();
+    });
+
+    // Test that non-string venueName values are ignored and not added to query
+    it('should ignore venueName filter if not a string', async () => {
+      mockRequest.query = { venueName: 789 as any };
+      await getGames(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+      const callArg = (Game.find as jest.Mock).mock.calls[0][0];
+      expect(callArg['venue.venueName']).toBeUndefined();
     });
 
     // Test that geolocation filter is not applied when longitude is missing
@@ -534,11 +891,48 @@ describe('Game Controllers - getGames.ts', () => {
       expect(callArg['venue.coordinates']).toBeUndefined();
     });
 
+    // Test that geolocation filter is not applied when both longitude and latitude are missing
+    it('should not apply geo filter if both is missing', async () => {
+      mockRequest.query = { lng: undefined, lat: undefined };
+
+      await getGames(
+        mockRequest as IUserRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      const callArg = (Game.find as jest.Mock).mock.calls[0][0];
+      expect(callArg['venue.coordinates']).toBeUndefined();
+    });
+
+    // Test that radius defaults to 5000m when radius parameter is invalid (<= 0)
+    it("should default radius to 5000 when radius <= 0", async () => {
+      mockRequest.query = { lng: "72.8", lat: "19.0", radius: "0" };
+
+      await getGames(
+        mockRequest as IUserRequest,
+        mockResponse as Response, 
+        mockNext
+      );
+      const callArg = (Game.find as jest.Mock).mock.calls[0][0];
+
+      expect(callArg["venue.coordinates"].$near.$maxDistance).toBe(5000);
+    });
+
+    // Test that radius defaults to 5000m when radius parameter is negative
+    it("should default radius to 5000 when radius is negative", async () => {
+      mockRequest.query = { lng: "72.8", lat: "19.0", radius: "-100" };
+
+      await getGames(mockRequest as IUserRequest, mockResponse as Response, mockNext);
+
+      const query = (Game.find as jest.Mock).mock.calls[0][0];
+      expect(query["venue.coordinates"].$near.$maxDistance).toBe(5000);
+    });
+
     // Test that empty array is returned when no games match the applied filters
     it('should return empty games array when no games match filters', async () => {
       const populateMock = jest.fn().mockReturnThis();
       const sortMock = jest.fn().mockResolvedValue([]);
-      
       (Game.find as jest.Mock) = jest.fn().mockReturnValue({
         populate: populateMock.mockReturnValue({
           populate: populateMock.mockReturnValue({
@@ -587,6 +981,24 @@ describe('Game Controllers - getGames.ts', () => {
 
       expect(Game.find).toHaveBeenCalled();
       expect(populateMock).toHaveBeenCalled();
+      expect(sortMock).toHaveBeenCalledWith({ 'slot.startTime': 1 })
     });
+
+    // Test that empty string filters for sport, city, venueName are ignored
+    it("should ignore empty string filters for sport, city, venueName", async () => {
+      mockRequest.query = { sport: "", city: "", venueName: "" };
+
+      await getGames(
+        mockRequest as IUserRequest, 
+        mockResponse as Response, 
+        mockNext
+      );
+      const callArg = (Game.find as jest.Mock).mock.calls[0][0];
+
+      expect(callArg.sport).toBeUndefined();
+      expect(callArg["venue.city"]).toBeUndefined();
+      expect(callArg["venue.venueName"]).toBeUndefined();
+    });
+    // Test 
   });
 });

@@ -35,16 +35,24 @@ app.use(pinoHttp({ logger }));
 // CORS config
 // Normalize CLIENT_ORIGIN (strip trailing slashes) to avoid exact-match CORS failures
 const rawClientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
-const clientOrigin = typeof rawClientOrigin === 'string' ? rawClientOrigin.replace(/\/+$/, '') : rawClientOrigin;
+const clientOrigin = typeof rawClientOrigin === 'string'
+  ? rawClientOrigin.replace(/\/+$/, '')
+  : rawClientOrigin;
 
 const corsOptions = {
-  origin: clientOrigin,
-  optionsSuccessStatus: 200,
+  origin: [
+    clientOrigin,
+    'http://localhost:5174',
+    'https://sport-sphere-ah9q.vercel.app'
+  ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
+
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 
 app.post(
   "/api/payments/webhook",

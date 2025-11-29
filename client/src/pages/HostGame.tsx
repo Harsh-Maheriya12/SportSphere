@@ -382,7 +382,7 @@ const HostGame: React.FC = () => {
     switch (currentStep) {
       case 0:
         return (
-          <div className="space-y-5">
+          <div className="space-y-5 bg-background">
             <SportPicker value={rawSport} onChange={(v: string) => setRawSport(v)} />
 
             <div className="group">

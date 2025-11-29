@@ -60,6 +60,13 @@ const GameDetails: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: `/games/${gameId}` } });
+    }
+  }, [isAuthenticated, navigate, gameId]);
+
   // Load Game
   const loadGame = async () => {
     if (!gameId) return;
@@ -322,7 +329,7 @@ const GameDetails: React.FC = () => {
   // render
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-screen bg-white/10 ">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-primary"></div>
       </div>
     );
@@ -633,8 +640,11 @@ const GameDetails: React.FC = () => {
                       Pay Now & Book Venue
                       </Button>
                     )}
-                    {/* Host actions */}
-                    {isHost && game?.status !== "Cancelled" && (
+                    {/* Host actions - hide cancel button if game is booked or completed */}
+                    {isHost && 
+                     game?.status !== "Cancelled" && 
+                     game?.bookingStatus !== "Booked" && 
+                     game?.status !== "Completed" && (
                       <Button
                         className="w-full bg-red-600 hover:bg-red-700 text-white mb-3 transition-all duration-200 hover:scale-105 active:scale-95"
                         onClick={handleCancelGame}
@@ -670,7 +680,9 @@ const GameDetails: React.FC = () => {
                           </Button>
                         )}
 
-                        {isApprovedPlayer && (
+                        {isApprovedPlayer && 
+                         game?.bookingStatus !== "Booked" && 
+                         game?.status !== "Completed" && (
                           <Button
                             className="w-full bg-red-600 hover:bg-red-700 text-white mb-3 transition-all duration-200 hover:scale-105 active:scale-95"
                             onClick={handleLeaveGame}

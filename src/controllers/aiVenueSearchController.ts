@@ -7,7 +7,13 @@ const Venue = mongoose.model("Venue");
 export async function aiVenueSearch(req: Request, res: Response){
   try {
     const { question } = req.body;
-    if (!question) return res.status(400).json({ error: "question required" });
+    if (!question || typeof question !== 'string') {
+      return res.status(400).json({ 
+        success: false,
+        error: "question required",
+        message: "Please provide a valid search query"
+      });
+    }
 
     const pipeline = await getPipelineFromNL(question);
     
@@ -27,6 +33,21 @@ export async function aiVenueSearch(req: Request, res: Response){
 
     return res.json({ success: true, count: result.length, data: result });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error("[AI Venue Search Error]:", err.message);
+    
+    // Handle specific error types
+    if (err.message?.includes("GROQ_API_KEY")) {
+      return res.status(503).json({ 
+        success: false,
+        error: "AI search service not configured",
+        message: "Smart search is temporarily unavailable. Please use the filter options."
+      });
+    }
+    
+    return res.status(500).json({ 
+      success: false,
+      error: err.message || "Search failed",
+      message: "Unable to process search. Please try again or use filters."
+    });
   }
 }

@@ -6,12 +6,13 @@ import Booking from "../models/Booking";
 import cloudinary from "../config/cloudinary";
 import fs from "fs";
 
-//Create Venue
+// Create Venue 
 export const createVenue = async (req: IUserRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
+
     let imageUrls: string[] = [];
 
     const files = req.files as Express.Multer.File[];
@@ -23,15 +24,44 @@ export const createVenue = async (req: IUserRequest, res: Response) => {
 
       imageUrls = uploads.map((img) => img.secure_url);
 
-      // delete temp files
       files.forEach((file) => fs.unlinkSync(file.path));
     }
-    const venue = await Venue.create({ ...req.body, owner: req.user._id });
+
+    const venueData: any = {
+      name: req.body.name,
+      address: req.body.address,
+      city: req.body.city,
+      phone: req.body.phone,
+      owner: req.user._id,
+      amenities: Array.isArray(req.body.amenities)
+        ? req.body.amenities.map((a: string) => a.trim()).filter(Boolean)
+        : typeof req.body.amenities === 'string'
+        ? req.body.amenities.split(",").map((a: string) => a.trim()).filter(Boolean)
+        : [],
+      images: imageUrls,
+    };
+
+    // optional location support
+    if (
+      req.body.location &&
+      req.body.location.coordinates &&
+      Array.isArray(req.body.location.coordinates) &&
+      req.body.location.coordinates.length === 2
+    ) {
+      venueData.location = {
+        type: "Point",
+        coordinates: req.body.location.coordinates,
+      };
+    }
+
+    const venue = await Venue.create(venueData);
+
     return res.status(201).json({ success: true, venue });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 //Get All Venues
 export const getVenues = async (_req: Request, res: Response) => {
@@ -76,15 +106,58 @@ export const getVenueById = async (req: Request, res: Response) => {
   }
 };
 
-//Update Venue
+// Update Venue (safe + optional location + image support)
 export const updateVenue = async (req: Request, res: Response) => {
   try {
-    const venue = await Venue.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    let imageUrls: string[] = [];
+    const files = req.files as Express.Multer.File[];
+
+    if (files && files.length > 0) {
+      const uploads = await Promise.all(
+        files.map((file) => cloudinary.uploader.upload(file.path))
+      );
+
+      imageUrls = uploads.map((img) => img.secure_url);
+      files.forEach((file) => fs.unlinkSync(file.path));
+    }
+
+    const updateData: any = {
+      name: req.body.name,
+      address: req.body.address,
+      city: req.body.city,
+      phone: req.body.phone,
+      amenities: req.body.amenities
+        ? req.body.amenities.split(",").map((a: string) => a.trim())
+        : undefined,
+    };
+
+    // Optional location handling
+    if (
+      req.body.location &&
+      req.body.location.coordinates &&
+      Array.isArray(req.body.location.coordinates) &&
+      req.body.location.coordinates.length === 2
+    ) {
+      updateData.location = {
+        type: "Point",
+        coordinates: req.body.location.coordinates,
+      };
+    }
+
+    if (imageUrls.length > 0) {
+      updateData.images = imageUrls;
+    }
+
+    const venue = await Venue.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
 
     if (!venue) {
-      return res.status(404).json({ success: false, message: "Venue not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Venue not found" });
     }
 
     return res.status(200).json({ success: true, venue });
@@ -92,6 +165,8 @@ export const updateVenue = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
 
 //Delete Venue
 export const deleteVenue = async (req: Request, res: Response) => {
@@ -126,14 +201,11 @@ const updateVenueSports = async (venueId: string) => {
   });
 };
 
-//Create SubVenue
 export const createSubVenue = async (req: Request, res: Response) => {
   try {
-    const { venue } = req.body;
+    const venueId = req.params.venueId;
 
-    const subVenue = await SubVenue.create(req.body);
-     let imageUrls: string[] = [];
-
+    let imageUrls: string[] = [];
     const files = req.files as Express.Multer.File[];
 
     if (files && files.length > 0) {
@@ -142,19 +214,48 @@ export const createSubVenue = async (req: Request, res: Response) => {
       );
 
       imageUrls = uploads.map((img) => img.secure_url);
-
-      // delete temp files
       files.forEach((file) => fs.unlinkSync(file.path));
     }
 
-    // Auto-update venue.sports
-    await updateVenueSports(venue);
+    let parsedSports: any[] = [];
+
+    if (req.body.sports) {
+      try {
+        parsedSports =
+          typeof req.body.sports === "string"
+            ? JSON.parse(req.body.sports)
+            : req.body.sports;
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid sports format. Must be valid JSON array.",
+        });
+      }
+    }
+
+    const subVenueData = {
+      name: req.body.name,
+      venue: venueId,
+      amenities: req.body.amenities
+        ? req.body.amenities.split(",").map((a: string) => a.trim())
+        : [],
+      sports: parsedSports,
+      images: imageUrls,
+    };
+
+    const subVenue = await SubVenue.create(subVenueData);
+    await updateVenueSports(venueId);
 
     return res.status(201).json({ success: true, subVenue });
+
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
+
 
 //Get SubVenues By Venue
 export const getSubVenuesByVenue = async (req: Request, res: Response) => {
@@ -167,18 +268,45 @@ export const getSubVenuesByVenue = async (req: Request, res: Response) => {
   }
 };
 
-//Update SubVenue
+// Update SubVenue (safe + image support)
 export const updateSubVenue = async (req: Request, res: Response) => {
   try {
-    const subVenue = await SubVenue.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    let imageUrls: string[] = [];
+    const files = req.files as Express.Multer.File[];
 
-    if (!subVenue) {
-      return res.status(404).json({ success: false, message: "SubVenue not found" });
+    if (files && files.length > 0) {
+      const uploads = await Promise.all(
+        files.map((file) => cloudinary.uploader.upload(file.path))
+      );
+
+      imageUrls = uploads.map((img) => img.secure_url);
+      files.forEach((file) => fs.unlinkSync(file.path));
     }
 
-    // Auto-update venue sports
+    const updateData: any = {
+      name: req.body.name,
+      amenities: req.body.amenities
+        ? req.body.amenities.split(",").map((a: string) => a.trim())
+        : undefined,
+      sports: req.body.sports ? JSON.parse(req.body.sports) : undefined,
+    };
+
+    if (imageUrls.length > 0) {
+      updateData.images = imageUrls;
+    }
+
+    const subVenue = await SubVenue.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    if (!subVenue) {
+      return res
+        .status(404)
+        .json({ success: false, message: "SubVenue not found" });
+    }
+
     await updateVenueSports(subVenue.venue.toString());
 
     return res.status(200).json({ success: true, subVenue });
@@ -186,6 +314,7 @@ export const updateSubVenue = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 //Delete SubVenue
 export const deleteSubVenue = async (req: Request, res: Response) => {
@@ -274,4 +403,3 @@ export const getVenueRatings = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-

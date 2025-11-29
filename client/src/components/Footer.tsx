@@ -11,7 +11,7 @@ import {
   Linkedin,
   Copyright,
 } from "lucide-react";
-import Logo from "../assets/SportSphereLogo.jpg";
+import Logo from "../assets/SportSphere_Logo1.png";
 
 function Footer() {
   return (
@@ -24,12 +24,12 @@ function Footer() {
               <img
                 src={Logo}
                 alt="SportSphere Logo"
-                className="h-8 w-auto mr-2 rounded-xl"
+                className="h-12 w-auto mr-2 rounded-xl"
               />
 
-              <span className="text-xl font-semibold text-primary">
+              {/* <span className="text-xl font-semibold text-primary">
                 Sport Sphere
-              </span>
+              </span> */}
             </div>
             <p className="text-sm text-muted-foreground">
               Connecting players, venues, and coaches in one unified platform.

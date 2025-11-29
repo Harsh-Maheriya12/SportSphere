@@ -1,12 +1,9 @@
 import { AuthResponse, RegisterResponse, User, Game, JoinRequest, ApiResponse } from "../types/index";
 
-// Need to change base URL based on environment
-// let BASE_URL = "/api";
-let BASE_URL = "https://sportsphere-f6f0.onrender.com/api";
-
-// if(process.env.NODE_ENV === "production") {
-  // let BASE_URL = "https://sportsphere-f6f0.onrender.com";
-// }
+// API URL
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}`
+  : "/api";
 
 // Centralized request handler with auto JWT token and error handling
 const request = async <T>(
@@ -120,7 +117,6 @@ export const apiResendOtp = (
 };
 
 // Username Availability Check
-
 export const apiCheckUsername = (
   username: string
 ): Promise<{ success: boolean; available: boolean }> => {
@@ -131,7 +127,6 @@ export const apiCheckUsername = (
 };
 
 // User Profile view and update
-
 export const apiGetProfile = (): Promise<{
   success: boolean;
   user: User & {
@@ -165,7 +160,6 @@ export const apiUpdateProfile = (
 };
 
 // Reset Password
-
 export const apiSendPasswordResetOtp = (
   email: string
 ): Promise<{ success: boolean; message: string }> => {
@@ -466,29 +460,40 @@ export const apiCreateVenue = (
   address: string,
   city: string,
   state: string,
-  coordinates: [number, number],
   amenities: string[],
-  images?: string[]
+  images?: File[]
 ): Promise<{
   success: boolean;
   venue: any;
 }> => {
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("description", description);
+  formData.append("phone", phone);
+  formData.append("address", address);
+  formData.append("city", city);
+  formData.append("state", state);
+  if (amenities && amenities.length > 0) {
+    amenities.forEach((a, index) => {
+      const clean = a.trim();
+      if (clean.length > 0) {
+        formData.append(`amenities[${index}]`, clean);
+      }
+    });
+  } else {
+    formData.append("amenities", "");
+  }
+  
+  // Append images if provided
+  if (images && images.length > 0) {
+    images.forEach((image) => {
+      formData.append("images", image);
+    });
+  }
+
   return request("/venues", {
     method: "POST",
-    body: JSON.stringify({
-      name,
-      description,
-      phone,
-      address,
-      city,
-      state,
-      location: {
-        type: "Point",
-        coordinates,
-      },
-      amenities,
-      images: images || [],
-    }),
+    body: formData,
   });
 };
 
@@ -522,21 +527,35 @@ export const apiCreateSubVenue = (
   name: string,
   description: string,
   sports: { name: string; minPlayers: number; maxPlayers: number }[],
-  images?: string[]
+  images?: File[]
 ): Promise<{
   success: boolean;
   subVenue: any;
 }> => {
-  return request("/subvenues", {
+  const formData = new FormData();
+  formData.append("venue", venueId);
+  formData.append("name", name);
+  formData.append("description", description);
+  
+  // Send each sport as individual form fields to avoid JSON parsing issues
+  sports.forEach((sport, index) => {
+    formData.append(`sports[${index}][name]`, sport.name);
+    formData.append(`sports[${index}][minPlayers]`, sport.minPlayers.toString());
+    formData.append(`sports[${index}][maxPlayers]`, sport.maxPlayers.toString());
+  });
+  
+  formData.append("status", "active");
+  
+  // Append images if provided
+  if (images && images.length > 0) {
+    images.forEach((image) => {
+      formData.append("images", image);
+    });
+  }
+
+  return request(`/subvenues/venue/${venueId}`, {
     method: "POST",
-    body: JSON.stringify({
-      venue: venueId,
-      name,
-      description,
-      sports,
-      images: images || [],
-      status: "active",
-    }),
+    body: formData,
   });
 };
 
@@ -561,6 +580,20 @@ export const apiDeleteSubVenue = (id: string): Promise<{
 }> => {
   return request(`/subvenues/${id}`, {
     method: "DELETE",
+  });
+};
+
+// AI Venue Search
+export const apiAiVenueSearch = (
+  question: string
+): Promise<{
+  success: boolean;
+  count: number;
+  data: any[];
+}> => {
+  return request("/venues/search", {
+    method: "POST",
+    body: JSON.stringify({ question }),
   });
 };
 
@@ -794,6 +827,7 @@ export const apiGetMyBookings = (): Promise<{
 
 
 export const apiStartGameBooking = async (gameId: string) => {
+  // console.log("Starting game booking for gameId:", gameId);
   return request<{
     success: boolean;
     url: string;
@@ -803,3 +837,16 @@ export const apiStartGameBooking = async (gameId: string) => {
     method: "POST",
   });
 };
+
+// APIs for Booking Payment
+export const apiVerifyPayment = (sessionId: string) => {
+  return request<{
+    success: boolean;
+    message: string;
+    booking?: { id: string; status: string };
+  }>(`/bookings/verify-payment?session_id=${sessionId}`, {
+    method: "GET",
+  });
+};
+
+

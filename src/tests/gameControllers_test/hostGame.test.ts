@@ -554,6 +554,7 @@ describe('Game Controllers - hostGame.ts', () => {
         _id: 'game123',
         host: 'host123',
         approvedPlayers: ['host123', 'user123', 'user456'],
+        joinRequests: [{ user: "user123" }, { user: "user777" }],
         bookingStatus: 'NotBooked',
         status: 'Open',
         playersNeeded: { min: 5, max: 10 },
@@ -576,6 +577,7 @@ describe('Game Controllers - hostGame.ts', () => {
       expect(mongoose.startSession).toHaveBeenCalled();
       expect(mockSession.startTransaction).toHaveBeenCalled();
       expect(mockGame.approvedPlayers).toEqual(['host123', 'user456']);
+      expect(mockGame.joinRequests).toEqual([{ user: "user777" }]);
       expect(mockGame.save).toHaveBeenCalledWith({ session: mockSession });
       expect(mockSession.commitTransaction).toHaveBeenCalled();
       expect(mockSession.endSession).toHaveBeenCalled();

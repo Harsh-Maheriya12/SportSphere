@@ -110,6 +110,11 @@ function ForgotPassword() {
       return;
     }
 
+    if(newPassword.length > 12) {
+      setError("Password cannot exceed 12 characters");
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -360,6 +365,7 @@ function ForgotPassword() {
                     placeholder="Enter new password"
                     required
                     minLength={6}
+                    maxLength={12}
                     disabled={isLoading}
                   />
                 </div>
@@ -384,6 +390,7 @@ function ForgotPassword() {
                     placeholder="Re-enter password"
                     required
                     minLength={6}
+                    maxLength={12}
                     disabled={isLoading}
                   />
                 </div>

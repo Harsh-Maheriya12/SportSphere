@@ -106,9 +106,19 @@ export interface TimeSlot {
 
 // Game JoinRequest
 export interface JoinRequest {
-  user: string;
+  user: string | { _id: string; username: string; email?: string };
   status: "pending" | "approved" | "rejected";
   requestedAt: string;
+}
+
+// Game Slot
+export interface GameSlot {
+  timeSlotDocId: string;
+  slotId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  price: number;
 }
 
 // Game
@@ -134,14 +144,7 @@ export interface Game {
     name: string;
   };
 
-  slot: {
-    timeSlotDocId: string;
-    slotId: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-    price: number;
-  };
+  slot: GameSlot;
 
   playersNeeded: { min: number; max: number };
   approvedPlayers: string[];

@@ -61,7 +61,7 @@ function GameCard({ game, onOpen, onJoin, onOptimisticUpdate }: GameCardProps) {
 
   return (
     <div
-      className="group relative flex h-full flex-col overflow-hidden rounded-xl border-2 border-primary/20 hover:border-primary transition-all cursor-pointer hover:shadow-lg shadow-sm bg-card/80 backdrop-blur"
+      className="group relative overflow-hidden rounded-xl border-2 border-primary/20 hover:border-primary transition-all cursor-pointer hover:shadow-lg shadow-sm bg-card/80 backdrop-blur"
       onClick={() => onOpen(game._id)}
     >
       {/* Header Image/Gradient */}
