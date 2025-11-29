@@ -102,7 +102,7 @@ const getPlayedGamesTabCount = (gameBookings: {
   const playedGames = Object.values(gameBookings)
     .flat()
     .filter(g => !hostedIds.has(g._id));
-  
+
   switch (status) {
     case "all":
       return playedGames.length;
@@ -136,8 +136,8 @@ function MyBookings() {
   >("all");
   const [selectedVenueBooking, setSelectedVenueBooking] = useState<VenueBooking | null>(null);
   const [gameSubTab, setGameSubTab] = useState<"hosted" | "played">("hosted");
-  const [hostedGamesTab, setHostedGamesTab] = useState<"all"| "pending-requests"| "accepted-players"| "completed"| "cancelled"| "expired" | "payment-completed">("all");
-  const [playedGamesTab, setPlayedGamesTab] = useState<"all"| "pending-requests"| "cancelled-requests"| "completed"| "cancelled" |"expired">("all");
+  const [hostedGamesTab, setHostedGamesTab] = useState<"all" | "pending-requests" | "accepted-players" | "completed" | "cancelled" | "expired" | "payment-completed">("all");
+  const [playedGamesTab, setPlayedGamesTab] = useState<"all" | "pending-requests" | "cancelled-requests" | "completed" | "cancelled" | "expired">("all");
   const [gameBookings, setGameBookings] = useState<{
     hosted: Game[];
     joined: Game[];
@@ -147,7 +147,7 @@ function MyBookings() {
     booked: Game[];
     completed: Game[];
   }>({ hosted: [], joined: [], pending: [], rejected: [], cancelled: [], booked: [], completed: [] });
-  
+
   const [activeGame, setActiveGame] = useState<Game | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Fetch bookings
@@ -196,7 +196,7 @@ function MyBookings() {
     const hosted = gameBookings.hosted || [];
     switch (hostedGamesTab) {
       case "all": return hosted;
-      case "pending-requests": return hosted.filter(g => (g.joinRequests || []).some((jr:any) => jr.status === "pending"));
+      case "pending-requests": return hosted.filter(g => (g.joinRequests || []).some((jr: any) => jr.status === "pending"));
       case "accepted-players": return hosted.filter(g => (g.approvedPlayers || []).length > 0);
       case "completed": return hosted.filter(g => g.status === "Completed");
       case "cancelled": return hosted.filter(g => g.status === "Cancelled");
@@ -204,7 +204,7 @@ function MyBookings() {
       default: return hosted;
     }
   }, [gameBookings.hosted, hostedGamesTab]);
-  
+
   const filteredPlayedGames = useMemo(() => {
     const hostedIds = new Set((gameBookings.hosted || []).map(h => h._id));
     const joined = (gameBookings.joined || []).filter(g => !hostedIds.has(g._id));
@@ -223,37 +223,37 @@ function MyBookings() {
       default: return [...joined, ...pending, ...booked, ...completed];
     }
   }, [gameBookings, playedGamesTab]);
-  
-  const openGameModal = (game:Game) => {  
-      setActiveGame(game);
-      setIsModalOpen(true);
-    };
 
-    const closeGameModal = () => {
-      setActiveGame(null);
-      setIsModalOpen(false);
-    };
+  const openGameModal = (game: Game) => {
+    setActiveGame(game);
+    setIsModalOpen(true);
+  };
 
-    const refetchGameBookings = async () => {
-      try {
-        const gameRes = await apiGetMyBookings();
-        setGameBookings(gameRes.bookings);
-      } catch (err) {
-        console.error("Failed to refetch game bookings", err);
-      }
-    };
+  const closeGameModal = () => {
+    setActiveGame(null);
+    setIsModalOpen(false);
+  };
 
-    const handleApprovePlayer = async (gameId: string, playerId: string) => {
-      try {
-        await apiApproveJoinRequest(gameId, playerId);
-        await refetchGameBookings();
-      } catch (err: any) {
-        console.error("approve error", err);
-        alert("Could not approve player");
-      }
-    };
+  const refetchGameBookings = async () => {
+    try {
+      const gameRes = await apiGetMyBookings();
+      setGameBookings(gameRes.bookings);
+    } catch (err) {
+      console.error("Failed to refetch game bookings", err);
+    }
+  };
 
-    const handleRejectPlayer = async (gameId: string, playerId: string) => {
+  const handleApprovePlayer = async (gameId: string, playerId: string) => {
+    try {
+      await apiApproveJoinRequest(gameId, playerId);
+      await refetchGameBookings();
+    } catch (err: any) {
+      console.error("approve error", err);
+      alert("Could not approve player");
+    }
+  };
+
+  const handleRejectPlayer = async (gameId: string, playerId: string) => {
     try {
       await apiRejectJoinRequest(gameId, playerId);
       await refetchGameBookings();
@@ -297,12 +297,12 @@ function MyBookings() {
     } catch (err: any) {
       console.error("start game booking error", err.message);
       alert("Could not start booking");
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
   // calendar link removed — feature deprecated
-  
+
   const handleCompleteGame = async (gameId: string) => {
     try {
       await apiCompleteGame(gameId);
@@ -724,7 +724,7 @@ function MyBookings() {
             ))}
           </div>
         )}
-        
+
         {/* Game Bookings — Played */}
         {!loading && !error && bookingType === "game" && gameSubTab === "played" && filteredPlayedGames.length === 0 && (
           <div className="bg-card/80 backdrop-blur rounded-2xl border border-primary/20 p-16 text-center">
@@ -745,7 +745,7 @@ function MyBookings() {
           </div>
         )}
         {/* Game Booking Details Modal */}
-        
+
         {activeGame && (
           <GameBookingModal
             open={isModalOpen}
@@ -763,7 +763,7 @@ function MyBookings() {
             onRateVenue={handleRateVenue}
           />
         )}
-        
+
       </div>
     </div>
   );
