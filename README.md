@@ -15,7 +15,9 @@ The entire development environment is managed using **Docker Compose**.
 - Authentication: JWT + Google OAuth 2.0
 - Logging: Pino
 - Validation: express-validator
-- Testing: Jest + Supertest
+- Testing:
+    - Unit Testing: Jest
+    - Mutation: Stryker
 
 ### Frontend
 - React 18 + TypeScript
@@ -23,7 +25,8 @@ The entire development environment is managed using **Docker Compose**.
 - React Router DOM v6
 - Tailwind CSS
 - Context API
-- Vitest + React Testing Library
+- Testing:
+   - GUI Testing: Selenium IDE
 
 ### Environment & DevOps
 - Docker & Docker Compose
@@ -34,40 +37,48 @@ The entire development environment is managed using **Docker Compose**.
 ## Setup & Running Instructions
 
 ### 1. Clone the Repository
-```bash
-git clone https://github.com/<your-username>/SportSphere_new.git
+```
+git clone https://github.com/Harsh-Maheriya12/SportSphere
 cd SportSphere_new
 ```
 
 ---
 
-## Environment Variables
+## 2. Set up Environment Variables
 
 Create a `.env` file at the project root.
 
-### **Email SMTP (for OTP + notifications)**
 ```
-SMTP_HOST=<host>
-SMTP_PORT=<port>
-SMTP_USER=<username>
-SMTP_PASS=<password>
-EMAIL_FROM=<noreply@example.com>
+`PORT=5000
+MONGO_URI=your_mongodb_url
+JWT_SECRET=your_jwt_secret_here
+FRONTEND_URL=frontend_irl # Where you frontend is running
+
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_REDIRECT_URI=backend_url/api/auth/google/callback # Where your backend call be made for google auth
+
+AUTH_EMAIL=your_email_here
+SENDGRID_API_KEY=your_sendgrid_api_key_here
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name_here
+CLOUDINARY_API_KEY=your_cloudinary_api_key_here
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret_here
+
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama-3b-8k  # or your preferred model
+
+STRIPE_SECRET_KEY=your_stripe_secret_key_here
+STRIPE_PUBLIC_KEY=your_stripe_public_key_here
+
+N8N_WEBHOOK_URL=https://your_n8n_webhook_url_here`
 ```
 
-### **Google OAuth**
-```
-GOOGLE_CLIENT_ID=<client-id>
-GOOGLE_CLIENT_SECRET=<secret>
-GOOGLE_REDIRECT_URI=http://localhost:8000/api/auth/google/callback
-```
+Create another `.env` file in `SportSphere/client`
 
-### **JWT**
 ```
-JWT_SECRET=<your-secret>
-JWT_EXPIRES_IN=7d
+VITE_API_BASE_URL = you_backend_api_endpoint_url # Base URL for all your api endpoints of where frontend is making api request
 ```
-
-These are required for email verification, login, and Google OAuth.
 
 ---
 
@@ -170,39 +181,63 @@ allowing a smooth local development workflow.
 ## Project Structure
 
 ```
-SportSphere_new/
-├── client/                     # React Frontend (5173)
+SportSphere/
+│
+├── client/                          # Frontend (Runs on 5173)
 │   ├── src/
-│   │   ├── components/
-│   │   ├── context/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   ├── tests/
-│   │   ├── types/
+│   │   ├── admin/                   # Admin Panel (screens, components)
+│   │   ├── assets/                  # Images, icons, SVGs
+│   │   ├── components/              # Shared UI components
+│   │   ├── constants/               # App constants
+│   │   ├── context/                 # React Context providers
+│   │   ├── hooks/                   # Custom React hooks
+│   │   ├── lib/                     # Utility libraries / helpers
+│   │   ├── pages/                   # Page-level components (UI screens)
+│   │   ├── services/                # API calls → Backend
+│   │   ├── types/                   # TypeScript types/interfaces
 │   │   ├── App.tsx
+│   │   ├── main.tsx
 │   │   ├── index.css
-│   │   └── main.tsx
+│   │   └── vite-env.d.ts
+│   │
+|   ├── index.html                      
 │   ├── Dockerfile.dev
-│   ├── vite.config.ts
-│   └── package.json
+│   ├── tailwind.config.ts
+│   ├── postcss.config.ts 
+│   ├── vite.config.ts               # Vite dev server + proxy
+│   ├── package.json
+│   ├── tsconfig.json
+|   ├── vercel.json                       
+|   └──.env                          # Environment variables
 │
-├── src/                        # Backend API (8000)
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── tests/
-│   ├── types/
-│   ├── app.ts
-│   └── server.ts
+│                             
+|── src/                             # Backend (Runs on 5000/8000)
+│   ├── config/                      # env, DB connection, logger config
+│   ├── constants/                   # Reusable constants
+│   ├── controllers/                 # Route controllers (Auth, Venue, Game)
+│   ├── middleware/                  # Auth, Error Handler, Validators
+│   ├── models/                      # MongoDB/Mongoose schemas
+│   ├── routes/                      # All Express routes
+│   ├── utils/                       # Utilities (Email Sender, Cloudinary Uploader, helpers)
+│   ├── types/                       # Typescript types
+│   ├── tests/                       # Unit + Integration tests
+│   ├── app.ts                       # Express app config
+│   └── server.ts                    # Entry point
 │
+├── n8n/                             # Automation
+│   ├── SportSphere_Workflow.json
+│   └── sportsphere-workflow-n8n.png
+|
+├── jest.config.js
+├── stryker.config.js
+├── package.json
+├── tsconfig.json 
 ├── docker-compose.yml
 ├── Dockerfile.dev
-├── .env
-├── jest.config.js
-├── package.json
-└── tsconfig.json
+├── .env                              # Environment variables
+├── README.md
+└── package.json                          
+
 ```
 
 ---

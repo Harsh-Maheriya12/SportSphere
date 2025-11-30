@@ -28,15 +28,17 @@ Below is an overview of the main directories and files:
 
 ```plaintext
 src/
-├── config/         # Application-wide configuration (e.g., db.ts, logger.ts)
-├── controllers/    # Business logic for each resource (e.g., userController.ts)
-├── middleware/     # Custom Express middleware (auth, validation, error handling)
-├── models/         # Mongoose schemas (e.g., User.ts)
-├── routes/         # Express router files (define API endpoints)
-├── tests/          # Backend test suite (see src/tests/README.md)
-├── types/          # TypeScript declaration files (e.g., Express req.user augmentation)
-├── app.ts          # Assembles middleware, routes, and error handlers
-└── server.ts       # Application entry point (starts server and connects to database)
+├── config/                      # env, DB connection, logger config
+├── constants/                   # Reusable constants
+├── controllers/                 # Route controllers (Auth, Venue, Game)
+├── middleware/                  # Auth, Error Handler, Validators
+├── models/                      # MongoDB/Mongoose schemas
+├── routes/                      # All Express routes
+├── utils/                       # Utilities (Email Sender, Cloudinary Uploader, helpers)
+├── types/                       # Typescript types
+├── tests/                       # Unit + Integration tests
+├── app.ts                       # Express app config
+└── server.ts                    # Entry point
 ```
 
 ### Directory Descriptions
